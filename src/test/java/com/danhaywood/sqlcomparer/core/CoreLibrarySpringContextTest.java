@@ -15,6 +15,7 @@ class CoreLibrarySpringContextTest {
     void coreComparisonServicesCanBeSpringManaged() {
         contextRunner.run(context -> assertThat(context)
                 .hasSingleBean(TableComparer.class)
+                .hasSingleBean(MultiTableComparer.class)
                 .hasSingleBean(TableMetadataReader.class)
                 .hasSingleBean(TableRowReader.class));
     }

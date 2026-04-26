@@ -8,11 +8,10 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 ## Candidate ideas
 
-- Add error handling if the table specified does not have a _BK unique index.
-- Compare multiple tables by orchestrating repeated single-table comparisons.
 - Specify multiple tables by way of a file
 - Configure ignored columns beyond the current default `id` and `version`.
 - Identify ignored columns from extended properties.
+- Make it a strategy as to how to ignore columns, with a fallback as per the above rules.
 - Render comparison results as JSON for tooling or future webapp use.
 - Render comparison results as Excel for tooling or future webapp use.
 - Add a CLI command on top of the core comparison library.

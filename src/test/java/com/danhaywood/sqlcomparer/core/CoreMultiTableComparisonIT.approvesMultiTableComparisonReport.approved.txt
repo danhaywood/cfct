@@ -1,0 +1,51 @@
+Multi-table comparison
+Tables: 2
+
+== dbo.Supplier ==
+Table: dbo.Supplier
+Business key: Supplier_BK(reference)
+
+Compared columns:
+  name
+  status
+  country_code
+
+Ignored columns:
+  id
+  version
+
+Rows only in left:
+  SUP-003
+
+Rows only in right:
+  SUP-004
+
+Rows with differences:
+  SUP-002
+    status: left=ACTIVE, right=SUSPENDED
+
+
+== dbo.Product ==
+Table: dbo.Product
+Business key: Product_BK(sku)
+
+Compared columns:
+  name
+  category
+  unit_price
+  status
+
+Ignored columns:
+  id
+  version
+
+Rows only in left:
+  SKU-003
+
+Rows only in right:
+  SKU-004
+
+Rows with differences:
+  SKU-002
+    unit_price: left=10.00, right=10.50
+

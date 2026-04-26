@@ -1,0 +1,15 @@
+DROP TABLE IF EXISTS dbo.Product;
+GO
+CREATE TABLE dbo.Product (
+    id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Product PRIMARY KEY,
+    sku NVARCHAR(40) NOT NULL,
+    name NVARCHAR(100) NOT NULL,
+    category NVARCHAR(40) NOT NULL,
+    unit_price DECIMAL(18,2) NOT NULL,
+    status NVARCHAR(20) NOT NULL,
+    [version] DATETIME2(3) NOT NULL
+);
+GO
+CREATE UNIQUE INDEX Product_BK
+ON dbo.Product(sku);
+GO
