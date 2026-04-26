@@ -1,0 +1,15 @@
+{
+  "output": {
+    "type": "json"
+  },
+  "tables": [
+    {
+      "schema": "dbo",
+      "name": "Supplier"
+    },
+    {
+      "schema": "dbo",
+      "name": "Product"
+    }
+  ]
+}

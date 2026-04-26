@@ -1,0 +1,72 @@
+package com.danhaywood.sqlcomparer.config;
+
+import com.danhaywood.sqlcomparer.core.MultiTableComparer;
+import com.danhaywood.sqlcomparer.core.TableComparer;
+import com.danhaywood.sqlcomparer.harness.DatabaseSide;
+import com.danhaywood.sqlcomparer.harness.SqlServerTestHarness;
+import com.danhaywood.sqlcomparer.report.JsonMultiTableComparisonReportRenderer;
+import com.danhaywood.sqlcomparer.sqlserver.SqlServerTableMetadataReader;
+import com.danhaywood.sqlcomparer.sqlserver.SqlServerTableRowReader;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.approvaltests.Approvals;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import java.sql.Connection;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@Tag("integration")
+class ConfiguredComparisonServiceIT {
+
+    private static SqlServerTestHarness harness;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ConfiguredComparisonService service = new ConfiguredComparisonService(
+            new JsonComparisonRequestLoader(objectMapper),
+            new MultiTableComparer(new TableComparer(new SqlServerTableMetadataReader(), new SqlServerTableRowReader())),
+            new JsonMultiTableComparisonReportRenderer(objectMapper));
+
+    @BeforeAll
+    static void startHarness() {
+        harness = new SqlServerTestHarness().start();
+    }
+
+    @AfterAll
+    static void stopHarness() {
+        if (harness != null) {
+            harness.close();
+        }
+    }
+
+    @Test
+    void approvesConfiguredJsonComparisonOutput() throws Exception {
+        initializeFixture("purchase-order");
+        initializeFixture("supplier");
+        initializeFixture("product");
+
+        final String json;
+        try (Connection left = harness.openConnection(DatabaseSide.LEFT);
+             Connection right = harness.openConnection(DatabaseSide.RIGHT);
+             var inputStream = ConfiguredComparisonServiceIT.class.getResourceAsStream("/sql/comparisons/supplier-product.json")) {
+            json = service.compare(left, right, inputStream);
+        }
+
+        assertThat(json).contains("\"name\" : \"Supplier\"");
+        assertThat(json).contains("\"name\" : \"Product\"");
+        assertThat(json).doesNotContain("PurchaseOrder_BK");
+        Approvals.verify(json);
+    }
+
+    private static void initializeFixture(final String fixtureName) {
+        initializeFixture(DatabaseSide.LEFT, fixtureName, "/sql/fixtures/%s/left-data.sql".formatted(fixtureName));
+        initializeFixture(DatabaseSide.RIGHT, fixtureName, "/sql/fixtures/%s/right-data.sql".formatted(fixtureName));
+    }
+
+    private static void initializeFixture(final DatabaseSide side, final String fixtureName, final String dataResourcePath) {
+        harness.initializeFromResource(side, "/sql/fixtures/%s/schema.sql".formatted(fixtureName));
+        harness.initializeFromResource(side, dataResourcePath);
+    }
+}

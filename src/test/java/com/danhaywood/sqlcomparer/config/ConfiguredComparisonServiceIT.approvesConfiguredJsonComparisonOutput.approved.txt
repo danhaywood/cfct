@@ -1,0 +1,46 @@
+{
+  "hasDifferences" : true,
+  "tables" : [ {
+    "table" : {
+      "schema" : "dbo",
+      "name" : "Supplier"
+    },
+    "businessKey" : {
+      "index" : "Supplier_BK",
+      "columns" : [ "reference" ]
+    },
+    "comparedColumns" : [ "name", "status", "country_code" ],
+    "ignoredColumns" : [ "id", "version" ],
+    "rowsOnlyInLeft" : [ [ "SUP-003" ] ],
+    "rowsOnlyInRight" : [ [ "SUP-004" ] ],
+    "differingRows" : [ {
+      "key" : [ "SUP-002" ],
+      "differences" : [ {
+        "column" : "status",
+        "left" : "ACTIVE",
+        "right" : "SUSPENDED"
+      } ]
+    } ]
+  }, {
+    "table" : {
+      "schema" : "dbo",
+      "name" : "Product"
+    },
+    "businessKey" : {
+      "index" : "Product_BK",
+      "columns" : [ "sku" ]
+    },
+    "comparedColumns" : [ "name", "category", "unit_price", "status" ],
+    "ignoredColumns" : [ "id", "version" ],
+    "rowsOnlyInLeft" : [ [ "SKU-003" ] ],
+    "rowsOnlyInRight" : [ [ "SKU-004" ] ],
+    "differingRows" : [ {
+      "key" : [ "SKU-002" ],
+      "differences" : [ {
+        "column" : "unit_price",
+        "left" : "10.00",
+        "right" : "10.50"
+      } ]
+    } ]
+  } ]
+}
