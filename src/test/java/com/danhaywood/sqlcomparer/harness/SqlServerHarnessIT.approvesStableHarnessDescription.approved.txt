@@ -1,0 +1,7 @@
+database=left_db
+rowCount=1
+payload=left payload
+
+database=right_db
+rowCount=1
+payload=right payload
