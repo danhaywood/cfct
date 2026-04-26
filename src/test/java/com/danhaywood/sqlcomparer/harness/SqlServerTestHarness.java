@@ -16,7 +16,6 @@ import java.sql.Statement;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.stream.Collectors;
 
 public final class SqlServerTestHarness implements AutoCloseable {
 
@@ -111,22 +110,9 @@ public final class SqlServerTestHarness implements AutoCloseable {
         }
     }
 
-    public String describeDatabases() {
-        return Arrays.stream(DatabaseSide.values())
-                .map(this::describeDatabase)
-                .collect(Collectors.joining(System.lineSeparator() + System.lineSeparator()));
-    }
-
     @Override
     public void close() {
         container.close();
-    }
-
-    private String describeDatabase(final DatabaseSide side) {
-        final String databaseName = queryForString(side, "SELECT DB_NAME()");
-        final int rowCount = queryForInt(side, "SELECT COUNT(*) FROM dbo.sample_items");
-        final String payload = queryForString(side, "SELECT TOP 1 payload FROM dbo.sample_items ORDER BY payload");
-        return "database=%s%nrowCount=%d%npayload=%s".formatted(databaseName, rowCount, payload);
     }
 
     private void createDatabaseIfMissing(final DatabaseSide side) {

@@ -5,11 +5,12 @@ Adding a deliberately invalid fixture table gives this error path a stable, real
 
 ## What Changes
 
-- Extend the realistic purchase order fixture resources with a table that has no unique index ending in `_BK`.
-- Name the table to make its purpose clear, such as `dbo.PurchaseOrderWithoutBusinessKey`.
-- Give the table a realistic shape with an identity primary key and reference-like domain column, but intentionally omit the `_BK` unique index.
-- Add or update tests so the core single-table comparison verifies the missing-business-key error against this fixture table.
-- Do not change the successful `dbo.PurchaseOrder` fixture or its `PurchaseOrder_BK(reference)` convention.
+- Organize SQL fixtures so each table-oriented fixture has its own subdirectory under `src/test/resources/sql/fixtures/`.
+- Add a `purchase-order-without-business-key` fixture for `dbo.PurchaseOrderWithoutBusinessKey`, a realistic table with no unique index ending in `_BK`.
+- Add an `ambiguous-business-key` fixture for the ambiguous `_BK` index error path so tests do not create DDL inline.
+- Remove the obsolete `sample_items` fixture resources and test-only approval output if they are no longer used.
+- Add or update tests so the core single-table comparison verifies metadata errors against shared fixture resources rather than ad hoc test SQL.
+- Do not change the successful `dbo.PurchaseOrder` fixture data or its `PurchaseOrder_BK(reference)` convention.
 - Do not add CLI or web error handling in this change.
 
 ## Capabilities
@@ -20,10 +21,11 @@ Adding a deliberately invalid fixture table gives this error path a stable, real
 
 ### Modified Capabilities
 
-- `purchase-order-comparison-fixture`: Adds a negative fixture table that intentionally lacks a `_BK` unique index so missing-business-key error handling can be tested realistically.
+- `purchase-order-comparison-fixture`: Adds table-specific fixture directories, including a negative fixture table that intentionally lacks a `_BK` unique index so missing-business-key error handling can be tested realistically.
 
 ## Impact
 
 - Updates SQL fixture resources under the test resources tree.
-- Adds or adjusts integration tests for the core comparison library's missing-business-key error path.
+- Removes obsolete `sample_items` smoke-fixture resources and tests if they are no longer used.
+- Adds or adjusts integration tests for the core comparison library's missing and ambiguous business-key error paths.
 - Leaves production comparison behavior and successful purchase order comparison semantics unchanged.

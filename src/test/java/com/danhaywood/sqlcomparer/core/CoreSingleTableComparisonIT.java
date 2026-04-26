@@ -40,7 +40,7 @@ class CoreSingleTableComparisonIT {
 
     @Test
     void comparesPurchaseOrderByBusinessKeyAndIgnoresTechnicalColumns() throws Exception {
-        initializePurchaseOrderFixture();
+        initializeFixture("purchase-order");
 
         final TableComparisonResult result = comparePurchaseOrders();
 
@@ -61,14 +61,14 @@ class CoreSingleTableComparisonIT {
 
     @Test
     void approvesPurchaseOrderComparisonReport() throws Exception {
-        initializePurchaseOrderFixture();
+        initializeFixture("purchase-order");
 
         Approvals.verify(renderer.render(comparePurchaseOrders()));
     }
 
     @Test
     void failsClearlyWhenBusinessKeyIndexIsMissing() {
-        initializePurchaseOrderFixture();
+        initializeFixture("purchase-order-without-business-key");
 
         assertThatThrownBy(() -> readMetadata("PurchaseOrderWithoutBusinessKey"))
                 .isInstanceOf(MetadataException.class)
@@ -78,17 +78,7 @@ class CoreSingleTableComparisonIT {
 
     @Test
     void failsClearlyWhenBusinessKeyIndexIsAmbiguous() {
-        harness.executeScript(DatabaseSide.LEFT, """
-                DROP TABLE IF EXISTS dbo.AmbiguousBusinessKey;
-                CREATE TABLE dbo.AmbiguousBusinessKey (
-                    id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-                    reference NVARCHAR(40) NOT NULL,
-                    external_reference NVARCHAR(40) NOT NULL,
-                    payload NVARCHAR(40) NOT NULL
-                );
-                CREATE UNIQUE INDEX AmbiguousBusinessKey_BK ON dbo.AmbiguousBusinessKey(reference);
-                CREATE UNIQUE INDEX AmbiguousBusinessKeyExternal_BK ON dbo.AmbiguousBusinessKey(external_reference);
-                """);
+        initializeSchema("ambiguous-business-key");
 
         assertThatThrownBy(() -> readMetadata("AmbiguousBusinessKey"))
                 .isInstanceOf(MetadataException.class)
@@ -111,13 +101,22 @@ class CoreSingleTableComparisonIT {
         }
     }
 
-    private static void initializePurchaseOrderFixture() {
-        initializePurchaseOrderFixture(DatabaseSide.LEFT, "/sql/fixtures/purchase-order/left-data.sql");
-        initializePurchaseOrderFixture(DatabaseSide.RIGHT, "/sql/fixtures/purchase-order/right-data.sql");
+    private static void initializeFixture(final String fixtureName) {
+        initializeFixture(DatabaseSide.LEFT, fixtureName, "/sql/fixtures/%s/left-data.sql".formatted(fixtureName));
+        initializeFixture(DatabaseSide.RIGHT, fixtureName, "/sql/fixtures/%s/right-data.sql".formatted(fixtureName));
     }
 
-    private static void initializePurchaseOrderFixture(final DatabaseSide side, final String dataResourcePath) {
-        harness.initializeFromResource(side, "/sql/fixtures/purchase-order/schema.sql");
+    private static void initializeFixture(final DatabaseSide side, final String fixtureName, final String dataResourcePath) {
+        initializeSchema(side, fixtureName);
         harness.initializeFromResource(side, dataResourcePath);
+    }
+
+    private static void initializeSchema(final String fixtureName) {
+        initializeSchema(DatabaseSide.LEFT, fixtureName);
+        initializeSchema(DatabaseSide.RIGHT, fixtureName);
+    }
+
+    private static void initializeSchema(final DatabaseSide side, final String fixtureName) {
+        harness.initializeFromResource(side, "/sql/fixtures/%s/schema.sql".formatted(fixtureName));
     }
 }

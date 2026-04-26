@@ -1,12 +1,12 @@
 package com.danhaywood.sqlcomparer.harness;
 
-import org.approvaltests.Approvals;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("integration")
@@ -34,29 +34,8 @@ class SqlServerHarnessIT {
     }
 
     @Test
-    void initializesDatabasesIndependentlyAndPreservesIsolation() {
-        initializeDatabases();
-
-        assertThat(harness.queryForString(DatabaseSide.LEFT, "SELECT TOP 1 payload FROM dbo.sample_items ORDER BY payload"))
-                .isEqualTo("left payload");
-        assertThat(harness.queryForString(DatabaseSide.RIGHT, "SELECT TOP 1 payload FROM dbo.sample_items ORDER BY payload"))
-                .isEqualTo("right payload");
-        assertThat(harness.queryForInt(DatabaseSide.LEFT, "SELECT COUNT(*) FROM dbo.sample_items"))
-                .isEqualTo(1);
-        assertThat(harness.queryForInt(DatabaseSide.RIGHT, "SELECT COUNT(*) FROM dbo.sample_items"))
-                .isEqualTo(1);
-    }
-
-    @Test
-    void approvesStableHarnessDescription() {
-        initializeDatabases();
-
-        Approvals.verify(harness.describeDatabases());
-    }
-
-    @Test
     void initializesRealisticPurchaseOrderFixture() {
-        initializePurchaseOrderFixture();
+        initializeFixture("purchase-order");
 
         assertThat(harness.queryForInt(DatabaseSide.LEFT, "SELECT COUNT(*) FROM dbo.PurchaseOrder"))
                 .isEqualTo(5);
@@ -70,7 +49,7 @@ class SqlServerHarnessIT {
 
     @Test
     void purchaseOrderFixtureMarksBusinessKeyWithUniqueIndex() {
-        initializePurchaseOrderFixture();
+        initializeFixture("purchase-order");
 
         assertThat(harness.queryForInt(DatabaseSide.LEFT, purchaseOrderBusinessKeyIndexColumnCountSql()))
                 .isEqualTo(1);
@@ -83,8 +62,8 @@ class SqlServerHarnessIT {
     }
 
     @Test
-    void purchaseOrderFixtureIncludesTableWithoutBusinessKey() {
-        initializePurchaseOrderFixture();
+    void purchaseOrderWithoutBusinessKeyFixtureHasNoBusinessKeyIndex() {
+        initializeFixture("purchase-order-without-business-key");
 
         assertThat(harness.queryForInt(DatabaseSide.LEFT, tableExistsSql("PurchaseOrderWithoutBusinessKey")))
                 .isEqualTo(1);
@@ -106,7 +85,7 @@ class SqlServerHarnessIT {
 
     @Test
     void purchaseOrderFixtureUsesDatetime2VersionNotSqlServerRowversion() {
-        initializePurchaseOrderFixture();
+        initializeFixture("purchase-order");
 
         assertThat(harness.queryForString(DatabaseSide.LEFT, purchaseOrderVersionDataTypeSql()))
                 .isEqualTo("datetime2");
@@ -118,18 +97,13 @@ class SqlServerHarnessIT {
                 .isEqualTo(0);
     }
 
-    private static void initializeDatabases() {
-        harness.initializeFromResource(DatabaseSide.LEFT, "/sql/left-init.sql");
-        harness.initializeFromResource(DatabaseSide.RIGHT, "/sql/right-init.sql");
+    private static void initializeFixture(final String fixtureName) {
+        initializeFixture(DatabaseSide.LEFT, fixtureName, "/sql/fixtures/%s/left-data.sql".formatted(fixtureName));
+        initializeFixture(DatabaseSide.RIGHT, fixtureName, "/sql/fixtures/%s/right-data.sql".formatted(fixtureName));
     }
 
-    private static void initializePurchaseOrderFixture() {
-        initializePurchaseOrderFixture(DatabaseSide.LEFT, "/sql/fixtures/purchase-order/left-data.sql");
-        initializePurchaseOrderFixture(DatabaseSide.RIGHT, "/sql/fixtures/purchase-order/right-data.sql");
-    }
-
-    private static void initializePurchaseOrderFixture(final DatabaseSide side, final String dataResourcePath) {
-        harness.initializeFromResource(side, "/sql/fixtures/purchase-order/schema.sql");
+    private static void initializeFixture(final DatabaseSide side, final String fixtureName, final String dataResourcePath) {
+        harness.initializeFromResource(side, "/sql/fixtures/%s/schema.sql".formatted(fixtureName));
         harness.initializeFromResource(side, dataResourcePath);
     }
 

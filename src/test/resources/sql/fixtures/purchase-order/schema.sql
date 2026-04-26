@@ -1,5 +1,3 @@
-DROP TABLE IF EXISTS dbo.PurchaseOrderWithoutBusinessKey;
-GO
 DROP TABLE IF EXISTS dbo.PurchaseOrder;
 GO
 CREATE TABLE dbo.PurchaseOrder (
@@ -17,11 +15,4 @@ CREATE TABLE dbo.PurchaseOrder (
 GO
 CREATE UNIQUE INDEX PurchaseOrder_BK
 ON dbo.PurchaseOrder(reference);
-GO
-CREATE TABLE dbo.PurchaseOrderWithoutBusinessKey (
-    id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PurchaseOrderWithoutBusinessKey PRIMARY KEY,
-    reference NVARCHAR(40) NOT NULL,
-    status NVARCHAR(20) NOT NULL,
-    [version] DATETIME2(3) NOT NULL
-);
 GO

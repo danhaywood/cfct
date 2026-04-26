@@ -26,13 +26,17 @@ It does not introduce new comparison behavior beyond verifying that the missing-
 
 ## Decisions
 
-### Add the negative table to the shared fixture schema
+### Keep each table-oriented fixture in its own directory
 
-The invalid table should be created by the same purchase-order fixture schema resource as the positive `dbo.PurchaseOrder` table.
-That makes the fixture self-contained and ensures both logical databases have the same positive and negative comparison examples.
+Each table-oriented fixture should live under its own subdirectory of `src/test/resources/sql/fixtures/`.
+For example, `purchase-order`, `purchase-order-without-business-key`, and `ambiguous-business-key` should each own their schema and data resources.
+This keeps fixture purpose obvious and prevents one table fixture from silently creating unrelated tables.
 
-Alternative considered: create the invalid table directly inside the error-handling test.
-This was rejected because it would hide the scenario in test code rather than documenting it as part of the fixture contract.
+Alternative considered: create the invalid table inside the existing purchase-order schema resource.
+This was rejected because it would make the `purchase-order` fixture responsible for multiple test scenarios.
+
+Alternative considered: create invalid tables directly inside error-handling tests.
+This was rejected because it would hide fixture DDL in test code rather than documenting it as reusable test data.
 
 ### Use a clear table name
 
@@ -48,8 +52,14 @@ The negative table should still have plausible columns such as `id`, `reference`
 It should intentionally omit a unique index whose name ends in `_BK`.
 This lets the test isolate the missing business-key convention rather than failing because the table is otherwise malformed.
 
+### Remove obsolete sample-items smoke fixture
+
+The original `sample_items` fixture was useful for proving basic left/right initialization before realistic fixtures existed.
+Now that the table-specific SQL fixtures cover initialization, shape, and comparison scenarios, the old `left-init.sql`, `right-init.sql`, and approval file should be removed if no test uses them.
+
 ## Risks / Trade-offs
 
-- The fixture may become cluttered with negative cases → Keep this table small and focused on the missing `_BK` scenario.
+- The fixture tree may become cluttered with negative cases → Keep each table fixture in a clearly named subdirectory.
 - A future developer may add a `_BK` index accidentally → Name the table explicitly and verify the missing-index behavior in tests.
+- Removing `sample_items` may hide a basic harness smoke scenario → Retain direct database connectivity tests and rely on realistic fixture initialization tests for script execution coverage.
 - The core comparison capability is currently an active change rather than an archived main spec → Keep this change focused on fixture extension and test coverage so it can be implemented after or alongside the core comparison work.
