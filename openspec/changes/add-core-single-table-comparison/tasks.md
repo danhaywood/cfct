@@ -2,7 +2,7 @@
 
 - [ ] 1.1 Add plain Java value types for table references, column references, business keys, comparison options, and table comparison requests.
 - [ ] 1.2 Add structured result types for table comparison results, row keys, rows only on one side, row differences, and column differences.
-- [ ] 1.3 Keep the core API independent of CLI, web, Spring MVC, and picocli types.
+- [ ] 1.3 Keep the core API independent of CLI, web request, Spring MVC, and picocli types while allowing Spring-managed services or configuration.
 
 ## 2. SQL Server metadata discovery
 

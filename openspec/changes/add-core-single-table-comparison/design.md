@@ -4,7 +4,8 @@ The project direction is library first, then CLI, and potentially webapp later.
 The SQL Server harness and `PurchaseOrder` fixture now provide a realistic left/right database scenario for the first library behavior.
 The first comparison slice should compare one caller-specified table, while keeping the design open for later multi-table orchestration.
 
-The core comparison code should be plain Java and should not depend on picocli, Spring Boot web APIs, or CLI configuration concepts.
+The core comparison code may use Spring Boot wiring patterns such as `@Component`, `@Service`, and `@Configuration` where that makes the library easier to consume.
+It should not depend on picocli, Spring MVC web APIs, or CLI configuration concepts.
 The CLI and webapp should eventually depend on the core library rather than shaping its domain model.
 
 ## Goals / Non-Goals
@@ -27,21 +28,22 @@ The CLI and webapp should eventually depend on the core library rather than shap
 - Do not compare schemas.
 - Do not support non-SQL Server databases.
 - Do not add external configuration files.
-- Do not make the core library depend on Spring-specific or picocli-specific APIs.
+- Do not make the core library depend on Spring MVC, web request, CLI, or picocli-specific APIs.
 
 ## Decisions
 
-### Build the core as plain Java over JDBC connections
+### Build the core as a Spring-friendly library over JDBC connections
 
 The first public comparison API should accept left and right JDBC `Connection` instances plus a table comparison request.
-This keeps the core library independent of CLI argument parsing, web request handling, Spring configuration, and connection lifecycle decisions.
-Callers remain responsible for opening and closing connections.
+The core implementation may be exposed as Spring-managed services or configuration where that makes composition easier for future CLI and webapp adapters.
+This keeps the core library independent of CLI argument parsing and web request handling while still allowing Spring Boot dependency injection and auto-wiring patterns.
+Callers remain responsible for opening and closing connections in the initial API.
 
 Alternative considered: accept JDBC URLs and credentials directly.
 This was rejected because that shape is CLI-friendly but too infrastructural for a reusable library API.
 
-Alternative considered: accept Spring `DataSource` or `JdbcTemplate` only.
-This was rejected because it would make the core library unnecessarily Spring-shaped before the CLI and web layers exist.
+Alternative considered: forbid Spring dependencies in the core entirely.
+This was rejected because Spring-managed components can make the same core services easier to consume from both future CLI and webapp layers.
 
 ### Center the first slice on single-table comparison
 
@@ -88,7 +90,7 @@ This renderer is useful for tests and future CLI output, but it should not repla
 
 ## Risks / Trade-offs
 
-- The first public API may need adjustment when `DataSource` support is added → Keep the initial API small and add overloads later rather than baking connection creation into the core.
+- The first public API may need adjustment when `DataSource` support is added → Keep the initial API small and add overloads or Spring configuration later rather than baking connection creation into the core.
 - SQL Server identifier quoting can be error-prone → Represent table and column names as values and quote generated SQL identifiers centrally.
 - Multiple `_BK` indexes on one table would be ambiguous → Fail clearly rather than choosing one arbitrarily.
 - Missing `_BK` indexes would prevent row comparison → Fail clearly with a metadata error that names the table.

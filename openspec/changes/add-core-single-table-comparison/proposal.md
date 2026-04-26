@@ -5,8 +5,9 @@ The next step is to introduce the first core library capability: comparing one n
 
 ## What Changes
 
-- Add a plain Java core library API for comparing a single named table between left and right JDBC connections.
-- Keep the core library independent of CLI, web, and Spring-specific APIs.
+- Add a Spring-friendly core library API for comparing a single named table between left and right JDBC connections.
+- Allow the core library to use Spring Boot wiring patterns such as `@Component`, `@Service`, and `@Configuration` where they make consumption easier.
+- Keep the core library independent of CLI and web-specific APIs.
 - Add SQL Server metadata discovery for the target table, including columns, identity columns, and a unique business-key index whose name ends with `_BK`.
 - Match rows using the business-key index columns rather than identity primary key values.
 - Compare non-key, non-ignored columns and return a structured comparison result.
@@ -29,5 +30,5 @@ The next step is to introduce the first core library capability: comparing one n
 
 - Adds production Java types for the comparison core, SQL Server metadata and row-reading support, comparison results, and report rendering.
 - Adds integration tests that run against the SQL Server harness and `PurchaseOrder` fixture.
-- Uses existing dependencies where possible and avoids introducing CLI or web dependencies into the core library.
-- Establishes the library-first boundary that future CLI and webapp layers will call into.
+- Uses existing dependencies where possible and avoids introducing CLI or web-specific dependencies into the core library.
+- Establishes the library-first boundary that future CLI and webapp layers will call into, potentially through Spring-managed services.

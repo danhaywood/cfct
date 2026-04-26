@@ -2,7 +2,8 @@
 
 ### Requirement: Core library compares one named table
 The system SHALL provide a core library API that compares one caller-specified SQL Server table between a left JDBC connection and a right JDBC connection.
-The API SHALL be independent of CLI, web, and Spring-specific request concepts.
+The core library MAY use Spring Boot wiring patterns such as components, services, and configuration.
+The API SHALL be independent of CLI and web-specific request concepts.
 
 #### Scenario: Caller compares one table
 - **WHEN** a caller provides left and right JDBC connections and a table reference
@@ -10,7 +11,11 @@ The API SHALL be independent of CLI, web, and Spring-specific request concepts.
 
 #### Scenario: Core API does not require CLI or web inputs
 - **WHEN** a caller invokes the core comparison API
-- **THEN** the caller is not required to provide command-line arguments, web request objects, or Spring-specific wrapper objects
+- **THEN** the caller is not required to provide command-line arguments, web request objects, or CLI-specific wrapper objects
+
+#### Scenario: Core services can be Spring-managed
+- **WHEN** the core comparison library is consumed from a Spring Boot application context
+- **THEN** its comparison services can be wired as Spring-managed beans
 
 ### Requirement: Core library discovers business-key metadata
 The system SHALL discover the target table's business key from SQL Server metadata using a unique index whose name ends with the configured business-key suffix.
