@@ -68,18 +68,11 @@ class CoreSingleTableComparisonIT {
 
     @Test
     void failsClearlyWhenBusinessKeyIndexIsMissing() {
-        harness.executeScript(DatabaseSide.LEFT, """
-                DROP TABLE IF EXISTS dbo.NoBusinessKey;
-                CREATE TABLE dbo.NoBusinessKey (
-                    id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-                    reference NVARCHAR(40) NOT NULL,
-                    payload NVARCHAR(40) NOT NULL
-                );
-                """);
+        initializePurchaseOrderFixture();
 
-        assertThatThrownBy(() -> readMetadata("NoBusinessKey"))
+        assertThatThrownBy(() -> readMetadata("PurchaseOrderWithoutBusinessKey"))
                 .isInstanceOf(MetadataException.class)
-                .hasMessageContaining("dbo.NoBusinessKey")
+                .hasMessageContaining("dbo.PurchaseOrderWithoutBusinessKey")
                 .hasMessageContaining("_BK");
     }
 

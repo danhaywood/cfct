@@ -83,6 +83,28 @@ class SqlServerHarnessIT {
     }
 
     @Test
+    void purchaseOrderFixtureIncludesTableWithoutBusinessKey() {
+        initializePurchaseOrderFixture();
+
+        assertThat(harness.queryForInt(DatabaseSide.LEFT, tableExistsSql("PurchaseOrderWithoutBusinessKey")))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(DatabaseSide.RIGHT, tableExistsSql("PurchaseOrderWithoutBusinessKey")))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(DatabaseSide.LEFT, columnExistsSql("PurchaseOrderWithoutBusinessKey", "id")))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(DatabaseSide.LEFT, columnExistsSql("PurchaseOrderWithoutBusinessKey", "reference")))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(DatabaseSide.LEFT, columnExistsSql("PurchaseOrderWithoutBusinessKey", "status")))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(DatabaseSide.LEFT, columnExistsSql("PurchaseOrderWithoutBusinessKey", "version")))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(DatabaseSide.LEFT, businessKeyLikeUniqueIndexCountSql("PurchaseOrderWithoutBusinessKey")))
+                .isEqualTo(0);
+        assertThat(harness.queryForInt(DatabaseSide.RIGHT, businessKeyLikeUniqueIndexCountSql("PurchaseOrderWithoutBusinessKey")))
+                .isEqualTo(0);
+    }
+
+    @Test
     void purchaseOrderFixtureUsesDatetime2VersionNotSqlServerRowversion() {
         initializePurchaseOrderFixture();
 
@@ -134,6 +156,36 @@ class SqlServerHarnessIT {
                   AND i.name = 'PurchaseOrder_BK'
                   AND ic.key_ordinal > 0
                 """;
+    }
+
+    private static String tableExistsSql(final String tableName) {
+        return """
+                SELECT COUNT(*)
+                FROM sys.tables t
+                JOIN sys.schemas s ON t.schema_id = s.schema_id
+                WHERE s.name = 'dbo'
+                  AND t.name = '%s'
+                """.formatted(tableName);
+    }
+
+    private static String columnExistsSql(final String tableName, final String columnName) {
+        return """
+                SELECT COUNT(*)
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = 'dbo'
+                  AND TABLE_NAME = '%s'
+                  AND COLUMN_NAME = '%s'
+                """.formatted(tableName, columnName);
+    }
+
+    private static String businessKeyLikeUniqueIndexCountSql(final String tableName) {
+        return """
+                SELECT COUNT(*)
+                FROM sys.indexes i
+                WHERE i.object_id = OBJECT_ID('dbo.%s')
+                  AND i.is_unique = 1
+                  AND i.name LIKE '%%[_]BK'
+                """.formatted(tableName);
     }
 
     private static String purchaseOrderVersionDataTypeSql() {
