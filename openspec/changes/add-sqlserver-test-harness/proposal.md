@@ -1,6 +1,7 @@
 ## Why
 
-The project needs a reliable foundation for regression testing across two databases before any comparison logic is built. Establishing a repeatable Spring Boot and Testcontainers harness now reduces risk, proves the local/CI execution model, and gives later comparison work a stable base.
+The project needs a reliable foundation for regression testing across two databases before any comparison logic is built.
+Establishing a repeatable Spring Boot and Testcontainers harness now reduces risk, proves the local/CI execution model, and gives later comparison work a stable base.
 
 ## What Changes
 
@@ -12,9 +13,11 @@ The project needs a reliable foundation for regression testing across two databa
 ## Capabilities
 
 ### New Capabilities
+
 - `sqlserver-two-databases-test-harness`: Provide an automated integration-test harness that provisions one SQL Server 2022 instance with two isolated logical databases for future regression-comparison tests.
 
 ### Modified Capabilities
+
 - None.
 
 ## Impact
