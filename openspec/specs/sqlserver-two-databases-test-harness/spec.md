@@ -1,0 +1,75 @@
+# sqlserver-two-databases-test-harness Specification
+
+## Purpose
+TBD - created by archiving change add-sqlserver-test-harness. Update Purpose after archive.
+## Requirements
+### Requirement: Harness provisions one SQL Server instance with two logical databases
+The system SHALL provide an automated integration-test harness that provisions one SQL Server 2022 instance within a single test run and creates two independent logical databases inside that instance.
+
+#### Scenario: One instance starts for the test suite
+- **WHEN** the integration test harness is executed in a Docker-enabled environment
+- **THEN** it provisions one SQL Server 2022 container instance for the duration of the test run
+
+#### Scenario: Left and right databases are created
+- **WHEN** the harness initializes the SQL Server instance
+- **THEN** it creates separate left and right logical databases within that instance for test use
+
+### Requirement: Harness exposes both databases independently
+The harness SHALL allow tests to address the left and right logical databases independently even though they reside in the same SQL Server instance.
+
+#### Scenario: Databases have distinct connection targets
+- **WHEN** the harness exposes connection details for both logical databases
+- **THEN** tests can connect to each database independently using the shared server instance and distinct database names
+
+#### Scenario: Tests can target either logical database explicitly
+- **WHEN** a test chooses to run setup or verification against one logical database
+- **THEN** the harness allows that operation to target the selected database without ambiguity
+
+### Requirement: Harness validates connectivity and readiness
+The harness SHALL verify that the provisioned SQL Server instance is ready to accept JDBC connections before smoke tests proceed against either logical database.
+
+#### Scenario: Readiness is confirmed before use
+- **WHEN** a smoke test begins interacting with either logical database
+- **THEN** the harness waits until the SQL Server instance is ready for JDBC access before executing test SQL
+
+#### Scenario: Startup failure is surfaced as a failing test
+- **WHEN** the SQL Server instance fails to become ready within the configured startup window
+- **THEN** the integration test run fails with a visible readiness or startup error
+
+### Requirement: Harness supports independent initialization of both logical databases
+The harness SHALL allow test setup to initialize the left and right logical databases independently.
+
+#### Scenario: Distinct setup can be applied to each logical database
+- **WHEN** a test applies initialization SQL or equivalent setup to both logical databases
+- **THEN** the left and right databases can receive different setup independently
+
+#### Scenario: State remains isolated between logical databases
+- **WHEN** setup creates or mutates database objects in one logical database
+- **THEN** those changes do not appear in the other logical database unless explicitly applied there
+
+### Requirement: Project provides a baseline Spring Boot scaffold for future comparison work
+The project SHALL include a baseline Spring Boot structure that can host future database-comparison services while coexisting with the integration-test harness.
+
+#### Scenario: Build supports application and test scaffolding
+- **WHEN** the project is built from a clean checkout
+- **THEN** the Spring Boot application structure and the SQL Server harness tests are both part of the Maven project layout
+
+#### Scenario: Harness can evolve without replacing the project foundation
+- **WHEN** future comparison features are added
+- **THEN** they can be implemented on top of the Spring Boot project structure without discarding the harness foundation introduced by this change
+
+### Requirement: Harness supports the preferred test style
+The project SHALL support a test style based on AssertJ, JUnit 5 parameterized tests with enum sources, and Approvals where characterization-style verification is useful.
+
+#### Scenario: Fluent assertions are available in harness tests
+- **WHEN** developers write harness tests
+- **THEN** they can express assertions using AssertJ
+
+#### Scenario: Repeated harness scenarios can be parameterized
+- **WHEN** developers need to test repeated left/right or mode-driven scenarios
+- **THEN** the project supports JUnit 5 parameterized tests using enum sources
+
+#### Scenario: Stable textual outputs can be characterized
+- **WHEN** a harness or future comparison test produces stable textual or tabular output
+- **THEN** the project supports Approvals-based characterization testing for that output
+
