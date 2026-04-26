@@ -1,0 +1,29 @@
+Table: dbo.PurchaseOrder
+Business key: PurchaseOrder_BK(reference)
+
+Compared columns:
+  order_date
+  status
+  supplier_reference
+  currency_code
+  net_amount
+  tax_amount
+  gross_amount
+
+Ignored columns:
+  id
+  version
+
+Rows only in left:
+  PO-003
+
+Rows only in right:
+  PO-004
+
+Rows with differences:
+  PO-002
+    status: left=DRAFT, right=APPROVED
+  PO-005
+    net_amount: left=100.00, right=100.01
+    gross_amount: left=100.00, right=100.01
+

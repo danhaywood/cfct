@@ -103,6 +103,14 @@ public final class SqlServerTestHarness implements AutoCloseable {
         }
     }
 
+    public Connection openConnection(final DatabaseSide side) {
+        try {
+            return connectionFor(side);
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Failed to open connection for database %s".formatted(side.databaseName()), ex);
+        }
+    }
+
     public String describeDatabases() {
         return Arrays.stream(DatabaseSide.values())
                 .map(this::describeDatabase)
