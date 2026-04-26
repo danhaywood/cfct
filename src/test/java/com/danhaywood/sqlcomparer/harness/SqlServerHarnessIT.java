@@ -7,12 +7,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.testcontainers.junit.jupiter.Testcontainers;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("integration")
-@Testcontainers(disabledWithoutDocker = true)
 class SqlServerHarnessIT {
 
     private static SqlServerTestHarness harness;

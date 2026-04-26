@@ -19,7 +19,7 @@
     <properties>
         <java.version>17</java.version>
         <picocli.version>4.7.6</picocli.version>
-        <testcontainers.version>1.21.1</testcontainers.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
         <approvaltests.version>24.17.0</approvaltests.version>
         <mssql-jdbc.version>12.10.0.jre11</mssql-jdbc.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -112,9 +112,7 @@
                     <includes>
                         <include>**/*IT.java</include>
                     </includes>
-                    <systemPropertyVariables>
-                        <file.encoding>${project.build.sourceEncoding}</file.encoding>
-                    </systemPropertyVariables>
+                    <argLine>-Dfile.encoding=${project.build.sourceEncoding} -Djava.util.logging.config.file=${project.basedir}/src/test/resources/logging.properties</argLine>
                 </configuration>
                 <executions>
                     <execution>

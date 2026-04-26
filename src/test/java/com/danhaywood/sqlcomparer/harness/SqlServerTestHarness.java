@@ -1,8 +1,8 @@
 package com.danhaywood.sqlcomparer.harness;
 
 import org.testcontainers.containers.MSSQLServerContainer;
-import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.utility.DockerImageName;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -14,18 +14,28 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public final class SqlServerTestHarness implements AutoCloseable {
 
     private static final DockerImageName SQL_SERVER_IMAGE = DockerImageName.parse("mcr.microsoft.com/mssql/server:2022-latest");
     private static final Duration STARTUP_TIMEOUT = Duration.ofMinutes(5);
+    private static final Duration JDBC_READY_TIMEOUT = Duration.ofMinutes(2);
+    private static final Duration JDBC_READY_POLL_INTERVAL = Duration.ofSeconds(1);
 
     private final MSSQLServerContainer<?> container;
 
+    static {
+        Logger.getLogger("com.microsoft.sqlserver.jdbc").setLevel(Level.SEVERE);
+        muteLogger("com.microsoft.sqlserver.jdbc.internals.SQLServerConnection");
+    }
+
     public SqlServerTestHarness() {
-        this.container = new MSSQLServerContainer<>(SQL_SERVER_IMAGE)
+        this.container = new QuietMssqlServerContainer(SQL_SERVER_IMAGE)
                 .acceptLicense()
                 .withEnv("MSSQL_PID", "Developer")
                 .withPassword("Str0ng_password!123")
@@ -35,6 +45,7 @@ public final class SqlServerTestHarness implements AutoCloseable {
 
     public SqlServerTestHarness start() {
         container.start();
+        waitUntilAcceptingJdbcConnections();
         Arrays.stream(DatabaseSide.values()).forEach(this::createDatabaseIfMissing);
         return this;
     }
@@ -128,6 +139,22 @@ public final class SqlServerTestHarness implements AutoCloseable {
         }
     }
 
+    private void waitUntilAcceptingJdbcConnections() {
+        final Instant deadline = Instant.now().plus(JDBC_READY_TIMEOUT);
+        SQLException lastFailure = null;
+        while (Instant.now().isBefore(deadline)) {
+            try (Connection connection = adminConnection();
+                 Statement statement = connection.createStatement()) {
+                statement.execute("SELECT 1");
+                return;
+            } catch (SQLException ex) {
+                lastFailure = ex;
+                sleepBeforeRetry();
+            }
+        }
+        throw new IllegalStateException("SQL Server did not accept JDBC connections within %s".formatted(JDBC_READY_TIMEOUT), lastFailure);
+    }
+
     private Connection adminConnection() throws SQLException {
         return DriverManager.getConnection(
                 "jdbc:sqlserver://%s:%d;databaseName=master;encrypt=false;trustServerCertificate=true"
@@ -140,6 +167,21 @@ public final class SqlServerTestHarness implements AutoCloseable {
         return DriverManager.getConnection(jdbcUrlFor(side), username(), password());
     }
 
+    private void sleepBeforeRetry() {
+        try {
+            Thread.sleep(JDBC_READY_POLL_INTERVAL.toMillis());
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for SQL Server JDBC readiness", ex);
+        }
+    }
+
+    private static void muteLogger(final String name) {
+        final Logger logger = Logger.getLogger(name);
+        logger.setLevel(Level.OFF);
+        logger.setUseParentHandlers(false);
+    }
+
     private String readResource(final String resourcePath) {
         try (var inputStream = SqlServerTestHarness.class.getResourceAsStream(resourcePath)) {
             if (inputStream == null) {
@@ -148,6 +190,19 @@ public final class SqlServerTestHarness implements AutoCloseable {
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException ex) {
             throw new UncheckedIOException("Failed to read resource: %s".formatted(resourcePath), ex);
+        }
+    }
+
+    private static final class QuietMssqlServerContainer extends MSSQLServerContainer<QuietMssqlServerContainer> {
+
+        private QuietMssqlServerContainer(final DockerImageName dockerImageName) {
+            super(dockerImageName);
+        }
+
+        @Override
+        protected void waitUntilContainerStarted() {
+            // The standard JDBC readiness loop emits transient SQL Server prelogin warnings while the container starts.
+            // The harness performs its own quiet JDBC readiness check after the log-based container wait completes.
         }
     }
 }
