@@ -54,8 +54,105 @@ class SqlServerHarnessIT {
         Approvals.verify(harness.describeDatabases());
     }
 
+    @Test
+    void initializesRealisticPurchaseOrderFixture() {
+        initializePurchaseOrderFixture();
+
+        assertThat(harness.queryForInt(DatabaseSide.LEFT, "SELECT COUNT(*) FROM dbo.PurchaseOrder"))
+                .isEqualTo(5);
+        assertThat(harness.queryForInt(DatabaseSide.RIGHT, "SELECT COUNT(*) FROM dbo.PurchaseOrder"))
+                .isEqualTo(5);
+        assertThat(harness.queryForString(DatabaseSide.LEFT, "SELECT STRING_AGG(reference, ',') WITHIN GROUP (ORDER BY reference) FROM dbo.PurchaseOrder"))
+                .isEqualTo("PO-001,PO-002,PO-003,PO-005,PO-006");
+        assertThat(harness.queryForString(DatabaseSide.RIGHT, "SELECT STRING_AGG(reference, ',') WITHIN GROUP (ORDER BY reference) FROM dbo.PurchaseOrder"))
+                .isEqualTo("PO-001,PO-002,PO-004,PO-005,PO-006");
+    }
+
+    @Test
+    void purchaseOrderFixtureMarksBusinessKeyWithUniqueIndex() {
+        initializePurchaseOrderFixture();
+
+        assertThat(harness.queryForInt(DatabaseSide.LEFT, purchaseOrderBusinessKeyIndexColumnCountSql()))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(DatabaseSide.RIGHT, purchaseOrderBusinessKeyIndexColumnCountSql()))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(DatabaseSide.LEFT, purchaseOrderBusinessKeyIndexKeyColumnCountSql()))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(DatabaseSide.RIGHT, purchaseOrderBusinessKeyIndexKeyColumnCountSql()))
+                .isEqualTo(1);
+    }
+
+    @Test
+    void purchaseOrderFixtureUsesDatetime2VersionNotSqlServerRowversion() {
+        initializePurchaseOrderFixture();
+
+        assertThat(harness.queryForString(DatabaseSide.LEFT, purchaseOrderVersionDataTypeSql()))
+                .isEqualTo("datetime2");
+        assertThat(harness.queryForString(DatabaseSide.RIGHT, purchaseOrderVersionDataTypeSql()))
+                .isEqualTo("datetime2");
+        assertThat(harness.queryForInt(DatabaseSide.LEFT, purchaseOrderRowversionColumnCountSql()))
+                .isEqualTo(0);
+        assertThat(harness.queryForInt(DatabaseSide.RIGHT, purchaseOrderRowversionColumnCountSql()))
+                .isEqualTo(0);
+    }
+
     private static void initializeDatabases() {
         harness.initializeFromResource(DatabaseSide.LEFT, "/sql/left-init.sql");
         harness.initializeFromResource(DatabaseSide.RIGHT, "/sql/right-init.sql");
+    }
+
+    private static void initializePurchaseOrderFixture() {
+        initializePurchaseOrderFixture(DatabaseSide.LEFT, "/sql/fixtures/purchase-order/left-data.sql");
+        initializePurchaseOrderFixture(DatabaseSide.RIGHT, "/sql/fixtures/purchase-order/right-data.sql");
+    }
+
+    private static void initializePurchaseOrderFixture(final DatabaseSide side, final String dataResourcePath) {
+        harness.initializeFromResource(side, "/sql/fixtures/purchase-order/schema.sql");
+        harness.initializeFromResource(side, dataResourcePath);
+    }
+
+    private static String purchaseOrderBusinessKeyIndexColumnCountSql() {
+        return """
+                SELECT COUNT(*)
+                FROM sys.indexes i
+                JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+                JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+                WHERE i.object_id = OBJECT_ID('dbo.PurchaseOrder')
+                  AND i.name = 'PurchaseOrder_BK'
+                  AND i.is_unique = 1
+                  AND c.name = 'reference'
+                  AND ic.key_ordinal = 1
+                """;
+    }
+
+    private static String purchaseOrderBusinessKeyIndexKeyColumnCountSql() {
+        return """
+                SELECT COUNT(*)
+                FROM sys.indexes i
+                JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+                WHERE i.object_id = OBJECT_ID('dbo.PurchaseOrder')
+                  AND i.name = 'PurchaseOrder_BK'
+                  AND ic.key_ordinal > 0
+                """;
+    }
+
+    private static String purchaseOrderVersionDataTypeSql() {
+        return """
+                SELECT DATA_TYPE
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = 'dbo'
+                  AND TABLE_NAME = 'PurchaseOrder'
+                  AND COLUMN_NAME = 'version'
+                """;
+    }
+
+    private static String purchaseOrderRowversionColumnCountSql() {
+        return """
+                SELECT COUNT(*)
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = 'dbo'
+                  AND TABLE_NAME = 'PurchaseOrder'
+                  AND DATA_TYPE IN ('timestamp', 'rowversion')
+                """;
     }
 }
