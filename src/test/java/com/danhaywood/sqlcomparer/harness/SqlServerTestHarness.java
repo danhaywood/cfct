@@ -16,8 +16,6 @@ import java.sql.Statement;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public final class SqlServerTestHarness implements AutoCloseable {
@@ -28,11 +26,6 @@ public final class SqlServerTestHarness implements AutoCloseable {
     private static final Duration JDBC_READY_POLL_INTERVAL = Duration.ofSeconds(1);
 
     private final MSSQLServerContainer<?> container;
-
-    static {
-        Logger.getLogger("com.microsoft.sqlserver.jdbc").setLevel(Level.SEVERE);
-        muteLogger("com.microsoft.sqlserver.jdbc.internals.SQLServerConnection");
-    }
 
     public SqlServerTestHarness() {
         this.container = new QuietMssqlServerContainer(SQL_SERVER_IMAGE)
@@ -174,12 +167,6 @@ public final class SqlServerTestHarness implements AutoCloseable {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while waiting for SQL Server JDBC readiness", ex);
         }
-    }
-
-    private static void muteLogger(final String name) {
-        final Logger logger = Logger.getLogger(name);
-        logger.setLevel(Level.OFF);
-        logger.setUseParentHandlers(false);
     }
 
     private String readResource(final String resourcePath) {

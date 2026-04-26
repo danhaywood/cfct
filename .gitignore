@@ -1,3 +1,5 @@
 .idea/
 target/
 **/*.received.*
+/.approval_tests_temp/.approved_files.log
+/.approval_tests_temp/.failed_comparison.log
