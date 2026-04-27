@@ -6,22 +6,22 @@ This change improves the UI structure and makes table selection easier to scan, 
 ## What Changes
 
 - Add a hamburger menu to the webapp shell so future navigation actions have an obvious location.
-- Move configured connection details into a footer that is visible from the main UI without taking focus from table selection.
-- Replace the left-hand table-selection list with a Vaadin Grid that supports sorting and filtering.
-- Preserve manual row selection behavior and selected-count feedback for eligible tables.
-- Add a `Compare` button in the left-hand selection area that is enabled when at least one eligible table is selected.
+- Move configured connection details and SQL connectivity status into a fixed footer/status bar that is visible from the main UI without taking focus from table selection.
+- Replace the table-selection list with a Vaadin Grid in the AppLayout navigation drawer that supports sorting and immediate filtering.
+- Preserve manual row selection behavior for eligible tables while hiding the selected-table count from the UI.
+- Add a `Compare` button in the main comparison area, aligned right, that is enabled when at least one eligible table is selected.
 - Leave the `Compare` button as a non-executing placeholder for this change.
 - Add unit tests where UI state can be validated without a browser.
-- Add Playwright happy-path coverage for the new menu, footer, grid sorting and filtering, selection state, and `Compare` button enablement.
+- Add Playwright happy-path coverage for the new menu, footer/status bar, grid sorting and filtering, selection state, and `Compare` button enablement.
 
 ## Capabilities
 
 ### New Capabilities
-- `webapp-main-ui-layout`: Main webapp UI layout, navigation shell, footer connection details, table-selection grid behavior, and placeholder compare action.
+- `webapp-main-ui-layout`: Main webapp AppLayout shell, navigation-drawer table-selection grid behavior, footer/status bar connection details, and placeholder compare action.
 
 ### Modified Capabilities
-- `webapp-manual-table-selection`: Manual table selection now requires a sortable and filterable Vaadin Grid on the left-hand side and a placeholder `Compare` button that enables after selection.
-- `vaadin-webapp-configuration`: Configured connection details are now required to be surfaced in the main UI footer.
+- `webapp-manual-table-selection`: Manual table selection now requires a sortable and filterable Vaadin Grid in the navigation drawer, without a visible selected-table count.
+- `vaadin-webapp-configuration`: Configured connection details and SQL connectivity status are now required to be surfaced in the main UI footer/status bar.
 - `webapp-playwright-connectivity-status`: Browser coverage is extended to verify the happy path for the updated main UI interactions.
 
 ## Impact

@@ -15,7 +15,7 @@ The shell SHALL preserve the existing main content area for comparison-stage fun
 - **THEN** the comparison-stage region remains visible in the content area and the table-selection region remains visible in the navigation area
 
 ### Requirement: Webapp footer displays non-sensitive connection details
-The webapp SHALL display configured connection details and SQL connectivity status in a footer on the main UI.
+The webapp SHALL display configured connection details and SQL connectivity status in a fixed footer/status bar on the main UI.
 The footer SHALL include the configured server identity and the configured left and right database names.
 The footer SHALL include the SQL connectivity status and failure summary when applicable.
 The footer SHALL NOT display the configured password.
@@ -29,8 +29,9 @@ The footer content SHALL be stable enough for deterministic unit or browser-leve
 - **WHEN** the home page footer displays connection details
 - **THEN** the configured password is not rendered in the page text
 
-### Requirement: Table selection exposes a placeholder compare action
-The webapp SHALL provide a `Compare` button in the left-hand table-selection area.
+### Requirement: Comparison area exposes a placeholder compare action
+The webapp SHALL provide a `Compare` button in the main comparison area.
+The `Compare` button SHALL be aligned to the right within the comparison area.
 The `Compare` button SHALL be disabled when no eligible table is selected.
 The `Compare` button SHALL be enabled when one or more eligible tables are selected.
 Activating the `Compare` button SHALL NOT start comparison execution in this change.

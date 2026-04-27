@@ -3,8 +3,8 @@
 ### Requirement: Headless Playwright validates home-page SQL connectivity status
 The project SHALL provide headless Playwright tests for webapp home-page SQL connectivity status behavior.
 Playwright tests SHALL verify both success and failure status rendering on the home page.
-Playwright tests SHALL verify manual table-selection behavior including checkbox toggling, disabled ineligible tables, and selection-count feedback.
-Playwright tests SHALL verify the happy path for the AppLayout shell, connection-details and status footer, navigation-area table-selection Grid sorting and filtering, ineligible non-selectable rows, and `Compare` button enablement.
+Playwright tests SHALL verify manual table-selection behavior including checkbox toggling, disabled ineligible tables, and omission of redundant selection labels.
+Playwright tests SHALL verify the happy path for the AppLayout shell, connection-details and status footer/status bar, navigation-area table-selection Grid sorting and filtering, ineligible non-selectable rows, and right-aligned main-area `Compare` button enablement.
 Playwright tests SHALL run against Testcontainers-provisioned SQL Server scenarios to preserve reproducibility.
 
 #### Scenario: Playwright verifies OK status
@@ -17,11 +17,11 @@ Playwright tests SHALL run against Testcontainers-provisioned SQL Server scenari
 
 #### Scenario: Playwright verifies manual selection interactions
 - **WHEN** a headless Playwright test interacts with the table-selection panel
-- **THEN** the test asserts that eligible table checkboxes toggle, ineligible rows are not selectable, and selected-table feedback updates correctly
+- **THEN** the test asserts that eligible table checkboxes toggle, ineligible rows are not selectable, and redundant selection labels are absent
 
 #### Scenario: Playwright verifies main UI happy path
 - **WHEN** a headless Playwright test opens the home page for a valid webapp instance and interacts with the updated UI
-- **THEN** the test asserts that the hamburger menu is visible, the footer displays non-sensitive connection details and SQL connectivity status, Grid sorting and filtering work without an apply-filter button, ineligible rows are non-selectable, and the `Compare` button enables after selecting an eligible table
+- **THEN** the test asserts that the hamburger menu is visible, the footer/status bar displays non-sensitive connection details and SQL connectivity status, Grid sorting and filtering work without an apply-filter button, ineligible rows are non-selectable, and the main-area `Compare` button enables after selecting an eligible table
 
 ### Requirement: Playwright execution is scriptable for local and CI usage
 The project SHALL provide a documented command or helper script that runs the connectivity-status Playwright tests headlessly.
