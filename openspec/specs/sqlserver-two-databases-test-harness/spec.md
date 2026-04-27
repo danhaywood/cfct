@@ -48,15 +48,20 @@ The harness SHALL allow test setup to initialize the left and right logical data
 - **THEN** those changes do not appear in the other logical database unless explicitly applied there
 
 ### Requirement: Project provides a baseline Spring Boot scaffold for future comparison work
-The project SHALL include a baseline Spring Boot structure that can host future database-comparison services while coexisting with the integration-test harness.
+The project SHALL include a baseline Spring Boot structure in the CLI module that can host future database-comparison application services while coexisting with the integration-test harness.
+The SQL Server harness SHALL live outside the CLI module in the integration-test module.
 
 #### Scenario: Build supports application and test scaffolding
 - **WHEN** the project is built from a clean checkout
-- **THEN** the Spring Boot application structure and the SQL Server harness tests are both part of the Maven project layout
+- **THEN** the Spring Boot application structure and the SQL Server harness tests are both part of the Maven reactor layout
+
+#### Scenario: Spring Boot application lives in CLI module
+- **WHEN** the source tree is inspected
+- **THEN** the Spring Boot application entry point is located in the CLI module
 
 #### Scenario: Harness can evolve without replacing the project foundation
 - **WHEN** future comparison features are added
-- **THEN** they can be implemented on top of the Spring Boot project structure without discarding the harness foundation introduced by this change
+- **THEN** they can be implemented on top of the multi-module project structure without discarding the harness foundation introduced by this change
 
 ### Requirement: Harness supports the preferred test style
 The project SHALL support a test style based on AssertJ, JUnit 5 parameterized tests with enum sources, and Approvals where characterization-style verification is useful.
