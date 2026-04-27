@@ -19,18 +19,17 @@ The left and right fixture schemas SHALL be identical.
 - **WHEN** the `dbo.PurchaseOrder` table is created
 - **THEN** it includes representative domain columns for purchase order comparison such as reference, order date, status, supplier reference, currency, and monetary amounts
 
-### Requirement: Fixture marks the business key using a BK-suffixed index
-The fixture SHALL identify the purchase order business key through a unique index whose name ends with `_BK`.
+### Requirement: Fixture marks the business key using a PK-suffixed index
+The fixture SHALL identify the purchase order business key through a unique index whose name ends with `_PK`.
 The indexed business key column SHALL be named `reference`.
 
 #### Scenario: Business key index exists
 - **WHEN** the `dbo.PurchaseOrder` table is created
-- **THEN** it has a unique index named `PurchaseOrder_BK` over the `reference` column
+- **THEN** it has a unique index named `PurchaseOrder_PK` over the `reference` column
 
 #### Scenario: Business key keeps domain column name
 - **WHEN** fixture consumers inspect the business key column
-- **THEN** the column is named `reference` rather than being named with the `_BK` suffix
-
+- **THEN** the column is named `reference` rather than being named with the `_PK` suffix
 ### Requirement: Fixture uses DATETIME2 for version values
 The fixture SHALL include a `version` column that uses SQL Server `DATETIME2` for timestamp-like application version values.
 The fixture MUST NOT use SQL Server `timestamp` or `rowversion` for this column.
@@ -45,7 +44,7 @@ The fixture MUST NOT use SQL Server `timestamp` or `rowversion` for this column.
 
 ### Requirement: Fixture data anticipates future row comparison scenarios
 The fixture SHALL seed left and right purchase order data that can support future row comparison tests without implementing comparison behavior in this change.
-The data SHALL include cases for equal rows, differing domain values, rows present only on one side, and rows where only surrogate or technical values differ.
+The data SHALL include cases for equal rows, differing domain values, rows present only on one side, rows where only version values differ, and rows where identity values differ.
 
 #### Scenario: Fixture includes matching business references
 - **WHEN** the purchase order fixture data is loaded into both logical databases
@@ -59,10 +58,13 @@ The data SHALL include cases for equal rows, differing domain values, rows prese
 - **WHEN** the purchase order fixture data is loaded into both logical databases
 - **THEN** at least one purchase order reference exists only in the left database and at least one purchase order reference exists only in the right database
 
-#### Scenario: Fixture includes future ignored-value example
+#### Scenario: Fixture includes version-only difference example
 - **WHEN** the purchase order fixture data is loaded into both logical databases
-- **THEN** at least one purchase order reference appears in both databases where the meaningful domain values match but surrogate identity or version values differ
+- **THEN** at least one purchase order reference appears in both databases where domain values and identity values match but `version` values differ
 
+#### Scenario: Fixture includes identity-difference example
+- **WHEN** the purchase order fixture data is loaded into both logical databases
+- **THEN** at least one purchase order reference appears in both databases where domain values match but identity values differ
 ### Requirement: Fixtures are organized by table scenario
 The SQL test fixtures SHALL organize each table-oriented fixture in its own subdirectory under `src/test/resources/sql/fixtures/`.
 Tests SHALL use these fixture resources rather than creating comparison-table DDL inline.
@@ -80,16 +82,16 @@ Tests SHALL use these fixture resources rather than creating comparison-table DD
 - **THEN** they use resources from `sql/fixtures/ambiguous-business-key/`
 
 ### Requirement: Fixture includes table without business-key index
-The purchase order comparison fixture SHALL include a realistic table that intentionally lacks any unique index whose name ends with `_BK`.
+The purchase order comparison fixture SHALL include a realistic table that intentionally lacks any unique index whose name ends with `_PK`.
 The table SHALL be available in both left and right logical databases so missing-business-key error handling can be tested against shared fixture resources.
 
 #### Scenario: Negative fixture table exists in both databases
 - **WHEN** the `purchase-order-without-business-key` fixture schema is initialized for the left and right logical databases
 - **THEN** each database contains a `dbo.PurchaseOrderWithoutBusinessKey` table
 
-#### Scenario: Negative fixture table has no BK-suffixed unique index
+#### Scenario: Negative fixture table has no PK-suffixed unique index
 - **WHEN** fixture consumers inspect `dbo.PurchaseOrderWithoutBusinessKey`
-- **THEN** the table has no unique index whose name ends with `_BK`
+- **THEN** the table has no unique index whose name ends with `_PK`
 
 #### Scenario: Negative fixture table remains realistic
 - **WHEN** fixture consumers inspect `dbo.PurchaseOrderWithoutBusinessKey`
@@ -98,7 +100,6 @@ The table SHALL be available in both left and right logical databases so missing
 #### Scenario: Missing business-key error can use fixture table
 - **WHEN** the core comparison library is asked to compare `dbo.PurchaseOrderWithoutBusinessKey`
 - **THEN** it can exercise the missing-business-key error path using the shared fixture rather than ad hoc test SQL
-
 ### Requirement: Obsolete sample-items fixture is removed
 The test resources SHALL remove the original `sample_items` smoke fixture once realistic table-specific fixtures cover initialization and comparison test scenarios.
 
@@ -107,21 +108,20 @@ The test resources SHALL remove the original `sample_items` smoke fixture once r
 - **THEN** no test depends on `left-init.sql`, `right-init.sql`, or `dbo.sample_items`
 
 ### Requirement: Fixture set includes three good comparable tables
-The SQL fixture set SHALL include three valid comparable table fixtures that each define a `_BK` unique index.
+The SQL fixture set SHALL include three valid comparable table fixtures that each define a `_PK` unique index.
 The fixtures SHALL be usable together in the left and right logical databases.
 
 #### Scenario: PurchaseOrder remains a good comparable table
 - **WHEN** the `purchase-order` fixture is initialized
-- **THEN** `dbo.PurchaseOrder` has a unique `_BK` index and deterministic left and right data
+- **THEN** `dbo.PurchaseOrder` has a unique `_PK` index and deterministic left and right data
 
 #### Scenario: Supplier is a good comparable table
 - **WHEN** the `supplier` fixture is initialized
-- **THEN** `dbo.Supplier` has a unique `_BK` index and deterministic left and right data
+- **THEN** `dbo.Supplier` has a unique `_PK` index and deterministic left and right data
 
 #### Scenario: Product is a good comparable table
 - **WHEN** the `product` fixture is initialized
-- **THEN** `dbo.Product` has a unique `_BK` index and deterministic left and right data
-
+- **THEN** `dbo.Product` has a unique `_PK` index and deterministic left and right data
 ### Requirement: Multi-table tests compare selected good fixtures
 The integration tests SHALL use the good table fixtures to verify selected-table comparison.
 The tests SHALL initialize three good comparable tables and compare two of them.

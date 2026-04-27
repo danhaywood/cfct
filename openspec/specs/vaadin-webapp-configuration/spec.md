@@ -94,14 +94,13 @@ The webapp SHALL provide live feedback showing how many tables are selected.
 - **THEN** comparison execution is not triggered until an explicit run action is invoked
 
 ### Requirement: Home page enforces `_BK` eligibility in manual selection
-The webapp SHALL evaluate table eligibility for manual selection based on `_BK` requirement rules.
+The webapp SHALL evaluate table eligibility for manual selection based on `_PK` requirement rules.
 The webapp SHALL render ineligible tables in a visually disabled style.
 The webapp SHALL disable checkbox interaction for ineligible tables.
 
 #### Scenario: Ineligible table is visible but disabled
-- **WHEN** the table list includes a table that does not satisfy `_BK` requirement rules
+- **WHEN** the table list includes a table that does not satisfy `_PK` requirement rules
 - **THEN** the table row is shown in greyed or disabled styling and its checkbox cannot be selected
-
 ### Requirement: Webapp invokes comparison orchestration through API contracts
 The webapp SHALL invoke comparison orchestration through interfaces defined in `sqlcomparer-api`.
 The webapp SHALL obtain implementations of those interfaces via imported Spring configuration from `sqlcomparer-impl`.
