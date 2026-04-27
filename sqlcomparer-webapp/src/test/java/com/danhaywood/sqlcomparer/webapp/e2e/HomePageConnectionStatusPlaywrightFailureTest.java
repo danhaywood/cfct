@@ -32,6 +32,7 @@ class HomePageConnectionStatusPlaywrightFailureTest {
     @DynamicPropertySource
     static void registerProperties(final DynamicPropertyRegistry registry) {
         PlaywrightSqlServerFixture.createDatabaseIfMissing(LEFT_DB);
+        PlaywrightSqlServerFixture.prepareManualSelectionTables(LEFT_DB);
         registry.add("sqlcomparer.webapp.comparison.connection.server", PlaywrightSqlServerFixture::server);
         registry.add("sqlcomparer.webapp.comparison.connection.username", PlaywrightSqlServerFixture::username);
         registry.add("sqlcomparer.webapp.comparison.connection.password", PlaywrightSqlServerFixture::password);

@@ -120,8 +120,16 @@ These shared keys map to CLI concepts as follows:
 - `output.format` ↔ `-f` / `--output-format`
 - `output.file` ↔ `-o` / `--output-file`
 
-Table selection in the webapp is strategy-driven via `SelectionPlan` and is intentionally decoupled from CLI table flags.
-The initial strategy is explicit-table based and configured with `sqlcomparer.webapp.selection-plan.explicit.tables` entries.
+Table selection in the webapp is now a two-stage workflow:
+- Stage 1: select eligible tables in the left-hand selection panel.
+- Stage 2: run comparison (right-hand comparison area is reserved for this stage).
+
+The left panel lists discovered tables and shows one checkbox per table.
+Tables that do not meet the `_BK` requirement are still shown but greyed out with disabled checkboxes.
+A live feedback label shows the current selected-table count.
+
+Table selection remains strategy-driven via `SelectionPlan` and is intentionally decoupled from CLI table flags.
+This manual panel is the first user-facing stage and is designed to evolve toward auto-selection plus manual include/exclude overrides.
 
 Migration notes:
 - Removed: `sqlcomparer.webapp.comparison.table-selection.tables`

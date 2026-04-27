@@ -33,6 +33,7 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
     static void registerProperties(final DynamicPropertyRegistry registry) {
         PlaywrightSqlServerFixture.createDatabaseIfMissing(LEFT_DB);
         PlaywrightSqlServerFixture.createDatabaseIfMissing(RIGHT_DB);
+        PlaywrightSqlServerFixture.prepareManualSelectionTables(LEFT_DB);
         registry.add("sqlcomparer.webapp.comparison.connection.server", PlaywrightSqlServerFixture::server);
         registry.add("sqlcomparer.webapp.comparison.connection.username", PlaywrightSqlServerFixture::username);
         registry.add("sqlcomparer.webapp.comparison.connection.password", PlaywrightSqlServerFixture::password);
@@ -51,6 +52,24 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             final String statusText = page.locator("[data-testid='connection-status-state']").innerText();
             assertThat(statusText).contains("OK");
             assertThat(page.locator("[data-testid='connection-status-summary']").count()).isZero();
+
+            final String feedbackBefore = page.locator("[data-testid='selected-table-feedback']").innerText();
+            assertThat(feedbackBefore).contains("Selected tables: 0");
+
+            toggleCheckbox(page, "[data-testid='table-checkbox-dbo-playwrighteligible']");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"selected-table-feedback\"]').textContent.includes('Selected tables: 1')");
+            final String feedbackAfter = page.locator("[data-testid='selected-table-feedback']").innerText();
+            assertThat(feedbackAfter).contains("Selected tables: 1");
+
+            toggleCheckbox(page, "[data-testid='table-checkbox-dbo-playwrightineligible']");
+            final String feedbackAfterIneligibleClick = page.locator("[data-testid='selected-table-feedback']").innerText();
+            assertThat(feedbackAfterIneligibleClick).contains("Selected tables: 1");
         }
+    }
+
+    private void toggleCheckbox(final Page page, final String selector) {
+        page.evaluate(
+                "(selector) => { const host = document.querySelector(selector); if (!host) return; host.checked = !host.checked; host.dispatchEvent(new CustomEvent('checked-changed', { detail: { value: host.checked }, bubbles: true, composed: true })); host.dispatchEvent(new Event('change', { bubbles: true, composed: true })); }",
+                selector);
     }
 }
