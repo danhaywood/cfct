@@ -8,6 +8,7 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 ## Candidate ideas
 
+- error handling if invalid table specified: for Excel format, for Json format
 - Specify multiple tables by way of a file
 - Configure ignored columns beyond the current default `id` and `version`.
 - Identify ignored columns from extended properties.

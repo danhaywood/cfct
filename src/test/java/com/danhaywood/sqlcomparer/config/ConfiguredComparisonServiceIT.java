@@ -93,9 +93,9 @@ class ConfiguredComparisonServiceIT {
             assertThat(workbook.getSheetName(1)).isEqualTo("dbo.Supplier");
             assertThat(workbook.getSheetName(2)).isEqualTo("dbo.Product");
             assertThat(workbook.getSheet("Table of Contents").getRow(1).getCell(0).getStringCellValue()).isEqualTo("dbo.Supplier");
-            assertThat(workbook.getSheet("Table of Contents").getRow(1).getCell(1).getHyperlink().getAddress()).isEqualTo("'dbo.Supplier'!A1");
+            assertThat(workbook.getSheet("Table of Contents").getRow(1).getCell(0).getHyperlink().getAddress()).isEqualTo("'dbo.Supplier'!A1");
             assertThat(workbook.getSheet("Table of Contents").getRow(2).getCell(0).getStringCellValue()).isEqualTo("dbo.Product");
-            assertThat(workbook.getSheet("Table of Contents").getRow(2).getCell(1).getHyperlink().getAddress()).isEqualTo("'dbo.Product'!A1");
+            assertThat(workbook.getSheet("Table of Contents").getRow(2).getCell(0).getHyperlink().getAddress()).isEqualTo("'dbo.Product'!A1");
         }
     }
 

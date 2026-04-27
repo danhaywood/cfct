@@ -8,6 +8,7 @@ import com.danhaywood.sqlcomparer.core.RowDifference;
 import com.danhaywood.sqlcomparer.core.RowKey;
 import com.danhaywood.sqlcomparer.core.TableComparisonResult;
 import com.danhaywood.sqlcomparer.core.TableRef;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
@@ -38,19 +39,18 @@ class ExcelMultiTableComparisonReportRendererTest {
 
             final var contents = workbook.getSheet("Table of Contents");
             assertThat(contents.getRow(0).getCell(0).getStringCellValue()).isEqualTo("Table");
-            assertThat(contents.getRow(0).getCell(1).getStringCellValue()).isEqualTo("Link");
+            assertThat(contents.getRow(0).getCell(1).getStringCellValue()).isEqualTo("Compared Columns");
             assertThat(contents.getRow(1).getCell(0).getStringCellValue()).isEqualTo("dbo.Supplier");
-            assertThat(contents.getRow(1).getCell(1).getStringCellValue()).isEqualTo("Open");
-            assertThat(contents.getRow(1).getCell(1).getHyperlink().getAddress()).isEqualTo("'dbo.Supplier'!A1");
-            assertThat(contents.getRow(1).getCell(2).getNumericCellValue()).isEqualTo(2);
+            assertThat(contents.getRow(1).getCell(0).getHyperlink().getAddress()).isEqualTo("'dbo.Supplier'!A1");
+            assertThat(contents.getRow(1).getCell(1).getNumericCellValue()).isEqualTo(2);
+            assertThat(contents.getRow(1).getCell(3).getNumericCellValue()).isEqualTo(1);
             assertThat(contents.getRow(1).getCell(4).getNumericCellValue()).isEqualTo(1);
             assertThat(contents.getRow(1).getCell(5).getNumericCellValue()).isEqualTo(1);
-            assertThat(contents.getRow(1).getCell(6).getNumericCellValue()).isEqualTo(1);
-            assertThat(contents.getRow(1).getCell(7).getBooleanCellValue()).isTrue();
+            assertThat(contents.getRow(1).getCell(6).getBooleanCellValue()).isTrue();
             assertThat(contents.getRow(2).getCell(0).getStringCellValue()).isEqualTo("dbo.Product");
-            assertThat(contents.getRow(2).getCell(1).getHyperlink().getAddress()).isEqualTo("'dbo.Product'!A1");
-            assertThat(contents.getRow(2).getCell(7).getBooleanCellValue()).isFalse();
-            assertThat(contents.getPaneInformation().getVerticalSplitPosition()).isEqualTo((short) 2);
+            assertThat(contents.getRow(2).getCell(0).getHyperlink().getAddress()).isEqualTo("'dbo.Product'!A1");
+            assertThat(contents.getRow(2).getCell(6).getBooleanCellValue()).isFalse();
+            assertThat(contents.getPaneInformation().getVerticalSplitPosition()).isEqualTo((short) 1);
             assertThat(contents.getPaneInformation().getHorizontalSplitPosition()).isEqualTo((short) 1);
         }
     }
@@ -74,17 +74,20 @@ class ExcelMultiTableComparisonReportRendererTest {
             assertThat(sheet.getRow(7).getCell(0).getStringCellValue()).isEqualTo("Only in left");
             assertThat(sheet.getRow(7).getCell(1).getStringCellValue()).isEqualTo("SUP-LEFT");
             assertThat(sheet.getRow(7).getCell(2).getStringCellValue()).isEqualTo("Left-only supplier");
+            assertThat(sheet.getRow(7).getCell(2).getCellStyle().getFillForegroundColor()).isEqualTo(IndexedColors.LIGHT_YELLOW.getIndex());
             assertThat(sheet.getRow(8).getCell(0).getStringCellValue()).isEqualTo("Only in right");
             assertThat(sheet.getRow(8).getCell(1).getStringCellValue()).isEqualTo("SUP-RIGHT");
             assertThat(sheet.getRow(8).getCell(2).getStringCellValue()).isEqualTo("Right-only supplier");
+            assertThat(sheet.getRow(8).getCell(2).getCellStyle().getFillForegroundColor()).isEqualTo(IndexedColors.YELLOW.getIndex());
             assertThat(sheet.getRow(9).getCell(0).getStringCellValue()).isEqualTo("Left");
             assertThat(sheet.getRow(9).getCell(1).getStringCellValue()).isEqualTo("SUP-DIFF");
+            assertThat(sheet.getRow(9).getCell(2).getCellStyle().getFillForegroundColor()).isEqualTo(IndexedColors.LIGHT_GREEN.getIndex());
             assertThat(sheet.getRow(9).getCell(3).getStringCellValue()).isEqualTo("ACTIVE");
             assertThat(sheet.getRow(10).getCell(0).getStringCellValue()).isEqualTo("Right");
             assertThat(sheet.getRow(10).getCell(1).getStringCellValue()).isEqualTo("SUP-DIFF");
             assertThat(sheet.getRow(10).getCell(3).getStringCellValue()).isEqualTo("INACTIVE");
-            assertThat(sheet.getRow(9).getCell(3).getCellStyle().getFillForegroundColor())
-                    .isEqualTo(sheet.getRow(10).getCell(3).getCellStyle().getFillForegroundColor());
+            assertThat(sheet.getRow(9).getCell(3).getCellStyle().getFillForegroundColor()).isEqualTo(IndexedColors.ROSE.getIndex());
+            assertThat(sheet.getRow(10).getCell(3).getCellStyle().getFillForegroundColor()).isEqualTo(IndexedColors.ROSE.getIndex());
             assertThat(sheet.getPaneInformation().getVerticalSplitPosition()).isEqualTo((short) 2);
             assertThat(sheet.getPaneInformation().getHorizontalSplitPosition()).isEqualTo((short) 7);
         }

@@ -51,25 +51,24 @@ public final class ExcelMultiTableComparisonReportRenderer {
     private void createTableOfContentsSheet(final Workbook workbook, final Styles styles, final List<TableSheet> tableSheets) {
         final Sheet sheet = workbook.createSheet(TABLE_OF_CONTENTS);
         final CreationHelper creationHelper = workbook.getCreationHelper();
-        sheet.createFreezePane(2, 1);
+        sheet.createFreezePane(1, 1);
         int rowIndex = 0;
-        writeRow(sheet, rowIndex++, styles.header(), "Table", "Link", "Compared Columns", "Ignored Columns", "Rows Only In Left", "Rows Only In Right", "Differing Rows", "Has Differences");
+        writeRow(sheet, rowIndex++, styles.header(), "Table", "Compared Columns", "Ignored Columns", "Rows Only In Left", "Rows Only In Right", "Differing Rows", "Has Differences");
         for (TableSheet tableSheet : tableSheets) {
             final TableComparisonResult tableResult = tableSheet.result();
             final Row row = sheet.createRow(rowIndex++);
-            writeCell(row, 0, tableResult.table().displayName(), null);
-            final Cell linkCell = writeCell(row, 1, "Open", styles.hyperlink());
+            final Cell tableCell = writeCell(row, 0, tableResult.table().displayName(), styles.hyperlink());
             final Hyperlink hyperlink = creationHelper.createHyperlink(HyperlinkType.DOCUMENT);
             hyperlink.setAddress("'" + tableSheet.sheetName().replace("'", "''") + "'!A1");
-            linkCell.setHyperlink(hyperlink);
-            writeCell(row, 2, tableResult.comparedColumns().size(), null);
-            writeCell(row, 3, tableResult.ignoredColumns().size(), null);
-            writeCell(row, 4, tableResult.rowsOnlyInLeft().size(), null);
-            writeCell(row, 5, tableResult.rowsOnlyInRight().size(), null);
-            writeCell(row, 6, tableResult.differingRows().size(), null);
-            writeCell(row, 7, tableResult.hasDifferences(), null);
+            tableCell.setHyperlink(hyperlink);
+            writeCell(row, 1, tableResult.comparedColumns().size(), null);
+            writeCell(row, 2, tableResult.ignoredColumns().size(), null);
+            writeCell(row, 3, tableResult.rowsOnlyInLeft().size(), null);
+            writeCell(row, 4, tableResult.rowsOnlyInRight().size(), null);
+            writeCell(row, 5, tableResult.differingRows().size(), null);
+            writeCell(row, 6, tableResult.hasDifferences(), null);
         }
-        autosizeColumns(sheet, 8);
+        autosizeColumns(sheet, 7);
     }
 
     private void createTableSheets(final Workbook workbook, final Styles styles, final List<TableSheet> tableSheets) {
@@ -225,7 +224,7 @@ public final class ExcelMultiTableComparisonReportRenderer {
         metadata.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
         final CellStyle changed = workbook.createCellStyle();
-        changed.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+        changed.setFillForegroundColor(IndexedColors.ROSE.getIndex());
         changed.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
         final CellStyle present = workbook.createCellStyle();
@@ -233,11 +232,11 @@ public final class ExcelMultiTableComparisonReportRenderer {
         present.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
         final CellStyle onlyInLeft = workbook.createCellStyle();
-        onlyInLeft.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
+        onlyInLeft.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
         onlyInLeft.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
         final CellStyle onlyInRight = workbook.createCellStyle();
-        onlyInRight.setFillForegroundColor(IndexedColors.ROSE.getIndex());
+        onlyInRight.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
         onlyInRight.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
         final CellStyle hyperlink = workbook.createCellStyle();
