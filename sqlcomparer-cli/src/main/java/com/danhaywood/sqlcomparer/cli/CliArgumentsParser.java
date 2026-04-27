@@ -4,10 +4,15 @@ import com.danhaywood.sqlcomparer.model.TableRef;
 
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Component
 public final class CliArgumentsParser {
@@ -18,31 +23,38 @@ public final class CliArgumentsParser {
     private static final String LEFT_DATABASE = "-l";
     private static final String RIGHT_DATABASE = "-r";
     private static final String TABLES = "-t";
+    private static final String TABLES_FILE = "--tables-file";
+    private static final String ENV_FILE = "--env-file";
 
-    private static final List<String> REQUIRED_FLAGS = List.of(SERVER, USER, PASSWORD, LEFT_DATABASE, RIGHT_DATABASE, TABLES);
+    private static final String ENV_SERVER = "SQLCOMPARER_SERVER";
+    private static final String ENV_USER = "SQLCOMPARER_USERNAME";
+    private static final String ENV_PASSWORD = "SQLCOMPARER_PASSWORD";
+    private static final String ENV_LEFT_DATABASE = "SQLCOMPARER_LEFT_DATABASE";
+    private static final String ENV_RIGHT_DATABASE = "SQLCOMPARER_RIGHT_DATABASE";
+
+    private static final List<String> CONNECTION_FLAGS = List.of(SERVER, USER, PASSWORD, LEFT_DATABASE, RIGHT_DATABASE);
+    private static final Set<String> ACCEPTED_FLAGS = Set.of(SERVER, USER, PASSWORD, LEFT_DATABASE, RIGHT_DATABASE, TABLES, TABLES_FILE, ENV_FILE);
 
     public CliArguments parse(final String[] args) {
-        if (args == null || args.length == 0) {
-            throw new IllegalArgumentException("Missing required arguments: -S, -U, -P, -l, -r, -t");
-        }
-
-        final Map<String, String> valuesByFlag = parseFlagValues(args);
-        validateRequired(valuesByFlag);
+        final Map<String, String> valuesByFlag = parseFlagValues(args == null ? new String[0] : args);
+        final Map<String, String> valuesByEnvKey = loadEnvValues(valuesByFlag.get(ENV_FILE));
+        final Map<String, String> resolvedValues = resolveConnectionValues(valuesByFlag, valuesByEnvKey);
+        validateRequiredConnections(resolvedValues);
 
         return new CliArguments(
-                valuesByFlag.get(SERVER).trim(),
-                valuesByFlag.get(USER).trim(),
-                valuesByFlag.get(PASSWORD),
-                valuesByFlag.get(LEFT_DATABASE).trim(),
-                valuesByFlag.get(RIGHT_DATABASE).trim(),
-                parseTables(valuesByFlag.get(TABLES)));
+                resolvedValues.get(SERVER).trim(),
+                resolvedValues.get(USER).trim(),
+                resolvedValues.get(PASSWORD),
+                resolvedValues.get(LEFT_DATABASE).trim(),
+                resolvedValues.get(RIGHT_DATABASE).trim(),
+                parseSelectedTables(valuesByFlag));
     }
 
     private Map<String, String> parseFlagValues(final String[] args) {
         final Map<String, String> valuesByFlag = new HashMap<>();
         for (int i = 0; i < args.length; i++) {
             final String token = args[i];
-            if (!REQUIRED_FLAGS.contains(token)) {
+            if (!ACCEPTED_FLAGS.contains(token)) {
                 throw new IllegalArgumentException("Unknown argument: " + token);
             }
             if (i + 1 >= args.length) {
@@ -53,10 +65,75 @@ public final class CliArgumentsParser {
         return valuesByFlag;
     }
 
-    private void validateRequired(final Map<String, String> valuesByFlag) {
+    private Map<String, String> loadEnvValues(final String explicitEnvFile) {
+        final Path envPath = explicitEnvFile == null || explicitEnvFile.isBlank()
+                ? Path.of(System.getProperty("user.dir"), ".env")
+                : Path.of(explicitEnvFile.trim());
+        if (!Files.exists(envPath)) {
+            if (explicitEnvFile == null || explicitEnvFile.isBlank()) {
+                return Map.of();
+            }
+            throw new IllegalArgumentException("Environment file not found: " + envPath);
+        }
+        if (!Files.isRegularFile(envPath)) {
+            throw new IllegalArgumentException("Environment file is not a regular file: " + envPath);
+        }
+        try {
+            return parseEnvLines(Files.readAllLines(envPath, StandardCharsets.UTF_8), envPath);
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("Unable to read environment file: " + envPath, ex);
+        }
+    }
+
+    private Map<String, String> parseEnvLines(final List<String> lines, final Path envPath) {
+        final Map<String, String> valuesByEnvKey = new HashMap<>();
+        for (int index = 0; index < lines.size(); index++) {
+            final String line = lines.get(index).trim();
+            if (line.isBlank() || line.startsWith("#")) {
+                continue;
+            }
+            final int separator = line.indexOf('=');
+            if (separator <= 0) {
+                throw new IllegalArgumentException("Invalid .env entry at %s:%d. Expected KEY=value".formatted(envPath, index + 1));
+            }
+            final String key = line.substring(0, separator).trim();
+            final String value = line.substring(separator + 1).trim();
+            valuesByEnvKey.put(key, value);
+        }
+        return valuesByEnvKey;
+    }
+
+    private Map<String, String> resolveConnectionValues(final Map<String, String> valuesByFlag, final Map<String, String> valuesByEnvKey) {
+        final Map<String, String> resolvedValues = new HashMap<>();
+        putResolvedValue(resolvedValues, valuesByFlag, valuesByEnvKey, SERVER, ENV_SERVER);
+        putResolvedValue(resolvedValues, valuesByFlag, valuesByEnvKey, USER, ENV_USER);
+        putResolvedValue(resolvedValues, valuesByFlag, valuesByEnvKey, PASSWORD, ENV_PASSWORD);
+        putResolvedValue(resolvedValues, valuesByFlag, valuesByEnvKey, LEFT_DATABASE, ENV_LEFT_DATABASE);
+        putResolvedValue(resolvedValues, valuesByFlag, valuesByEnvKey, RIGHT_DATABASE, ENV_RIGHT_DATABASE);
+        return resolvedValues;
+    }
+
+    private void putResolvedValue(
+            final Map<String, String> resolvedValues,
+            final Map<String, String> valuesByFlag,
+            final Map<String, String> valuesByEnvKey,
+            final String flag,
+            final String envKey) {
+        final String commandLineValue = valuesByFlag.get(flag);
+        if (commandLineValue != null && !commandLineValue.isBlank()) {
+            resolvedValues.put(flag, commandLineValue);
+            return;
+        }
+        final String envValue = valuesByEnvKey.get(envKey);
+        if (envValue != null && !envValue.isBlank()) {
+            resolvedValues.put(flag, envValue);
+        }
+    }
+
+    private void validateRequiredConnections(final Map<String, String> resolvedValues) {
         final List<String> missing = new ArrayList<>();
-        for (String requiredFlag : REQUIRED_FLAGS) {
-            final String value = valuesByFlag.get(requiredFlag);
+        for (String requiredFlag : CONNECTION_FLAGS) {
+            final String value = resolvedValues.get(requiredFlag);
             if (value == null || value.isBlank()) {
                 missing.add(requiredFlag);
             }
@@ -66,7 +143,25 @@ public final class CliArgumentsParser {
         }
     }
 
+    private List<TableRef> parseSelectedTables(final Map<String, String> valuesByFlag) {
+        final String tableList = valuesByFlag.get(TABLES);
+        final String tableFile = valuesByFlag.get(TABLES_FILE);
+        if (tableList != null && tableFile != null) {
+            throw new IllegalArgumentException("Only one table source is allowed: use either -t or --tables-file");
+        }
+        if (tableList == null && tableFile == null) {
+            throw new IllegalArgumentException("Missing required arguments: -t or --tables-file");
+        }
+        if (tableFile != null) {
+            return parseTablesFile(tableFile);
+        }
+        return parseTables(tableList);
+    }
+
     private List<TableRef> parseTables(final String tableList) {
+        if (tableList == null || tableList.isBlank()) {
+            throw new IllegalArgumentException("At least one table is required in -t");
+        }
         final String[] tokens = tableList.split(",", -1);
         final List<TableRef> tables = new ArrayList<>();
         for (String token : tokens) {
@@ -78,6 +173,37 @@ public final class CliArgumentsParser {
         }
         if (tables.isEmpty()) {
             throw new IllegalArgumentException("At least one table is required in -t");
+        }
+        return List.copyOf(tables);
+    }
+
+    private List<TableRef> parseTablesFile(final String tableFile) {
+        if (tableFile == null || tableFile.isBlank()) {
+            throw new IllegalArgumentException("Missing value for argument: --tables-file");
+        }
+        final Path tableFilePath = Path.of(tableFile.trim());
+        if (!Files.exists(tableFilePath)) {
+            throw new IllegalArgumentException("Tables file not found: " + tableFilePath);
+        }
+        if (!Files.isRegularFile(tableFilePath)) {
+            throw new IllegalArgumentException("Tables file is not a regular file: " + tableFilePath);
+        }
+        final List<String> lines;
+        try {
+            lines = Files.readAllLines(tableFilePath, StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("Unable to read tables file: " + tableFilePath, ex);
+        }
+        final List<TableRef> tables = new ArrayList<>();
+        for (int index = 0; index < lines.size(); index++) {
+            final String tableToken = lines.get(index).trim();
+            if (tableToken.isBlank()) {
+                throw new IllegalArgumentException("Invalid table reference: blank line in --tables-file at line " + (index + 1));
+            }
+            tables.add(parseTableToken(tableToken));
+        }
+        if (tables.isEmpty()) {
+            throw new IllegalArgumentException("At least one table is required in --tables-file");
         }
         return List.copyOf(tables);
     }
