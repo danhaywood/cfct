@@ -8,6 +8,7 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 ## Candidate ideas
 
+- use lombok to remove getter/setter boilerplate
 - if there is no BK, then log warning.
 - generalize the way to find a _BK, care only about the suffix.  So, PurchaseOrder__reference__BK would also be ok.
 - allow the cli to pick up credentials from a .env file

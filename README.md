@@ -17,7 +17,7 @@ It provides a reusable comparison API, an implementation module, a Spring Boot C
 
 ## Prerequisites
 
-- Java 17 or later.
+- Java 21 or later.
 - Maven 3.9 or later.
 - Docker, for the fixture SQL Server and integration tests.
 - Enough local resources and startup time for the `mcr.microsoft.com/mssql/server:2022-latest` container.
@@ -55,6 +55,50 @@ Run the webapp scaffold locally from the repository root:
 mvn -pl sqlcomparer-webapp -am spring-boot:run
 ```
 
+By default, the webapp validates SQL Server connectivity and configured left/right database existence at startup.
+If SQL Server is not available yet and you want UI-only startup, disable startup validation:
+
+```bash
+mvn -pl sqlcomparer-webapp -am spring-boot:run -Dspring-boot.run.arguments=--sqlcomparer.webapp.comparison.validation.enabled=false
+```
+
+Happy-path connectivity check with the demo fixture SQL Server:
+
+1. Start the fixture SQL Server container and load demo data.
+
+```bash
+scripts/fixture-sqlserver.sh start
+```
+
+2. Start the webapp with fixture credentials and fixture databases.
+
+```bash
+mvn -pl sqlcomparer-webapp -am spring-boot:run \
+  -Dspring-boot.run.arguments="--sqlcomparer.webapp.comparison.connection.server=localhost:14333 --sqlcomparer.webapp.comparison.connection.username=sa --sqlcomparer.webapp.comparison.connection.password=Str0ng_password!123 --sqlcomparer.webapp.comparison.connection.left-database=left_db --sqlcomparer.webapp.comparison.connection.right-database=right_db"
+```
+
+Or use the one-liner helper script that starts the fixture and runs the webapp with the same happy-path settings:
+
+```bash
+scripts/check-webapp-happy-path.sh
+```
+
+3. Confirm happy-path startup by checking that the app reports successful startup and does not log `SqlServerConnectivityValidationException`.
+
+Expected startup line includes:
+
+```text
+Started SqlComparerWebApplication
+```
+
+4. Open `http://localhost:8080` to confirm the UI is reachable.
+
+5. Stop the fixture when done.
+
+```bash
+scripts/fixture-sqlserver.sh stop
+```
+
 The webapp reads shared execution defaults from `sqlcomparer-webapp/src/main/resources/application.yml` using `sqlcomparer.webapp.comparison.*` keys.
 These shared keys map to CLI concepts as follows:
 
@@ -74,6 +118,15 @@ Migration notes:
 - Removed: `sqlcomparer.webapp.comparison.table-selection.tables`
 - Removed: `sqlcomparer.webapp.comparison.table-selection.tables-file`
 - Replacement: `sqlcomparer.webapp.selection-plan.explicit.tables`
+
+Run webapp connectivity-validation tests (Docker required):
+
+```bash
+scripts/test-webapp-connectivity-validation.sh
+```
+
+This change intentionally does not add Playwright or browser E2E automation.
+Playwright is out of scope for the current infrastructure-focused stage.
 
 ## Fixture SQL Server
 

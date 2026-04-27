@@ -31,6 +31,9 @@ public class WebappComparisonProperties {
     @Valid
     private Output output = new Output();
 
+    @Valid
+    private Validation validation = new Validation();
+
     private String envFile;
 
     public Connection getConnection() {
@@ -47,6 +50,14 @@ public class WebappComparisonProperties {
 
     public void setOutput(final Output output) {
         this.output = output;
+    }
+
+    public Validation getValidation() {
+        return validation;
+    }
+
+    public void setValidation(final Validation validation) {
+        this.validation = validation;
     }
 
     public String getEnvFile() {
@@ -123,6 +134,18 @@ public class WebappComparisonProperties {
 
         public void setFile(final String file) {
             this.file = file;
+        }
+    }
+
+    public static class Validation {
+        private boolean enabled = true;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(final boolean enabled) {
+            this.enabled = enabled;
         }
     }
 }

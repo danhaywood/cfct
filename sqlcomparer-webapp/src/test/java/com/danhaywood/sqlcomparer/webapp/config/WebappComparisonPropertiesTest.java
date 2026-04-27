@@ -26,7 +26,8 @@ class WebappComparisonPropertiesTest {
                         "sqlcomparer.webapp.comparison.connection.right-database=right_db",
                         "sqlcomparer.webapp.comparison.env-file=demo/.env",
                         "sqlcomparer.webapp.comparison.output.format=json",
-                        "sqlcomparer.webapp.comparison.output.file=comparison.json")
+                        "sqlcomparer.webapp.comparison.output.file=comparison.json",
+                        "sqlcomparer.webapp.comparison.validation.enabled=false")
                 .run(context -> {
                     assertThat(context).hasNotFailed();
                     final WebappComparisonProperties properties = context.getBean(WebappComparisonProperties.class);
@@ -38,6 +39,7 @@ class WebappComparisonPropertiesTest {
                     assertThat(properties.getEnvFile()).isEqualTo("demo/.env");
                     assertThat(properties.getOutput().getFormat()).isEqualTo("json");
                     assertThat(properties.getOutput().getFile()).isEqualTo("comparison.json");
+                    assertThat(properties.getValidation().isEnabled()).isFalse();
                 });
     }
 

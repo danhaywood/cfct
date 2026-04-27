@@ -11,6 +11,8 @@ sqlcomparer:
       output:
         format: text
         file:
+      validation:
+        enabled: true
     # Migration note: legacy keys removed
     # - sqlcomparer.webapp.comparison.table-selection.tables
     # - sqlcomparer.webapp.comparison.table-selection.tables-file
