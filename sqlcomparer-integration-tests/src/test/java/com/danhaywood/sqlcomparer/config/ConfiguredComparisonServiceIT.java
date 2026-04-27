@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.approvaltests.Approvals;
+import org.approvaltests.core.Options;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -71,7 +72,7 @@ class ConfiguredComparisonServiceIT {
         assertThat(json).contains("\"reference\" : \"SUP-003\"");
         assertThat(json).contains("\"sku\" : \"SKU-004\"");
         assertThat(json).doesNotContain("PurchaseOrder_BK");
-        Approvals.verify(json);
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 
     @Test
