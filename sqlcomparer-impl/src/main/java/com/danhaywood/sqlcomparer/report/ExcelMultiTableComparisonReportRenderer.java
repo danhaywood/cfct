@@ -121,16 +121,16 @@ public final class ExcelMultiTableComparisonReportRenderer {
         }
 
         for (RowKey rowKey : result.rowsOnlyInLeft()) {
-            rowIndex = writeActualRow(sheet, rowIndex, styles.onlyInLeft(), styles.onlyInLeft(), "Only in left", rowKey, result.rowsOnlyInLeftValues().get(rowKey), null, keyColumns, result.comparedColumns(), Set.of());
+            rowIndex = writeActualRow(sheet, rowIndex, styles.onlyInLeft(), styles.onlyInLeft(), null, styles.changed(), "Only in left", rowKey, result.rowsOnlyInLeftValues().get(rowKey), null, keyColumns, result.comparedColumns(), Set.of());
         }
         for (RowKey rowKey : result.rowsOnlyInRight()) {
-            rowIndex = writeActualRow(sheet, rowIndex, styles.onlyInRight(), styles.onlyInRight(), "Only in right", rowKey, null, result.rowsOnlyInRightValues().get(rowKey), keyColumns, result.comparedColumns(), Set.of());
+            rowIndex = writeActualRow(sheet, rowIndex, styles.onlyInRight(), null, styles.onlyInRight(), styles.changed(), "Only in right", rowKey, null, result.rowsOnlyInRightValues().get(rowKey), keyColumns, result.comparedColumns(), Set.of());
         }
         for (RowDifference rowDifference : result.differingRows()) {
             final Set<ColumnRef> changedColumns = rowDifference.columnDifferences().stream()
                     .map(ColumnDifference::column)
                     .collect(Collectors.toSet());
-            rowIndex = writeActualRow(sheet, rowIndex, styles.present(), styles.changed(), "Differ", rowDifference.key(), rowDifference.leftValues(), rowDifference.rightValues(), keyColumns, result.comparedColumns(), changedColumns);
+            rowIndex = writeActualRow(sheet, rowIndex, styles.present(), styles.present(), styles.present(), styles.changed(), "Differ", rowDifference.key(), rowDifference.leftValues(), rowDifference.rightValues(), keyColumns, result.comparedColumns(), changedColumns);
         }
         if (!result.hasDifferences()) {
             writeRow(sheet, rowIndex, styles.present(), "No differences found");
@@ -144,6 +144,8 @@ public final class ExcelMultiTableComparisonReportRenderer {
             final Sheet sheet,
             final int rowIndex,
             final CellStyle rowStyle,
+            final CellStyle leftValueStyle,
+            final CellStyle rightValueStyle,
             final CellStyle changedStyle,
             final String differenceType,
             final RowKey rowKey,
@@ -157,13 +159,14 @@ public final class ExcelMultiTableComparisonReportRenderer {
         int columnIndex = 1;
         for (int keyIndex = 0; keyIndex < keyColumns.size(); keyIndex++) {
             final String keyValue = keyIndex < rowKey.values().size() ? rowKey.values().get(keyIndex) : "";
-            writeCell(row, columnIndex++, leftValues == null ? "" : keyValue, rowStyle);
-            writeCell(row, columnIndex++, rightValues == null ? "" : keyValue, rowStyle);
+            writeCell(row, columnIndex++, leftValues == null ? "" : keyValue, leftValueStyle);
+            writeCell(row, columnIndex++, rightValues == null ? "" : keyValue, rightValueStyle);
         }
         for (ColumnRef comparedColumn : comparedColumns) {
-            final CellStyle valueStyle = changedColumns.contains(comparedColumn) ? changedStyle : rowStyle;
-            writeCell(row, columnIndex++, value(leftValues, comparedColumn), valueStyle);
-            writeCell(row, columnIndex++, value(rightValues, comparedColumn), valueStyle);
+            final CellStyle leftStyle = changedColumns.contains(comparedColumn) ? changedStyle : leftValueStyle;
+            final CellStyle rightStyle = changedColumns.contains(comparedColumn) ? changedStyle : rightValueStyle;
+            writeCell(row, columnIndex++, value(leftValues, comparedColumn), leftStyle);
+            writeCell(row, columnIndex++, value(rightValues, comparedColumn), rightStyle);
         }
         return rowIndex + 1;
     }

@@ -9,6 +9,7 @@ import com.danhaywood.sqlcomparer.model.RowKey;
 import com.danhaywood.sqlcomparer.model.TableComparisonResult;
 import com.danhaywood.sqlcomparer.model.TableRef;
 
+import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -85,10 +86,12 @@ class ExcelMultiTableComparisonReportRendererTest {
             assertThat(sheet.getRow(8).getCell(0).getStringCellValue()).isEqualTo("Only in left");
             assertThat(sheet.getRow(8).getCell(1).getStringCellValue()).isEqualTo("SUP-LEFT");
             assertThat(sheet.getRow(8).getCell(2).getStringCellValue()).isEmpty();
+            assertThat(sheet.getRow(8).getCell(2).getCellStyle().getFillPattern()).isEqualTo(FillPatternType.NO_FILL);
             assertThat(sheet.getRow(8).getCell(3).getStringCellValue()).isEqualTo("Left-only supplier");
             assertThat(sheet.getRow(8).getCell(3).getCellStyle().getFillForegroundColor()).isEqualTo(IndexedColors.LIGHT_YELLOW.getIndex());
             assertThat(sheet.getRow(9).getCell(0).getStringCellValue()).isEqualTo("Only in right");
             assertThat(sheet.getRow(9).getCell(1).getStringCellValue()).isEmpty();
+            assertThat(sheet.getRow(9).getCell(1).getCellStyle().getFillPattern()).isEqualTo(FillPatternType.NO_FILL);
             assertThat(sheet.getRow(9).getCell(2).getStringCellValue()).isEqualTo("SUP-RIGHT");
             assertThat(sheet.getRow(9).getCell(4).getStringCellValue()).isEqualTo("Right-only supplier");
             assertThat(sheet.getRow(9).getCell(4).getCellStyle().getFillForegroundColor()).isEqualTo(IndexedColors.YELLOW.getIndex());
