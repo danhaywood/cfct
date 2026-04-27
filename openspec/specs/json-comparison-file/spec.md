@@ -19,18 +19,6 @@ The JSON request SHALL specify an output type and a non-empty list of table refe
 - **WHEN** a JSON comparison file omits the output type
 - **THEN** the system rejects the file with a clear validation error
 
-### Requirement: JSON is the only supported output type
-The system SHALL accept `json` as the only output type in a comparison JSON file.
-The system SHALL reject all other output types.
-
-#### Scenario: JSON output type is accepted
-- **WHEN** a JSON comparison file specifies output type `json`
-- **THEN** the system accepts the requested output type
-
-#### Scenario: Unsupported output type is rejected
-- **WHEN** a JSON comparison file specifies an output type other than `json`
-- **THEN** the system rejects the file with a clear validation error identifying the unsupported output type
-
 ### Requirement: Configured comparison produces deterministic JSON output
 The system SHALL render comparison results as deterministic JSON when the comparison file requests JSON output.
 The JSON output SHALL preserve requested table order and stable difference ordering.
@@ -46,4 +34,20 @@ The JSON output SHALL preserve requested table order and stable difference order
 #### Scenario: JSON output is approval-tested
 - **WHEN** the configured comparison integration test runs
 - **THEN** the approved output is a JSON document
+
+### Requirement: Comparison JSON file supports configured output formats
+The system SHALL accept `json` and `excel` as supported output types in a comparison JSON file.
+The system SHALL reject all other output types.
+
+#### Scenario: JSON output type is accepted
+- **WHEN** a JSON comparison file specifies output type `json`
+- **THEN** the system accepts the requested output type
+
+#### Scenario: Excel output type is accepted
+- **WHEN** a JSON comparison file specifies output type `excel`
+- **THEN** the system accepts the requested output type
+
+#### Scenario: Unsupported output type is rejected
+- **WHEN** a JSON comparison file specifies an output type other than `json` or `excel`
+- **THEN** the system rejects the file with a clear validation error identifying the unsupported output type
 
