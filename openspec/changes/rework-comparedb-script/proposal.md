@@ -10,6 +10,8 @@ The naming, environment variables, file layout, and build behavior should reflec
 - Move the production wrapper script to the repository root.
 - Rename `demo/sqlcomparer.env` to `demo/.env` for the fixture example.
 - Add a root `.env.TEMPLATE` file for users to copy and customize.
+- Default `comparedb.sh` to `.env` in the current directory.
+- Require callers to provide table selection explicitly through `--tables-file`, `-t`, or `SQLCOMPARER_TABLES_FILE`.
 - Remove automatic jar rebuild logic from the wrapper and instead fail clearly when required jar files are missing.
 - Update README and OpenSpec documentation to reflect the new script name, environment files, variables, and build expectations.
 

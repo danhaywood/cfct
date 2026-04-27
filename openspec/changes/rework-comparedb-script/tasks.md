@@ -10,7 +10,7 @@
 
 - [x] 2.1 Rename `demo/sqlcomparer.env` to `demo/.env`.
 - [x] 2.2 Add root `.env.TEMPLATE` with all supported SQL comparer dotenv keys and safe placeholder values.
-- [x] 2.3 Update wrapper defaults to use `demo/.env` and `demo/tables.txt`.
+- [x] 2.3 Update wrapper env default to `.env` in the current directory and require explicit table selection.
 - [x] 2.4 Keep fixture credentials clearly labelled as fixture-only in the demo env file or docs.
 
 ## 3. Jar Handling
@@ -36,3 +36,12 @@
 - [x] 5.3 Verify `comparedb.sh --help` describes the new env vars and paths.
 - [x] 5.4 Verify the wrapper fails clearly when the CLI jar is absent or overridden to a missing path.
 - [x] 5.5 Review OpenSpec status and ensure all tasks are complete.
+
+## 6. Wrapper Default Refinement
+
+- [x] 6.1 Change `comparedb.sh` to default to `.env` in the current directory.
+- [x] 6.2 Remove the default tables file from `comparedb.sh`.
+- [x] 6.3 Keep `SQLCOMPARER_TABLES_FILE` as an optional tables-file override.
+- [x] 6.4 Update README fixture examples to pass `demo/.env` and `demo/tables.txt` explicitly.
+- [x] 6.5 Update OpenSpec proposal, design, and specs to reflect current wrapper defaults.
+- [x] 6.6 Validate shell syntax, help output, missing env handling, missing jar handling, and CLI module tests.

@@ -33,9 +33,10 @@ The user wants this wrapper to be production-oriented, repository-root visible, 
   The fixture file remains a runnable example, while the template gives users a safe starting point for real environments.
   Alternative considered: make root `.env` the default, but committing a root `.env` with fixture credentials would be misleading and unsafe.
 
-- Default `comparedb.sh` to `demo/.env` and `demo/tables.txt` only as repository examples, while allowing overrides through production-named environment variables.
-  This preserves a quick local path without encoding demo naming into the wrapper itself.
-  Alternative considered: require all paths on every invocation, but that would make the wrapper less useful.
+- Default `comparedb.sh` to `.env` in the current working directory and provide no default tables file.
+  This makes the production-oriented behavior explicit and avoids silently comparing fixture tables in real use.
+  Fixture examples should pass `demo/.env` and `demo/tables.txt` explicitly.
+  Alternative considered: keep `demo/.env` and `demo/tables.txt` as defaults, but that preserves demo-oriented behavior in the production wrapper.
 
 - Remove `jar_needs_build` and all automatic Maven invocation from the wrapper.
   The wrapper should verify the executable jar exists and fail with a clear build command if it does not.
@@ -49,4 +50,5 @@ The user wants this wrapper to be production-oriented, repository-root visible, 
 - Users may expect the wrapper to build automatically because `run-demo.sh` did → Print an explicit build command when the jar is missing.
 - Moving the script can leave stale references behind → Search README, scripts, OpenSpec docs, and shell examples for `run-demo.sh`, `DEMO_ENV`, `DEMO_TABLES`, and `demo/sqlcomparer.env`.
 - Root `.env.TEMPLATE` could be confused with active config → Use template comments and keep active fixture config in `demo/.env`.
-- Dotfiles under `demo/` can be overlooked by basic directory listings → README must mention the exact `demo/.env` path.
+- Dotfiles under `demo/` can be overlooked by basic directory listings → README must mention the exact `demo/.env` path in example commands.
+- Users may run `comparedb.sh` without table selection → The wrapper help and README must explain that `--tables-file`, `-t`, or `SQLCOMPARER_TABLES_FILE` is required.

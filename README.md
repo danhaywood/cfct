@@ -5,7 +5,7 @@ It provides a reusable comparison API, an implementation module, a Spring Boot C
 
 ## Project layout
 
-- `comparedb.sh`: root comparison wrapper script for running the CLI with env-file and table-file inputs.
+- `comparedb.sh`: root comparison wrapper script for running the CLI with env-file and table-selection inputs.
 - `.env.TEMPLATE`: template for user-managed connection configuration.
 - `sqlcomparer-api`: public comparison contracts, result models, exceptions, and service interfaces.
 - `sqlcomparer-impl`: comparison services, SQL Server readers, JSON request loading, and report renderers.
@@ -78,60 +78,63 @@ Override the host port if needed:
 SQLCOMPARER_FIXTURE_PORT=14334 scripts/fixture-sqlserver.sh start
 ```
 
-If you change the port, also update or override the env file used by the comparison wrapper.
+If you change the port, also update the env file used by the comparison wrapper or pass a different env file with `SQLCOMPARER_ENV_FILE`.
 
 ## Comparison wrapper
 
 `comparedb.sh` is the root comparison wrapper script.
-It expects the CLI jar to already exist and then invokes the Java CLI with an env file and a tables file.
+It expects the CLI jar to already exist and then invokes the Java CLI with an env file.
+By default, the env file is `.env` in the current directory.
+The wrapper has no default tables file; provide table selection by passing `--tables-file`, passing `-t`, or setting `SQLCOMPARER_TABLES_FILE`.
 
 For the fixture example, build the CLI jar, start the fixture, then run:
 
 ```bash
+SQLCOMPARER_ENV_FILE=demo/.env ./comparedb.sh --tables-file demo/tables.txt
+```
+
+Equivalent usage with the tables-file environment override:
+
+```bash
+SQLCOMPARER_ENV_FILE=demo/.env \
+SQLCOMPARER_TABLES_FILE=demo/tables.txt \
 ./comparedb.sh
 ```
 
-The wrapper defaults to:
-
-```bash
---env-file demo/.env --tables-file demo/tables.txt
-```
-
-Additional arguments are passed through to the CLI.
 This overrides the server value from the env file:
 
 ```bash
-./comparedb.sh -S localhost:14334
+SQLCOMPARER_ENV_FILE=demo/.env ./comparedb.sh --tables-file demo/tables.txt -S localhost:14334
 ```
 
 This writes JSON output instead of the default text output:
 
 ```bash
-./comparedb.sh --output-format json
+SQLCOMPARER_ENV_FILE=demo/.env ./comparedb.sh --tables-file demo/tables.txt --output-format json
 ```
 
 This writes JSON output to a file:
 
 ```bash
-./comparedb.sh --output-format json -o comparison.json
+SQLCOMPARER_ENV_FILE=demo/.env ./comparedb.sh --tables-file demo/tables.txt --output-format json -o comparison.json
 ```
 
 This writes Excel output to a workbook file:
 
 ```bash
-./comparedb.sh --output-format excel -o comparison.xlsx
+SQLCOMPARER_ENV_FILE=demo/.env ./comparedb.sh --tables-file demo/tables.txt --output-format excel -o comparison.xlsx
 ```
 
 The wrapper supports these environment overrides:
 
-- `SQLCOMPARER_ENV_FILE`: env file path, defaulting to `demo/.env`.
-- `SQLCOMPARER_TABLES_FILE`: table list file path, defaulting to `demo/tables.txt`.
+- `SQLCOMPARER_ENV_FILE`: env file path, defaulting to `.env` in the current directory.
+- `SQLCOMPARER_TABLES_FILE`: optional table list file path, with no default.
 - `SQLCOMPARER_CLI_JAR`: CLI jar path, defaulting to `sqlcomparer-cli/target/sqlcomparer-cli-0.0.1-SNAPSHOT.jar`.
 
 ## Env files and table files
 
 Use `.env.TEMPLATE` as the starting point for a user-managed env file.
-Copy it to `.env` or another private location and set `SQLCOMPARER_ENV_FILE` when invoking `comparedb.sh`.
+Copy it to `.env` in the directory from which you run `comparedb.sh`, or store it elsewhere and set `SQLCOMPARER_ENV_FILE`.
 Do not commit real production credentials.
 
 `demo/.env` contains fixture-only connection values using the CLI-supported dotenv keys:

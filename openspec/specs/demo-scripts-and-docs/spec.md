@@ -9,17 +9,22 @@ The wrapper SHALL verify that the CLI executable artifact is present before invo
 The wrapper SHALL fail with a clear build instruction when required jar artifacts are missing.
 The wrapper SHALL not automatically build or rebuild jar artifacts.
 The wrapper SHALL use production-oriented variable names and environment overrides rather than `DEMO_`-prefixed names.
-The wrapper SHALL support an example env file at `demo/.env` through the CLI environment-file option.
-The wrapper SHALL use the example tables file through the CLI table-file option by default.
+The wrapper SHALL use `.env` in the current working directory as its default env file.
+The wrapper SHALL not define a default tables file.
+The wrapper SHALL support table selection by pass-through CLI arguments or by `SQLCOMPARER_TABLES_FILE`.
 The wrapper SHALL allow callers to pass additional CLI arguments without editing the script.
 
-#### Scenario: Comparison wrapper runs with default example inputs
-- **WHEN** the fixture SQL Server is running, required jars are built, and the user runs `./comparedb.sh` with no custom options
+#### Scenario: Comparison wrapper runs with explicit fixture example inputs
+- **WHEN** the fixture SQL Server is running, required jars are built, and the user runs `./comparedb.sh` with `SQLCOMPARER_ENV_FILE=demo/.env` and `--tables-file demo/tables.txt`
 - **THEN** the wrapper invokes the CLI with `demo/.env` and `demo/tables.txt`
 
 #### Scenario: Comparison wrapper accepts additional arguments
 - **WHEN** the user runs `./comparedb.sh` with additional CLI arguments
 - **THEN** the wrapper passes those arguments through to the CLI invocation
+
+#### Scenario: Comparison wrapper supports tables file environment override
+- **WHEN** the user runs `./comparedb.sh` with `SQLCOMPARER_TABLES_FILE` set
+- **THEN** the wrapper passes that file path to the CLI table-file option
 
 #### Scenario: Comparison wrapper reports missing jar artifacts
 - **WHEN** the user runs `./comparedb.sh` before required jar artifacts have been built
@@ -66,13 +71,15 @@ The demo files SHALL be safe examples and SHALL not contain production credentia
 The README SHALL document the current Maven module layout and build commands.
 The README SHALL document how to start, check, and stop the fixture SQL Server using the fixture script.
 The README SHALL document how to run the root `comparedb.sh` comparison wrapper.
+The README SHALL document that `comparedb.sh` defaults to `.env` in the current directory and has no default tables file.
+The README SHALL document fixture examples that pass `demo/.env` and `demo/tables.txt` explicitly.
 The README SHALL document the direct CLI argument options, including `.env`, table-file, output-format, and output-file usage.
 The README SHALL document `demo/.env` as the fixture example and `.env.TEMPLATE` as the user configuration template.
 The README SHALL remove or correct information that no longer matches current project behavior.
 
 #### Scenario: README explains the comparison wrapper path
 - **WHEN** a user reads the README from a clean checkout
-- **THEN** the README gives an ordered path for building the CLI jar, starting the fixture, and running `./comparedb.sh`
+- **THEN** the README gives an ordered path for building the CLI jar, starting the fixture, and running `./comparedb.sh` with explicit fixture env and tables files
 
 #### Scenario: README documents direct CLI invocation
 - **WHEN** a user wants to bypass the wrapper script
