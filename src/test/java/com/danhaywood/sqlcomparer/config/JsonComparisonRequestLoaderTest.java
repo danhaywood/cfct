@@ -14,7 +14,7 @@ class JsonComparisonRequestLoaderTest {
     private final JsonComparisonRequestLoader loader = new JsonComparisonRequestLoader(new ObjectMapper());
 
     @Test
-    void loadsValidRequest() {
+    void loadsValidJsonRequest() {
         final JsonComparisonRequest request = load("""
                 {
                   "output": { "type": "json" },
@@ -23,6 +23,21 @@ class JsonComparisonRequestLoaderTest {
                 """);
 
         assertThat(request.outputType()).isEqualTo(ComparisonOutputType.JSON);
+        assertThat(request.toMultiTableComparisonRequest().tables())
+                .extracting(table -> table.schemaName() + "." + table.tableName())
+                .containsExactly("dbo.Supplier");
+    }
+
+    @Test
+    void loadsValidExcelRequest() {
+        final JsonComparisonRequest request = load("""
+                {
+                  "output": { "type": "excel" },
+                  "tables": [ { "schema": "dbo", "name": "Supplier" } ]
+                }
+                """);
+
+        assertThat(request.outputType()).isEqualTo(ComparisonOutputType.EXCEL);
         assertThat(request.toMultiTableComparisonRequest().tables())
                 .extracting(table -> table.schemaName() + "." + table.tableName())
                 .containsExactly("dbo.Supplier");

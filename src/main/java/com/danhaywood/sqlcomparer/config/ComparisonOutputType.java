@@ -1,7 +1,8 @@
 package com.danhaywood.sqlcomparer.config;
 
 public enum ComparisonOutputType {
-    JSON("json");
+    JSON("json"),
+    EXCEL("excel");
 
     private final String jsonValue;
 
@@ -17,8 +18,11 @@ public enum ComparisonOutputType {
         if (value == null || value.isBlank()) {
             throw new ComparisonRequestException("Comparison output type is required");
         }
-        if (JSON.jsonValue.equalsIgnoreCase(value.trim())) {
-            return JSON;
+        final String normalizedValue = value.trim();
+        for (ComparisonOutputType outputType : values()) {
+            if (outputType.jsonValue.equalsIgnoreCase(normalizedValue)) {
+                return outputType;
+            }
         }
         throw new ComparisonRequestException("Unsupported comparison output type: %s".formatted(value));
     }
