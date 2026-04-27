@@ -23,9 +23,9 @@ Use a dedicated `sqlcomparer-webapp` Maven module rather than extending `sqlcomp
 This keeps packaging concerns separate and avoids coupling a web runtime to the CLI executable artifact.
 Alternative considered was adding Vaadin to the CLI module, but that would blur responsibilities and increase startup complexity for CLI-only use.
 
-Use Vaadin Flow on the latest stable line identified from Context7 resolver metadata, choosing `24.9.2` and excluding `25.0.0-beta1` pre-release.
-This balances access to current features with stable dependency behavior for initial scaffolding.
-Alternative considered was adopting Vaadin 25 beta immediately, but pre-release risk is unnecessary for foundational setup.
+Use Vaadin Flow on the latest stable 25.x line for compatibility with Spring Boot 4.
+This keeps the scaffold aligned with the current Spring ecosystem while avoiding pre-release artifacts.
+Alternative considered was staying on 24.x, but that introduced Spring Boot 4 auto-configuration incompatibilities.
 
 Use Spring Boot `@ConfigurationProperties` classes in the webapp module to bind keys that correspond to CLI concepts.
 This provides typed validation and clear mapping between web configuration and existing comparison request construction.

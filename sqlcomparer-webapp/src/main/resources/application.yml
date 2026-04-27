@@ -1,0 +1,16 @@
+sqlcomparer:
+  webapp:
+    comparison:
+      connection:
+        server: localhost:14333
+        username: sa
+        password: change-me
+        left-database: left_db
+        right-database: right_db
+      env-file: .env
+      table-selection:
+        tables: []
+        tables-file:
+      output:
+        format: text
+        file:

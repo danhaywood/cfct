@@ -6,7 +6,7 @@ We should scaffold the Vaadin application and configuration binding now so futur
 ## What Changes
 
 - Add a new `sqlcomparer-webapp` Maven module with Spring Boot and Vaadin scaffolding.
-- Use Vaadin Flow latest stable line from Context7 metadata, selecting `24.9.2` and avoiding `25.0.0-beta1` pre-release.
+- Use Vaadin Flow latest stable 25.x line for Spring Boot 4 compatibility and avoid pre-release versions.
 - Add baseline `application.yml` configuration keys that mirror the CLI connection and output options.
 - Add typed Spring configuration properties classes for server, username, password, left database, right database, tables/tables-file, env-file, output-format, and output-file.
 - Define precedence and mapping rules so webapp configuration sources can resolve the same logical inputs the CLI accepts.

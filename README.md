@@ -1,7 +1,7 @@
 # sqlcomparer
 
 `sqlcomparer` is a Maven multi-module project for comparing selected SQL Server tables between two databases.
-It provides a reusable comparison API, an implementation module, a Spring Boot CLI, a root comparison wrapper script, and a Docker-backed integration-test fixture.
+It provides a reusable comparison API, an implementation module, a Spring Boot CLI, a Vaadin webapp scaffold, a root comparison wrapper script, and a Docker-backed integration-test fixture.
 
 ## Project layout
 
@@ -10,6 +10,7 @@ It provides a reusable comparison API, an implementation module, a Spring Boot C
 - `sqlcomparer-api`: public comparison contracts, result models, exceptions, and service interfaces.
 - `sqlcomparer-impl`: comparison services, SQL Server readers, JSON request loading, and report renderers.
 - `sqlcomparer-cli`: Spring Boot CLI application and executable jar packaging.
+- `sqlcomparer-webapp`: Spring Boot + Vaadin Flow web application scaffold with typed configuration properties.
 - `sqlcomparer-integration-tests`: SQL Server Testcontainers harness, fixture SQL, approval files, and integration tests.
 - `demo/`: committed fixture example files for local comparison runs.
 - `scripts/`: local helper scripts for the fixture SQL Server.
@@ -47,6 +48,28 @@ mvn -pl sqlcomparer-cli -am package
 
 `comparedb.sh` does not build or rebuild jars automatically.
 If the CLI jar is missing, it prints the build command and exits.
+
+Run the webapp scaffold locally from the repository root:
+
+```bash
+mvn -pl sqlcomparer-webapp -am spring-boot:run
+```
+
+The webapp reads comparison defaults from `sqlcomparer-webapp/src/main/resources/application.yml` using `sqlcomparer.webapp.comparison.*` keys.
+These keys map to CLI concepts as follows:
+
+- `connection.server` ↔ `-S` / `--server`
+- `connection.username` ↔ `-U` / `--username`
+- `connection.password` ↔ `-P` / `--password`
+- `connection.left-database` ↔ `-l` / `--left-database`
+- `connection.right-database` ↔ `-r` / `--right-database`
+- `table-selection.tables` ↔ `-t` / `--tables`
+- `table-selection.tables-file` ↔ `-F` / `--tables-file`
+- `env-file` ↔ `-e` / `--env-file`
+- `output.format` ↔ `-f` / `--output-format`
+- `output.file` ↔ `-o` / `--output-file`
+
+The webapp validates table source configuration and rejects startup when both `table-selection.tables` and `table-selection.tables-file` are configured simultaneously.
 
 ## Fixture SQL Server
 
