@@ -1,7 +1,7 @@
 package com.danhaywood.sqlcomparer.config;
 
-import com.danhaywood.sqlcomparer.core.MultiTableComparer;
-import com.danhaywood.sqlcomparer.core.TableComparer;
+import com.danhaywood.sqlcomparer.comparison.MultiTableComparer;
+import com.danhaywood.sqlcomparer.comparison.TableComparer;
 import com.danhaywood.sqlcomparer.harness.DatabaseSide;
 import com.danhaywood.sqlcomparer.harness.SqlServerTestHarness;
 import com.danhaywood.sqlcomparer.report.ExcelMultiTableComparisonReportRenderer;

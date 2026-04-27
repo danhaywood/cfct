@@ -11,6 +11,7 @@
 - [x] 2.2 Ensure API module contains request, result, table, column, key, option, exception, and service-interface types needed by callers and implementations.
 - [x] 2.3 Ensure API module has no dependency on implementation, CLI, Spring Boot application packaging, Testcontainers, ApprovalTests, Jackson, POI, or Picocli.
 - [x] 2.4 Compile the API module independently and fix module-boundary issues.
+- [x] 2.5 Split API contracts into responsibility-focused packages: `model`, `request`, `spi`, and `exception`.
 
 ## 3. Implementation Module
 
@@ -19,6 +20,7 @@
 - [x] 3.3 Move implementation unit tests into `sqlcomparer-impl/src/test/java`.
 - [x] 3.4 Configure implementation test dependencies for JUnit, AssertJ, and Spring test support.
 - [x] 3.5 Verify `sqlcomparer-impl` does not depend on CLI or integration-test modules.
+- [x] 3.6 Move implementation comparer services into a responsibility-focused `comparison` package.
 
 ## 4. CLI Module
 

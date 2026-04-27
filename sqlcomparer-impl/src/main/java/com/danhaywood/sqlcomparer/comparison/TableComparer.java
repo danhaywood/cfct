@@ -1,5 +1,14 @@
-package com.danhaywood.sqlcomparer.core;
+package com.danhaywood.sqlcomparer.comparison;
 
+import com.danhaywood.sqlcomparer.model.ColumnDifference;
+import com.danhaywood.sqlcomparer.model.ColumnRef;
+import com.danhaywood.sqlcomparer.model.RowDifference;
+import com.danhaywood.sqlcomparer.model.RowKey;
+import com.danhaywood.sqlcomparer.model.TableComparisonResult;
+import com.danhaywood.sqlcomparer.model.TableMetadata;
+import com.danhaywood.sqlcomparer.request.TableComparisonRequest;
+import com.danhaywood.sqlcomparer.spi.TableMetadataReader;
+import com.danhaywood.sqlcomparer.spi.TableRowReader;
 import org.springframework.stereotype.Service;
 
 import java.sql.Connection;

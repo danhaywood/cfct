@@ -1,5 +1,14 @@
 package com.danhaywood.sqlcomparer.core;
 
+import com.danhaywood.sqlcomparer.comparison.MultiTableComparer;
+import com.danhaywood.sqlcomparer.comparison.TableComparer;
+import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
+import com.danhaywood.sqlcomparer.model.RowDifference;
+import com.danhaywood.sqlcomparer.model.RowKey;
+import com.danhaywood.sqlcomparer.model.TableComparisonResult;
+import com.danhaywood.sqlcomparer.model.TableRef;
+import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
+import com.danhaywood.sqlcomparer.request.TableComparisonRequest;
 import com.danhaywood.sqlcomparer.harness.DatabaseSide;
 import com.danhaywood.sqlcomparer.harness.SqlServerTestHarness;
 import com.danhaywood.sqlcomparer.report.TextMultiTableComparisonReportRenderer;

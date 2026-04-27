@@ -1,11 +1,11 @@
 package com.danhaywood.sqlcomparer.report;
 
-import com.danhaywood.sqlcomparer.core.ColumnDifference;
-import com.danhaywood.sqlcomparer.core.ColumnRef;
-import com.danhaywood.sqlcomparer.core.MultiTableComparisonResult;
-import com.danhaywood.sqlcomparer.core.RowDifference;
-import com.danhaywood.sqlcomparer.core.RowKey;
-import com.danhaywood.sqlcomparer.core.TableComparisonResult;
+import com.danhaywood.sqlcomparer.model.ColumnDifference;
+import com.danhaywood.sqlcomparer.model.ColumnRef;
+import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
+import com.danhaywood.sqlcomparer.model.RowDifference;
+import com.danhaywood.sqlcomparer.model.RowKey;
+import com.danhaywood.sqlcomparer.model.TableComparisonResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;

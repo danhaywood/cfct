@@ -1,4 +1,6 @@
-package com.danhaywood.sqlcomparer.core;
+package com.danhaywood.sqlcomparer.request;
+
+import com.danhaywood.sqlcomparer.model.TableRef;
 
 public record TableComparisonRequest(TableRef table, ComparisonOptions options) {
 

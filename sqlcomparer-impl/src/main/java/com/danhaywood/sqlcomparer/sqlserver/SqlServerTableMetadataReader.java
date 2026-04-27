@@ -1,14 +1,14 @@
 package com.danhaywood.sqlcomparer.sqlserver;
 
-import com.danhaywood.sqlcomparer.core.BusinessKey;
-import com.danhaywood.sqlcomparer.core.ColumnMetadata;
-import com.danhaywood.sqlcomparer.core.ColumnRef;
-import com.danhaywood.sqlcomparer.core.ComparisonOptions;
-import com.danhaywood.sqlcomparer.core.MetadataException;
-import com.danhaywood.sqlcomparer.core.TableComparisonRequest;
-import com.danhaywood.sqlcomparer.core.TableMetadata;
-import com.danhaywood.sqlcomparer.core.TableMetadataReader;
-import com.danhaywood.sqlcomparer.core.TableRef;
+import com.danhaywood.sqlcomparer.model.BusinessKey;
+import com.danhaywood.sqlcomparer.model.ColumnMetadata;
+import com.danhaywood.sqlcomparer.model.ColumnRef;
+import com.danhaywood.sqlcomparer.request.ComparisonOptions;
+import com.danhaywood.sqlcomparer.exception.MetadataException;
+import com.danhaywood.sqlcomparer.request.TableComparisonRequest;
+import com.danhaywood.sqlcomparer.model.TableMetadata;
+import com.danhaywood.sqlcomparer.spi.TableMetadataReader;
+import com.danhaywood.sqlcomparer.model.TableRef;
 import org.springframework.stereotype.Service;
 
 import java.sql.Connection;

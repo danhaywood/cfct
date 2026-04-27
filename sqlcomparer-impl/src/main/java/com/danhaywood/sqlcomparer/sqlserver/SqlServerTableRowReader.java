@@ -1,10 +1,10 @@
 package com.danhaywood.sqlcomparer.sqlserver;
 
-import com.danhaywood.sqlcomparer.core.ColumnRef;
-import com.danhaywood.sqlcomparer.core.ComparisonException;
-import com.danhaywood.sqlcomparer.core.RowKey;
-import com.danhaywood.sqlcomparer.core.TableMetadata;
-import com.danhaywood.sqlcomparer.core.TableRowReader;
+import com.danhaywood.sqlcomparer.model.ColumnRef;
+import com.danhaywood.sqlcomparer.exception.ComparisonException;
+import com.danhaywood.sqlcomparer.model.RowKey;
+import com.danhaywood.sqlcomparer.model.TableMetadata;
+import com.danhaywood.sqlcomparer.spi.TableRowReader;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;

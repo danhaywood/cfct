@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.core;
+package com.danhaywood.sqlcomparer.exception;
 
 public final class ComparisonException extends RuntimeException {
 

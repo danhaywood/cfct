@@ -1,5 +1,10 @@
-package com.danhaywood.sqlcomparer.core;
+package com.danhaywood.sqlcomparer.comparison;
 
+import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
+import com.danhaywood.sqlcomparer.model.TableComparisonResult;
+import com.danhaywood.sqlcomparer.model.TableRef;
+import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
+import com.danhaywood.sqlcomparer.request.TableComparisonRequest;
 import org.springframework.stereotype.Service;
 
 import java.sql.Connection;

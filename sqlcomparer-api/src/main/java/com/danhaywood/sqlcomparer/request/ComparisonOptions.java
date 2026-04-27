@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.core;
+package com.danhaywood.sqlcomparer.request;
 
 import java.util.Locale;
 import java.util.Set;

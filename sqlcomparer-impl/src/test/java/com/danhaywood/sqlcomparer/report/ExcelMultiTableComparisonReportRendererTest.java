@@ -1,13 +1,13 @@
 package com.danhaywood.sqlcomparer.report;
 
-import com.danhaywood.sqlcomparer.core.BusinessKey;
-import com.danhaywood.sqlcomparer.core.ColumnDifference;
-import com.danhaywood.sqlcomparer.core.ColumnRef;
-import com.danhaywood.sqlcomparer.core.MultiTableComparisonResult;
-import com.danhaywood.sqlcomparer.core.RowDifference;
-import com.danhaywood.sqlcomparer.core.RowKey;
-import com.danhaywood.sqlcomparer.core.TableComparisonResult;
-import com.danhaywood.sqlcomparer.core.TableRef;
+import com.danhaywood.sqlcomparer.model.BusinessKey;
+import com.danhaywood.sqlcomparer.model.ColumnDifference;
+import com.danhaywood.sqlcomparer.model.ColumnRef;
+import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
+import com.danhaywood.sqlcomparer.model.RowDifference;
+import com.danhaywood.sqlcomparer.model.RowKey;
+import com.danhaywood.sqlcomparer.model.TableComparisonResult;
+import com.danhaywood.sqlcomparer.model.TableRef;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;

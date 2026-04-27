@@ -1,7 +1,7 @@
 package com.danhaywood.sqlcomparer.config;
 
-import com.danhaywood.sqlcomparer.core.MultiTableComparer;
-import com.danhaywood.sqlcomparer.core.MultiTableComparisonResult;
+import com.danhaywood.sqlcomparer.comparison.MultiTableComparer;
+import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
 import com.danhaywood.sqlcomparer.report.ExcelMultiTableComparisonReportRenderer;
 import com.danhaywood.sqlcomparer.report.JsonMultiTableComparisonReportRenderer;
 import org.springframework.stereotype.Service;
