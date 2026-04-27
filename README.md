@@ -1,12 +1,19 @@
 # sqlcomparer
 
-This project provides the initial Spring Boot scaffold for SQL Server regression-comparison work.
-The current focus is a Testcontainers-backed harness that starts one SQL Server 2022 instance and provisions two logical databases inside it.
+This project provides a Maven multi-module scaffold for SQL Server regression-comparison work.
+The current focus is a reusable comparison API and implementation, a Spring Boot CLI application module, and a Testcontainers-backed integration-test harness that starts one SQL Server 2022 instance and provisions two logical databases inside it.
+
+## Project layout
+
+- `sqlcomparer-api`: public comparison contracts, result models, exceptions, and service interfaces.
+- `sqlcomparer-impl`: comparison services, SQL Server readers, request loading, and report renderers.
+- `sqlcomparer-cli`: Spring Boot application entry point and executable packaging.
+- `sqlcomparer-integration-tests`: SQL Server Testcontainers harness, fixtures, approval files, and integration tests.
 
 ## Running the build
 
-Run `mvn test` to compile the project and execute non-integration tests.
-Run `mvn verify` in a Docker-enabled environment to execute the SQL Server harness integration tests.
+Run `mvn test` from the repository root to compile the full reactor and execute non-integration tests.
+Run `mvn verify` from the repository root in a Docker-enabled environment to execute the SQL Server harness integration tests.
 
 ## Local and CI prerequisites
 
@@ -23,5 +30,5 @@ Use Approvals for stable textual or tabular outputs when characterization-style 
 ## Scope guardrail
 
 The harness is intentionally narrow.
-It owns container lifecycle, logical database creation, connectivity, and smoke-test initialization.
-It does not yet implement comparison logic, reporting, or a broader database support matrix.
+It owns container lifecycle, logical database creation, connectivity, and smoke-test initialization inside the integration-test module.
+It does not implement comparison logic, reporting, or a broader database support matrix.

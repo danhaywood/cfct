@@ -1,0 +1,3 @@
+/Users/danhaywood/repos/github/danhaywood/sqlcomparer/sqlcomparer-integration-tests/./src/test/java/com/danhaywood/sqlcomparer/core/CoreMultiTableComparisonIT.approvesMultiTableComparisonReport.approved.txt
+/Users/danhaywood/repos/github/danhaywood/sqlcomparer/sqlcomparer-integration-tests/./src/test/java/com/danhaywood/sqlcomparer/core/CoreSingleTableComparisonIT.approvesPurchaseOrderComparisonReport.approved.txt
+/Users/danhaywood/repos/github/danhaywood/sqlcomparer/sqlcomparer-integration-tests/./src/test/java/com/danhaywood/sqlcomparer/config/ConfiguredComparisonServiceIT.approvesConfiguredJsonComparisonOutput.approved.txt
