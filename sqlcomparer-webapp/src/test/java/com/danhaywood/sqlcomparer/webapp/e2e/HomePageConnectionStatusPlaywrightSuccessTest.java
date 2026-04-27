@@ -42,24 +42,47 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
     }
 
     @Test
-    void showsOkStatusOnHomePage() {
+    void showsOkStatusAndMainUiHappyPathOnHomePage() {
         try (Playwright playwright = Playwright.create();
              Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
              Page page = browser.newPage()) {
             page.navigate("http://localhost:" + serverPort + "/");
             page.waitForSelector("[data-testid='connection-status-state']");
+            page.waitForSelector("[data-testid='table-selection-grid']");
 
             final String statusText = page.locator("[data-testid='connection-status-state']").innerText();
             assertThat(statusText).contains("OK");
             assertThat(page.locator("[data-testid='connection-status-summary']").count()).isZero();
 
+            assertThat(page.locator("[data-testid='hamburger-menu']").count()).isEqualTo(1);
+            final String footerText = page.locator("[data-testid='connection-details-footer']").innerText();
+            assertThat(footerText).contains(PlaywrightSqlServerFixture.server(), LEFT_DB, RIGHT_DB);
+            assertThat(footerText).doesNotContain(PlaywrightSqlServerFixture.password());
+
             final String feedbackBefore = page.locator("[data-testid='selected-table-feedback']").innerText();
             assertThat(feedbackBefore).contains("Selected tables: 0");
+            assertThat(page.locator("[data-testid='compare-button']").isDisabled()).isTrue();
+
+            page.locator("[data-testid='table-filter-table'] input").fill(PlaywrightSqlServerFixture.ELIGIBLE_TABLE);
+            page.locator("[data-testid='apply-table-filter']").click();
+            page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PlaywrightEligible')");
+            final String filteredText = page.locator("[data-testid='table-selection-grid']").innerText();
+            assertThat(filteredText).contains("PlaywrightEligible");
+            assertThat(filteredText).doesNotContain("PlaywrightIneligible");
+
+            page.locator("[data-testid='table-filter-table'] input").fill("");
+            page.locator("[data-testid='apply-table-filter']").click();
+            page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PlaywrightIneligible')");
+            page.locator("vaadin-grid-sorter[aria-label='Sort by Table']").click();
+            page.waitForTimeout(250);
+            final String sortedGridText = page.locator("[data-testid='table-selection-grid']").innerText();
+            assertThat(sortedGridText.indexOf("PlaywrightEligible")).isLessThan(sortedGridText.indexOf("PlaywrightIneligible"));
 
             toggleCheckbox(page, "[data-testid='table-checkbox-dbo-playwrighteligible']");
             page.waitForFunction("() => document.querySelector('[data-testid=\"selected-table-feedback\"]').textContent.includes('Selected tables: 1')");
             final String feedbackAfter = page.locator("[data-testid='selected-table-feedback']").innerText();
             assertThat(feedbackAfter).contains("Selected tables: 1");
+            assertThat(page.locator("[data-testid='compare-button']").isEnabled()).isTrue();
 
             toggleCheckbox(page, "[data-testid='table-checkbox-dbo-playwrightineligible']");
             final String feedbackAfterIneligibleClick = page.locator("[data-testid='selected-table-feedback']").innerText();
@@ -72,4 +95,5 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
                 "(selector) => { const host = document.querySelector(selector); if (!host) return; host.checked = !host.checked; host.dispatchEvent(new CustomEvent('checked-changed', { detail: { value: host.checked }, bubbles: true, composed: true })); host.dispatchEvent(new Event('change', { bubbles: true, composed: true })); }",
                 selector);
     }
+
 }

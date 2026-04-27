@@ -22,6 +22,52 @@ class ManualTableSelectionStateTest {
         state.updateSelection(ineligible, true);
 
         assertThat(state.selectedTables()).containsExactly(eligible);
+        assertThat(state.selectedCount()).isEqualTo(1);
         assertThat(state.feedbackText()).isEqualTo("Selected tables: 1");
+        assertThat(state.isCompareEnabled()).isTrue();
+    }
+
+    @Test
+    void compareIsDisabledUntilAnEligibleTableIsSelected() {
+        final TableRef eligible = new TableRef("dbo", "Supplier");
+        final ManualTableSelectionState state = new ManualTableSelectionState(List.of(TableCatalogEntry.eligible(eligible)));
+
+        assertThat(state.isCompareEnabled()).isFalse();
+
+        state.updateSelection(eligible, true);
+        assertThat(state.isCompareEnabled()).isTrue();
+
+        state.updateSelection(eligible, false);
+        assertThat(state.isCompareEnabled()).isFalse();
+    }
+
+    @Test
+    void filtersEntriesBySchemaTableNameOrDisplayName() {
+        final ManualTableSelectionState state = new ManualTableSelectionState(List.of(
+                TableCatalogEntry.eligible(new TableRef("dbo", "Supplier")),
+                TableCatalogEntry.eligible(new TableRef("audit", "SupplierHistory")),
+                TableCatalogEntry.eligible(new TableRef("dbo", "PurchaseOrder"))));
+
+        assertThat(state.filteredEntries("supplier"))
+                .extracting(entry -> entry.table().displayName())
+                .containsExactly("dbo.Supplier", "audit.SupplierHistory");
+        assertThat(state.filteredEntries("audit"))
+                .extracting(entry -> entry.table().displayName())
+                .containsExactly("audit.SupplierHistory");
+    }
+
+    @Test
+    void sortsFilteredEntriesByDisplayName() {
+        final ManualTableSelectionState state = new ManualTableSelectionState(List.of(
+                TableCatalogEntry.eligible(new TableRef("dbo", "Supplier")),
+                TableCatalogEntry.eligible(new TableRef("dbo", "Address")),
+                TableCatalogEntry.eligible(new TableRef("dbo", "PurchaseOrder"))));
+
+        assertThat(state.entriesSortedByTableName("dbo", true))
+                .extracting(entry -> entry.table().displayName())
+                .containsExactly("dbo.Address", "dbo.PurchaseOrder", "dbo.Supplier");
+        assertThat(state.entriesSortedByTableName("dbo", false))
+                .extracting(entry -> entry.table().displayName())
+                .containsExactly("dbo.Supplier", "dbo.PurchaseOrder", "dbo.Address");
     }
 }

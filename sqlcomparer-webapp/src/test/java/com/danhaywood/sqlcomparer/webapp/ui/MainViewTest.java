@@ -1,6 +1,7 @@
 package com.danhaywood.sqlcomparer.webapp.ui;
 
 import com.danhaywood.sqlcomparer.model.TableRef;
+import com.danhaywood.sqlcomparer.webapp.config.WebappComparisonProperties;
 import com.danhaywood.sqlcomparer.webapp.selection.SqlServerTableCatalogService;
 import com.danhaywood.sqlcomparer.webapp.selection.TableCatalogEntry;
 import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationState;
@@ -8,11 +9,13 @@ import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationStatusHo
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasText;
-import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -25,14 +28,23 @@ import static org.mockito.Mockito.when;
 class MainViewTest {
 
     @Test
-    void rendersOkStatusWithoutFailureSummary() {
+    void rendersMainShellAndOkStatusWithoutFailureSummary() {
         final ConnectionValidationStatusHolder holder = new ConnectionValidationStatusHolder();
         holder.markOk("Connected to configured SQL Server and databases.");
 
-        final MainView view = new MainView(holder, catalogServiceWithDefaults());
+        final MainView view = new MainView(holder, catalogServiceWithDefaults(), propertiesWithDefaults());
         final List<Component> topLevel = view.getChildren().toList();
-        final Div panel = (Div) topLevel.get(1);
 
+        assertThat(topLevel.get(0).getElement().getAttribute("data-testid")).isEqualTo("main-shell-header");
+        final Button hamburger = topLevel.get(0).getChildren()
+                .filter(component -> "hamburger-menu".equals(component.getElement().getAttribute("data-testid")))
+                .map(component -> (Button) component)
+                .findFirst()
+                .orElseThrow();
+        assertThat(hamburger.getElement().getAttribute("aria-label")).isEqualTo("Open navigation menu");
+
+        final VerticalLayout content = (VerticalLayout) topLevel.get(1);
+        final Div panel = (Div) content.getChildren().toList().get(0);
         final Span status = panel.getChildren()
                 .filter(component -> "connection-status-state".equals(component.getElement().getAttribute("data-testid")))
                 .map(component -> (Span) component)
@@ -48,8 +60,9 @@ class MainViewTest {
         final ConnectionValidationStatusHolder holder = new ConnectionValidationStatusHolder();
         holder.markFailed("Configured database does not exist: missing_db");
 
-        final MainView view = new MainView(holder, catalogServiceWithDefaults());
-        final Div panel = (Div) view.getChildren().toList().get(1);
+        final MainView view = new MainView(holder, catalogServiceWithDefaults(), propertiesWithDefaults());
+        final VerticalLayout content = (VerticalLayout) view.getChildren().toList().get(1);
+        final Div panel = (Div) content.getChildren().toList().get(0);
 
         final List<String> texts = panel.getChildren()
                 .filter(component -> component instanceof HasText)
@@ -61,9 +74,28 @@ class MainViewTest {
     }
 
     @Test
-    void updatesSelectionFeedbackAndStageOneOutputWithoutAutoRun() {
-        final MainView view = new MainView(new ConnectionValidationStatusHolder(), catalogServiceWithDefaults());
-        final HorizontalLayout stages = (HorizontalLayout) view.getChildren().toList().get(2);
+    void rendersFooterConnectionDetailsWithoutPassword() {
+        final WebappComparisonProperties properties = propertiesWithDefaults();
+        properties.getConnection().setPassword("super-secret-password");
+
+        final MainView view = new MainView(new ConnectionValidationStatusHolder(), catalogServiceWithDefaults(), properties);
+        final Footer footer = (Footer) view.getChildren().toList().get(2);
+
+        final String footerText = footer.getChildren()
+                .filter(component -> component instanceof HasText)
+                .map(component -> ((HasText) component).getText())
+                .reduce("", (left, right) -> left + " " + right);
+
+        assertThat(footer.getElement().getAttribute("data-testid")).isEqualTo("connection-details-footer");
+        assertThat(footerText).contains("localhost:1433", "left_db", "right_db");
+        assertThat(footerText).doesNotContain("super-secret-password");
+    }
+
+    @Test
+    void rendersSelectionPanelWithGridAndDisabledCompareButton() {
+        final MainView view = new MainView(new ConnectionValidationStatusHolder(), catalogServiceWithDefaults(), propertiesWithDefaults());
+        final VerticalLayout content = (VerticalLayout) view.getChildren().toList().get(1);
+        final HorizontalLayout stages = (HorizontalLayout) content.getChildren().toList().get(1);
         final Div leftPanel = (Div) stages.getChildren().toList().get(0);
 
         final Span feedback = leftPanel.getChildren()
@@ -71,16 +103,15 @@ class MainViewTest {
                 .map(component -> (Span) component)
                 .findFirst()
                 .orElseThrow();
+        final Button compareButton = leftPanel.getChildren()
+                .filter(component -> "compare-button".equals(component.getElement().getAttribute("data-testid")))
+                .map(component -> (Button) component)
+                .findFirst()
+                .orElseThrow();
 
-        final VerticalLayoutRows rows = new VerticalLayoutRows(leftPanel);
-        final Checkbox eligibleCheckbox = rows.findCheckbox("table-checkbox-dbo-supplier");
-        final Checkbox ineligibleCheckbox = rows.findCheckbox("table-checkbox-dbo-purchaseorderwithoutbusinesskey");
-
-        assertThat(ineligibleCheckbox.isEnabled()).isFalse();
-        eligibleCheckbox.setValue(true);
-
-        assertThat(feedback.getText()).isEqualTo("Selected tables: 1");
-        assertThat(view.selectedTablesForStageTwo()).containsExactly(new TableRef("dbo", "Supplier"));
+        assertThat(feedback.getText()).isEqualTo("Selected tables: 0");
+        assertThat(compareButton.isEnabled()).isFalse();
+        assertThat(leftPanel.getChildren().anyMatch(component -> "table-selection-grid".equals(component.getElement().getAttribute("data-testid")))).isTrue();
 
         final Div rightPanel = (Div) stages.getChildren().toList().get(1);
         assertThat(rightPanel.getElement().getAttribute("data-testid")).isEqualTo("comparison-stage-placeholder");
@@ -94,18 +125,11 @@ class MainViewTest {
         return service;
     }
 
-    private record VerticalLayoutRows(Div leftPanel) {
-        Checkbox findCheckbox(final String testId) {
-            return leftPanel.getChildren()
-                    .filter(component -> "table-selection-grid".equals(component.getElement().getAttribute("data-testid")))
-                    .findFirst()
-                    .orElseThrow()
-                    .getChildren()
-                    .flatMap(Component::getChildren)
-                    .filter(component -> testId.equals(component.getElement().getAttribute("data-testid")))
-                    .map(component -> (Checkbox) component)
-                    .findFirst()
-                    .orElseThrow();
-        }
+    private WebappComparisonProperties propertiesWithDefaults() {
+        final WebappComparisonProperties properties = new WebappComparisonProperties();
+        properties.getConnection().setServer("localhost:1433");
+        properties.getConnection().setLeftDatabase("left_db");
+        properties.getConnection().setRightDatabase("right_db");
+        return properties;
     }
 }
