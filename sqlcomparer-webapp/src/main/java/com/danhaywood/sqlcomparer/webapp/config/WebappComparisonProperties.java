@@ -139,6 +139,7 @@ public class WebappComparisonProperties {
 
     public static class Validation {
         private boolean enabled = true;
+        private boolean failFast = true;
 
         public boolean isEnabled() {
             return enabled;
@@ -146,6 +147,14 @@ public class WebappComparisonProperties {
 
         public void setEnabled(final boolean enabled) {
             this.enabled = enabled;
+        }
+
+        public boolean isFailFast() {
+            return failFast;
+        }
+
+        public void setFailFast(final boolean failFast) {
+            this.failFast = failFast;
         }
     }
 }

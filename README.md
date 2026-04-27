@@ -56,10 +56,19 @@ mvn -pl sqlcomparer-webapp -am spring-boot:run
 ```
 
 By default, the webapp validates SQL Server connectivity and configured left/right database existence at startup.
+The home page shows a deterministic SQL connectivity status block with either `OK` or `FAILED`.
+If validation fails and fail-fast is enabled (default), startup aborts.
+
 If SQL Server is not available yet and you want UI-only startup, disable startup validation:
 
 ```bash
 mvn -pl sqlcomparer-webapp -am spring-boot:run -Dspring-boot.run.arguments=--sqlcomparer.webapp.comparison.validation.enabled=false
+```
+
+If you want the app to keep running and show `FAILED` status details on the home page (for troubleshooting or browser assertions), disable fail-fast:
+
+```bash
+mvn -pl sqlcomparer-webapp -am spring-boot:run -Dspring-boot.run.arguments="--sqlcomparer.webapp.comparison.validation.enabled=true --sqlcomparer.webapp.comparison.validation.fail-fast=false"
 ```
 
 Happy-path connectivity check with the demo fixture SQL Server:
@@ -125,8 +134,13 @@ Run webapp connectivity-validation tests (Docker required):
 scripts/test-webapp-connectivity-validation.sh
 ```
 
-This change intentionally does not add Playwright or browser E2E automation.
-Playwright is out of scope for the current infrastructure-focused stage.
+Run headless Playwright browser tests for home-page connectivity status (Docker required):
+
+```bash
+scripts/test-webapp-playwright-connectivity.sh
+```
+
+Playwright tests are headless and use Testcontainers-backed SQL Server settings to keep runs reproducible in local and CI environments.
 
 ## Fixture SQL Server
 

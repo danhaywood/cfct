@@ -11,19 +11,32 @@ public class ConnectivityValidationStartupRunner implements ApplicationRunner {
 
     private final SqlServerConnectivityValidationService validationService;
     private final WebappComparisonProperties properties;
+    private final ConnectionValidationStatusHolder statusHolder;
 
     public ConnectivityValidationStartupRunner(
             final SqlServerConnectivityValidationService validationService,
-            final WebappComparisonProperties properties) {
+            final WebappComparisonProperties properties,
+            final ConnectionValidationStatusHolder statusHolder) {
         this.validationService = validationService;
         this.properties = properties;
+        this.statusHolder = statusHolder;
     }
 
     @Override
     public void run(final ApplicationArguments args) {
         if (properties.getValidation() != null && !properties.getValidation().isEnabled()) {
+            statusHolder.markOk("Connectivity validation disabled by configuration.");
             return;
         }
-        validationService.validateConfiguredTargets();
+
+        try {
+            validationService.validateConfiguredTargets();
+            statusHolder.markOk("Connected to configured SQL Server and databases.");
+        } catch (SqlServerConnectivityValidationException ex) {
+            statusHolder.markFailed(ex.getMessage());
+            if (properties.getValidation() == null || properties.getValidation().isFailFast()) {
+                throw ex;
+            }
+        }
     }
 }

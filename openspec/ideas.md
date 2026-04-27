@@ -8,6 +8,7 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 ## Candidate ideas
 
+- exclude uuid columns for comparison
 - use lombok to remove getter/setter boilerplate
 - if there is no BK, then fall back to a _PK.
 - generalize the way to find a _BK, care only about the suffix.  So, PurchaseOrder__reference__BK would also be ok.

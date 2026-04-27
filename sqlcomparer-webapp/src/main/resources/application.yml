@@ -13,6 +13,7 @@ sqlcomparer:
         file:
       validation:
         enabled: true
+        fail-fast: true
     # Migration note: legacy keys removed
     # - sqlcomparer.webapp.comparison.table-selection.tables
     # - sqlcomparer.webapp.comparison.table-selection.tables-file
