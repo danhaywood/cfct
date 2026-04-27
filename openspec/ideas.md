@@ -8,6 +8,7 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 ## Candidate ideas
 
+- don't hardcode package names, eg '@SpringBootApplication(scanBasePackages = "com.danhaywood.sqlcomparer.cli")'
 - exclude uuid columns for comparison
 - use lombok to remove getter/setter boilerplate
 - if there is no BK, then fall back to a _PK.
