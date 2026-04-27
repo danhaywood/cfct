@@ -1,0 +1,3 @@
+dbo.Supplier
+dbo.Product
+dbo.PurchaseOrder
