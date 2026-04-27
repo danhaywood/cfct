@@ -47,3 +47,19 @@
 - [x] 7.2 Run the headless Playwright happy-path test for the updated main UI.
 - [x] 7.3 Run the broader webapp test suite or documented Maven verification command to catch regressions.
 - [x] 7.4 Run OpenSpec validation for `improve-main-ui` and fix any proposal, spec, or task issues.
+
+## 8. Requested UI Refinements
+
+- [x] 8.1 Remove the apply-filter button and keep filtering immediate from the table filter field.
+- [x] 8.2 Remove the eligibility column and keep ineligible rows non-selectable with tooltip text.
+- [x] 8.3 Move SQL connectivity status into the footer with connection details.
+- [x] 8.4 Convert the shell to Vaadin AppLayout and move table selection into the navigation area.
+- [x] 8.5 Add spacing around layout, footer, drawer, and comparison widgets.
+
+## 9. Follow-up Layout and Documentation Refinements
+
+- [x] 9.1 Remove the `Select tables` label and selected-table count from the navigation drawer.
+- [x] 9.2 Move the `Compare` button into the right-hand comparison area and align it to the right.
+- [x] 9.3 Reintroduce the footer/status bar so connection URL, database names, and connectivity status are visible outside the empty comparison body.
+- [x] 9.4 Extend the local fixture data with an ineligible demo table.
+- [x] 9.5 Capture app screenshots and reference them from the README.

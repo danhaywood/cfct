@@ -1,9 +1,10 @@
 ## ADDED Requirements
 
 ### Requirement: Webapp provides a main UI shell
-The webapp SHALL render the home page inside a main UI shell with a hamburger menu affordance.
+The webapp SHALL render the home page inside a Vaadin AppLayout shell with a hamburger menu affordance.
 The hamburger menu control SHALL have a deterministic accessible label suitable for browser-level tests.
-The shell SHALL preserve the existing home page content area for connectivity and table-selection functionality.
+The shell SHALL place table-selection functionality in the AppLayout navigation area.
+The shell SHALL preserve the existing main content area for comparison-stage functionality.
 
 #### Scenario: Hamburger menu is available
 - **WHEN** the home page is rendered
@@ -11,17 +12,18 @@ The shell SHALL preserve the existing home page content area for connectivity an
 
 #### Scenario: Main content remains visible
 - **WHEN** the main UI shell is rendered
-- **THEN** the connectivity status and table-selection region remain visible in the content area
+- **THEN** the comparison-stage region remains visible in the content area and the table-selection region remains visible in the navigation area
 
 ### Requirement: Webapp footer displays non-sensitive connection details
-The webapp SHALL display configured connection details in a footer on the main UI.
+The webapp SHALL display configured connection details and SQL connectivity status in a footer on the main UI.
 The footer SHALL include the configured server identity and the configured left and right database names.
+The footer SHALL include the SQL connectivity status and failure summary when applicable.
 The footer SHALL NOT display the configured password.
 The footer content SHALL be stable enough for deterministic unit or browser-level assertions.
 
 #### Scenario: Footer shows configured connection context
 - **WHEN** the home page is rendered with configured connection properties
-- **THEN** the footer shows the configured server identity and the left and right database names
+- **THEN** the footer shows the configured server identity, the left and right database names, and SQL connectivity status
 
 #### Scenario: Footer excludes password
 - **WHEN** the home page footer displays connection details

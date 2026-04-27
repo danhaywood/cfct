@@ -2,15 +2,17 @@
 
 ### Requirement: Webapp exposes a manual table catalog for selection
 The webapp SHALL discover and present a manual table catalog for comparison selection.
-The webapp SHALL present the catalog in a Vaadin Grid on the left-hand side of the home page.
-Each catalog row SHALL include table identity and whether it is currently eligible for selection.
+The webapp SHALL present the catalog in a Vaadin Grid in the AppLayout navigation area.
+Each catalog row SHALL include table identity.
+The Grid SHALL NOT include a dedicated eligibility column.
+The Grid SHALL make ineligible rows non-selectable and expose the eligibility reason as a tooltip.
 The Grid SHALL support sorting table rows by visible table-identity columns.
-The Grid SHALL support filtering table rows by visible table-identity values.
+The Grid SHALL support filtering table rows by visible table-identity values without requiring a separate apply-filter action.
 The manual selection state SHALL be available as input to the later comparison-execution stage.
 
 #### Scenario: Catalog lists candidate tables
 - **WHEN** the home page initializes table-selection data
-- **THEN** users see a Vaadin Grid of candidate tables with one row per table and per-row selection controls
+- **THEN** users see a Vaadin Grid in the navigation area with one row per table and per-row selection controls for eligible rows
 
 #### Scenario: User sorts candidate tables
 - **WHEN** a user sorts the table-selection Grid by a visible table-identity column
@@ -18,7 +20,11 @@ The manual selection state SHALL be available as input to the later comparison-e
 
 #### Scenario: User filters candidate tables
 - **WHEN** a user enters a table-identity filter in the table-selection Grid
-- **THEN** the visible candidate table rows are narrowed to rows matching the filter
+- **THEN** the visible candidate table rows are narrowed to rows matching the filter without pressing an apply-filter button
+
+#### Scenario: Ineligible row is non-selectable
+- **WHEN** the table-selection Grid includes an ineligible table
+- **THEN** the table row cannot be selected and exposes an eligibility reason tooltip
 
 #### Scenario: Selected tables become execution input
 - **WHEN** a user marks eligible tables as selected

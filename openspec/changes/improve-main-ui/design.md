@@ -8,9 +8,9 @@ Playwright coverage already validates connectivity status and manual selection b
 ## Goals / Non-Goals
 
 **Goals:**
-- Provide a main layout structure with a hamburger menu, content area, and footer.
-- Render configured connection details in the footer using deterministic labels and test selectors.
-- Replace the left-hand table-selection list with a Vaadin Grid that supports client-visible sorting and filtering.
+- Provide a Vaadin AppLayout structure with a hamburger menu, navigation area, content area, and footer.
+- Render configured connection details and SQL connectivity status in the footer using deterministic labels and test selectors.
+- Replace the left-hand table-selection list with a navigation-area Vaadin Grid that supports client-visible sorting and filtering.
 - Preserve eligibility, selection count, and disabled ineligible-table behavior.
 - Add a placeholder `Compare` button whose enabled state follows whether one or more eligible tables are selected.
 - Cover deterministic state transitions with unit tests where practical and Playwright for the happy browser path.
@@ -23,9 +23,9 @@ Playwright coverage already validates connectivity status and manual selection b
 
 ## Decisions
 
-- Use a Vaadin `AppLayout`-style shell or equivalent reusable layout component for the hamburger menu, main content, and footer.
+- Use a Vaadin `AppLayout` shell for the hamburger menu, navigation-area table selection, main content, and footer.
   Alternative considered: keep all markup inside the home view.
-  A reusable shell is preferable because navigation and footer concerns are layout-level concerns and future pages can reuse them.
+  AppLayout is preferable because navigation and footer concerns are layout-level concerns and future pages can reuse them.
 
 - Use Vaadin Grid for the left-hand table-selection surface.
   Alternative considered: enhance the existing checkbox list with custom filtering controls.
@@ -35,9 +35,9 @@ Playwright coverage already validates connectivity status and manual selection b
   Alternative considered: derive all state directly from selected Grid items.
   A presentation model is preferable because selected-count feedback, button enablement, unit tests, and future comparison execution all need a deterministic selected-table set.
 
-- Implement filtering with explicit filter fields above or inside Grid header rows.
-  Alternative considered: rely only on browser find or built-in visual sorting.
-  Explicit filter controls are preferable because Playwright can exercise them deterministically and users can narrow the table catalog without changing selection state unexpectedly.
+- Implement filtering with an explicit filter field and no apply-filter button.
+  Alternative considered: require a separate apply-filter action.
+  Eager filtering is preferable because users get immediate narrowing without an irrelevant extra control.
 
 - Render the `Compare` button as enabled only when the selected-table set is non-empty and attach no execution side effect beyond optional placeholder feedback.
   Alternative considered: wire the button into partial comparison orchestration now.
@@ -53,7 +53,7 @@ Playwright coverage already validates connectivity status and manual selection b
   Mitigation: assert against visible happy-path rows and use filters that narrow the result set before checking row content.
 
 - Footer connection details could expose sensitive values if credentials are included.
-  Mitigation: display server and database identities, but never display the configured password and mask or omit other sensitive fields.
+  Mitigation: display server, database identities, and SQL connectivity status, but never display the configured password and mask or omit other sensitive fields.
 
 - Vaadin component tests can be expensive if they require full UI bootstrapping.
   Mitigation: put enablement and filtering logic behind small presentation methods where possible and reserve browser tests for integrated behavior.

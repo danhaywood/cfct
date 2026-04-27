@@ -10,17 +10,15 @@ import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationStatusHo
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasText;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Footer;
-import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -28,49 +26,33 @@ import static org.mockito.Mockito.when;
 class MainViewTest {
 
     @Test
-    void rendersMainShellAndOkStatusWithoutFailureSummary() {
+    void rendersAppLayoutShellAndOkStatusInFooter() {
         final ConnectionValidationStatusHolder holder = new ConnectionValidationStatusHolder();
         holder.markOk("Connected to configured SQL Server and databases.");
 
         final MainView view = new MainView(holder, catalogServiceWithDefaults(), propertiesWithDefaults());
-        final List<Component> topLevel = view.getChildren().toList();
 
-        assertThat(topLevel.get(0).getElement().getAttribute("data-testid")).isEqualTo("main-shell-header");
-        final Button hamburger = topLevel.get(0).getChildren()
-                .filter(component -> "hamburger-menu".equals(component.getElement().getAttribute("data-testid")))
-                .map(component -> (Button) component)
-                .findFirst()
-                .orElseThrow();
-        assertThat(hamburger.getElement().getAttribute("aria-label")).isEqualTo("Open navigation menu");
+        assertThat(view.getElement().getAttribute("data-testid")).isEqualTo("main-app-layout");
+        assertThat(findByTestId(view, "hamburger-menu")).isPresent();
+        assertThat(findByTestId(view, "main-shell-header")).isPresent();
 
-        final VerticalLayout content = (VerticalLayout) topLevel.get(1);
-        final Div panel = (Div) content.getChildren().toList().get(0);
-        final Span status = panel.getChildren()
-                .filter(component -> "connection-status-state".equals(component.getElement().getAttribute("data-testid")))
-                .map(component -> (Span) component)
-                .findFirst()
-                .orElseThrow();
-
+        final Span status = (Span) findByTestId(view, "connection-status-state").orElseThrow();
         assertThat(status.getText()).contains(ConnectionValidationState.OK.name());
-        assertThat(panel.getChildren().anyMatch(component -> component instanceof Paragraph)).isFalse();
+        assertThat(findByTestId(view, "connection-status-summary")).isEmpty();
     }
 
     @Test
-    void rendersFailedStatusWithFailureSummary() {
+    void rendersFailedStatusWithFailureSummaryInFooter() {
         final ConnectionValidationStatusHolder holder = new ConnectionValidationStatusHolder();
         holder.markFailed("Configured database does not exist: missing_db");
 
         final MainView view = new MainView(holder, catalogServiceWithDefaults(), propertiesWithDefaults());
-        final VerticalLayout content = (VerticalLayout) view.getChildren().toList().get(1);
-        final Div panel = (Div) content.getChildren().toList().get(0);
 
-        final List<String> texts = panel.getChildren()
-                .filter(component -> component instanceof HasText)
-                .map(component -> ((HasText) component).getText())
-                .toList();
+        final Span status = (Span) findByTestId(view, "connection-status-state").orElseThrow();
+        final Span summary = (Span) findByTestId(view, "connection-status-summary").orElseThrow();
 
-        assertThat(texts).anyMatch(text -> text.contains(ConnectionValidationState.FAILED.name()));
-        assertThat(texts).anyMatch(text -> text.contains("missing_db"));
+        assertThat(status.getText()).contains(ConnectionValidationState.FAILED.name());
+        assertThat(summary.getText()).contains("missing_db");
     }
 
     @Test
@@ -79,42 +61,48 @@ class MainViewTest {
         properties.getConnection().setPassword("super-secret-password");
 
         final MainView view = new MainView(new ConnectionValidationStatusHolder(), catalogServiceWithDefaults(), properties);
-        final Footer footer = (Footer) view.getChildren().toList().get(2);
+        final Footer footer = (Footer) findByTestId(view, "connection-details-footer").orElseThrow();
 
-        final String footerText = footer.getChildren()
-                .filter(component -> component instanceof HasText)
-                .map(component -> ((HasText) component).getText())
-                .reduce("", (left, right) -> left + " " + right);
+        final String footerText = textOf(footer);
 
-        assertThat(footer.getElement().getAttribute("data-testid")).isEqualTo("connection-details-footer");
-        assertThat(footerText).contains("localhost:1433", "left_db", "right_db");
+        assertThat(footerText).contains("localhost:1433", "left_db", "right_db", "SQL connectivity status");
         assertThat(footerText).doesNotContain("super-secret-password");
     }
 
     @Test
-    void rendersSelectionPanelWithGridAndDisabledCompareButton() {
+    void rendersSelectionPanelInNavigationAreaAndCompareButtonInMainActionBar() {
         final MainView view = new MainView(new ConnectionValidationStatusHolder(), catalogServiceWithDefaults(), propertiesWithDefaults());
-        final VerticalLayout content = (VerticalLayout) view.getChildren().toList().get(1);
-        final HorizontalLayout stages = (HorizontalLayout) content.getChildren().toList().get(1);
-        final Div leftPanel = (Div) stages.getChildren().toList().get(0);
 
-        final Span feedback = leftPanel.getChildren()
-                .filter(component -> "selected-table-feedback".equals(component.getElement().getAttribute("data-testid")))
-                .map(component -> (Span) component)
-                .findFirst()
-                .orElseThrow();
-        final Button compareButton = leftPanel.getChildren()
-                .filter(component -> "compare-button".equals(component.getElement().getAttribute("data-testid")))
-                .map(component -> (Button) component)
-                .findFirst()
-                .orElseThrow();
+        final Button compareButton = (Button) findByTestId(view, "compare-button").orElseThrow();
 
-        assertThat(feedback.getText()).isEqualTo("Selected tables: 0");
         assertThat(compareButton.isEnabled()).isFalse();
-        assertThat(leftPanel.getChildren().anyMatch(component -> "table-selection-grid".equals(component.getElement().getAttribute("data-testid")))).isTrue();
+        assertThat(findByTestId(view, "table-selection-panel")).isPresent();
+        assertThat(findByTestId(view, "table-selection-grid")).isPresent();
+        assertThat(findByTestId(view, "selected-table-feedback")).isEmpty();
+        assertThat(findByTestId(view, "apply-table-filter")).isEmpty();
+        assertThat(findByTestId(view, "comparison-stage-placeholder")).isPresent();
+        assertThat(findByTestId(view, "comparison-action-bar")).isPresent();
+    }
 
-        final Div rightPanel = (Div) stages.getChildren().toList().get(1);
-        assertThat(rightPanel.getElement().getAttribute("data-testid")).isEqualTo("comparison-stage-placeholder");
+    private Optional<Component> findByTestId(final Component root, final String testId) {
+        if (testId.equals(root.getElement().getAttribute("data-testid"))) {
+            return Optional.of(root);
+        }
+        return root.getChildren()
+                .flatMap(child -> streamWithDescendants(child))
+                .filter(component -> testId.equals(component.getElement().getAttribute("data-testid")))
+                .findFirst();
+    }
+
+    private Stream<Component> streamWithDescendants(final Component component) {
+        return Stream.concat(Stream.of(component), component.getChildren().flatMap(this::streamWithDescendants));
+    }
+
+    private String textOf(final Component component) {
+        final String ownText = component instanceof HasText hasText ? hasText.getText() : "";
+        return Stream.concat(Stream.of(ownText), component.getChildren().map(this::textOf))
+                .filter(text -> text != null && !text.isBlank())
+                .reduce("", (left, right) -> left + " " + right);
     }
 
     private SqlServerTableCatalogService catalogServiceWithDefaults() {

@@ -56,22 +56,25 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
             assertThat(page.locator("[data-testid='hamburger-menu']").count()).isEqualTo(1);
             final String footerText = page.locator("[data-testid='connection-details-footer']").innerText();
-            assertThat(footerText).contains(PlaywrightSqlServerFixture.server(), LEFT_DB, RIGHT_DB);
+            assertThat(footerText).contains(PlaywrightSqlServerFixture.server(), LEFT_DB, RIGHT_DB, "SQL connectivity status");
             assertThat(footerText).doesNotContain(PlaywrightSqlServerFixture.password());
 
-            final String feedbackBefore = page.locator("[data-testid='selected-table-feedback']").innerText();
-            assertThat(feedbackBefore).contains("Selected tables: 0");
-            assertThat(page.locator("[data-testid='compare-button']").isDisabled()).isTrue();
+            assertThat(page.locator("[data-testid='selected-table-feedback']").count()).isZero();
+            assertThat(page.locator("[data-testid='comparison-action-bar'] [data-testid='compare-button']").isDisabled()).isTrue();
+            assertThat(page.locator("[data-testid='apply-table-filter']").count()).isZero();
 
-            page.locator("[data-testid='table-filter-table'] input").fill(PlaywrightSqlServerFixture.ELIGIBLE_TABLE);
-            page.locator("[data-testid='apply-table-filter']").click();
-            page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PlaywrightEligible')");
+            final String initialGridText = page.locator("[data-testid='table-selection-grid']").innerText();
+            assertThat(initialGridText).doesNotContain("Eligibility");
+            assertThat(page.locator("[data-testid='table-checkbox-dbo-playwrightineligible']").getAttribute("disabled")).isNotNull();
+            assertThat(page.locator("[data-testid='table-checkbox-dbo-playwrightineligible']").getAttribute("title")).isNotBlank();
+
+            setFilter(page, PlaywrightSqlServerFixture.ELIGIBLE_TABLE);
+            page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PlaywrightEligible') && !document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PlaywrightIneligible')");
             final String filteredText = page.locator("[data-testid='table-selection-grid']").innerText();
             assertThat(filteredText).contains("PlaywrightEligible");
             assertThat(filteredText).doesNotContain("PlaywrightIneligible");
 
-            page.locator("[data-testid='table-filter-table'] input").fill("");
-            page.locator("[data-testid='apply-table-filter']").click();
+            setFilter(page, "");
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PlaywrightIneligible')");
             page.locator("vaadin-grid-sorter[aria-label='Sort by Table']").click();
             page.waitForTimeout(250);
@@ -79,14 +82,11 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             assertThat(sortedGridText.indexOf("PlaywrightEligible")).isLessThan(sortedGridText.indexOf("PlaywrightIneligible"));
 
             toggleCheckbox(page, "[data-testid='table-checkbox-dbo-playwrighteligible']");
-            page.waitForFunction("() => document.querySelector('[data-testid=\"selected-table-feedback\"]').textContent.includes('Selected tables: 1')");
-            final String feedbackAfter = page.locator("[data-testid='selected-table-feedback']").innerText();
-            assertThat(feedbackAfter).contains("Selected tables: 1");
-            assertThat(page.locator("[data-testid='compare-button']").isEnabled()).isTrue();
+            page.waitForFunction("() => !document.querySelector('[data-testid=\"compare-button\"]').disabled");
+            assertThat(page.locator("[data-testid='comparison-action-bar'] [data-testid='compare-button']").isEnabled()).isTrue();
 
             toggleCheckbox(page, "[data-testid='table-checkbox-dbo-playwrightineligible']");
-            final String feedbackAfterIneligibleClick = page.locator("[data-testid='selected-table-feedback']").innerText();
-            assertThat(feedbackAfterIneligibleClick).contains("Selected tables: 1");
+            assertThat(page.locator("[data-testid='comparison-action-bar'] [data-testid='compare-button']").isEnabled()).isTrue();
         }
     }
 
@@ -96,4 +96,8 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
                 selector);
     }
 
+    private void setFilter(final Page page, final String value) {
+        page.locator("[data-testid='table-filter-table'] input").fill(value);
+        page.keyboard().press("Tab");
+    }
 }
