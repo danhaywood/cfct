@@ -85,6 +85,32 @@ class CliArgumentsParserTest {
     }
 
     @Test
+    void supportsShortFlagsForLongOptions(@TempDir final Path tempDir) throws IOException {
+        final Path envFile = writeEnvFile(tempDir, """
+                SQLCOMPARER_SERVER=server-from-env
+                SQLCOMPARER_USERNAME=user-from-env
+                SQLCOMPARER_PASSWORD=password-from-env
+                SQLCOMPARER_LEFT_DATABASE=left_from_env
+                SQLCOMPARER_RIGHT_DATABASE=right_from_env
+                """);
+        final Path tablesFile = tempDir.resolve("tables.txt");
+        java.nio.file.Files.writeString(tablesFile, "dbo.Supplier\ndbo.PurchaseOrder\n");
+
+        final CliArguments arguments = parser.parse(new String[]{
+                "-e", envFile.toString(),
+                "-F", tablesFile.toString(),
+                "-f", "json",
+                "-o", "comparison.json"
+        });
+
+        assertThat(arguments.server()).isEqualTo("server-from-env");
+        assertThat(arguments.outputFormat()).isEqualTo(CliOutputFormat.JSON);
+        assertThat(arguments.outputFile()).hasToString("comparison.json");
+        assertThat(arguments.tables()).extracting(table -> table.displayName())
+                .containsExactly("dbo.Supplier", "dbo.PurchaseOrder");
+    }
+
+    @Test
     void parsesSupportedNonExcelOutputFormatsWithoutOutputFile() {
         for (CliOutputFormat outputFormat : List.of(CliOutputFormat.TEXT, CliOutputFormat.JSON)) {
             final CliArguments arguments = parser.parse(new String[]{
@@ -139,7 +165,8 @@ class CliArgumentsParserTest {
                 "-t", "dbo.Supplier"
         }))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Unknown argument: --unknown");
+                .hasMessageContaining("Unknown option")
+                .hasMessageContaining("--unknown");
     }
 
     @Test
@@ -153,7 +180,7 @@ class CliArgumentsParserTest {
                 "--tables-file"
         }))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Missing value for argument: --tables-file");
+                .hasMessageContaining("--tables-file");
     }
 
     @Test

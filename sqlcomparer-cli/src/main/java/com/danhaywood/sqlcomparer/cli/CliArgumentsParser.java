@@ -12,7 +12,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 @Component
 public final class CliArgumentsParser {
@@ -22,11 +25,6 @@ public final class CliArgumentsParser {
     private static final String PASSWORD = "-P";
     private static final String LEFT_DATABASE = "-l";
     private static final String RIGHT_DATABASE = "-r";
-    private static final String TABLES = "-t";
-    private static final String TABLES_FILE = "--tables-file";
-    private static final String ENV_FILE = "--env-file";
-    private static final String OUTPUT_FORMAT = "--output-format";
-    private static final String OUTPUT_FILE = "-o";
 
     private static final String ENV_SERVER = "SQLCOMPARER_SERVER";
     private static final String ENV_USER = "SQLCOMPARER_USERNAME";
@@ -35,16 +33,15 @@ public final class CliArgumentsParser {
     private static final String ENV_RIGHT_DATABASE = "SQLCOMPARER_RIGHT_DATABASE";
 
     private static final List<String> CONNECTION_FLAGS = List.of(SERVER, USER, PASSWORD, LEFT_DATABASE, RIGHT_DATABASE);
-    private static final Set<String> ACCEPTED_FLAGS = Set.of(SERVER, USER, PASSWORD, LEFT_DATABASE, RIGHT_DATABASE, TABLES, TABLES_FILE, ENV_FILE, OUTPUT_FORMAT, OUTPUT_FILE);
 
     public CliArguments parse(final String[] args) {
-        final Map<String, String> valuesByFlag = parseFlagValues(args == null ? new String[0] : args);
-        final Map<String, String> valuesByEnvKey = loadEnvValues(valuesByFlag.get(ENV_FILE));
-        final Map<String, String> resolvedValues = resolveConnectionValues(valuesByFlag, valuesByEnvKey);
+        final CliParseOptions options = parseOptions(args == null ? new String[0] : args);
+        final Map<String, String> valuesByEnvKey = loadEnvValues(options.envFile);
+        final Map<String, String> resolvedValues = resolveConnectionValues(options, valuesByEnvKey);
         validateRequiredConnections(resolvedValues);
 
-        final CliOutputFormat outputFormat = CliOutputFormat.parse(valuesByFlag.get(OUTPUT_FORMAT));
-        final Path outputFile = parseOutputFile(valuesByFlag.get(OUTPUT_FILE));
+        final CliOutputFormat outputFormat = CliOutputFormat.parse(options.outputFormat);
+        final Path outputFile = parseOutputFile(options.outputFile);
         validateOutputDestination(outputFormat, outputFile);
 
         return new CliArguments(
@@ -53,24 +50,19 @@ public final class CliArgumentsParser {
                 resolvedValues.get(PASSWORD),
                 resolvedValues.get(LEFT_DATABASE).trim(),
                 resolvedValues.get(RIGHT_DATABASE).trim(),
-                parseSelectedTables(valuesByFlag),
+                parseSelectedTables(options),
                 outputFormat,
                 outputFile);
     }
 
-    private Map<String, String> parseFlagValues(final String[] args) {
-        final Map<String, String> valuesByFlag = new HashMap<>();
-        for (int i = 0; i < args.length; i++) {
-            final String token = args[i];
-            if (!ACCEPTED_FLAGS.contains(token)) {
-                throw new IllegalArgumentException("Unknown argument: " + token);
-            }
-            if (i + 1 >= args.length) {
-                throw new IllegalArgumentException("Missing value for argument: " + token);
-            }
-            valuesByFlag.put(token, args[++i]);
+    private CliParseOptions parseOptions(final String[] args) {
+        final CliParseOptions options = new CliParseOptions();
+        try {
+            new CommandLine(options).parseArgs(args);
+            return options;
+        } catch (CommandLine.ParameterException ex) {
+            throw new IllegalArgumentException(ex.getMessage(), ex);
         }
-        return valuesByFlag;
     }
 
     private Map<String, String> loadEnvValues(final String explicitEnvFile) {
@@ -111,23 +103,22 @@ public final class CliArgumentsParser {
         return valuesByEnvKey;
     }
 
-    private Map<String, String> resolveConnectionValues(final Map<String, String> valuesByFlag, final Map<String, String> valuesByEnvKey) {
+    private Map<String, String> resolveConnectionValues(final CliParseOptions options, final Map<String, String> valuesByEnvKey) {
         final Map<String, String> resolvedValues = new HashMap<>();
-        putResolvedValue(resolvedValues, valuesByFlag, valuesByEnvKey, SERVER, ENV_SERVER);
-        putResolvedValue(resolvedValues, valuesByFlag, valuesByEnvKey, USER, ENV_USER);
-        putResolvedValue(resolvedValues, valuesByFlag, valuesByEnvKey, PASSWORD, ENV_PASSWORD);
-        putResolvedValue(resolvedValues, valuesByFlag, valuesByEnvKey, LEFT_DATABASE, ENV_LEFT_DATABASE);
-        putResolvedValue(resolvedValues, valuesByFlag, valuesByEnvKey, RIGHT_DATABASE, ENV_RIGHT_DATABASE);
+        putResolvedValue(resolvedValues, options.server, valuesByEnvKey, SERVER, ENV_SERVER);
+        putResolvedValue(resolvedValues, options.username, valuesByEnvKey, USER, ENV_USER);
+        putResolvedValue(resolvedValues, options.password, valuesByEnvKey, PASSWORD, ENV_PASSWORD);
+        putResolvedValue(resolvedValues, options.leftDatabase, valuesByEnvKey, LEFT_DATABASE, ENV_LEFT_DATABASE);
+        putResolvedValue(resolvedValues, options.rightDatabase, valuesByEnvKey, RIGHT_DATABASE, ENV_RIGHT_DATABASE);
         return resolvedValues;
     }
 
     private void putResolvedValue(
             final Map<String, String> resolvedValues,
-            final Map<String, String> valuesByFlag,
+            final String commandLineValue,
             final Map<String, String> valuesByEnvKey,
             final String flag,
             final String envKey) {
-        final String commandLineValue = valuesByFlag.get(flag);
         if (commandLineValue != null && !commandLineValue.isBlank()) {
             resolvedValues.put(flag, commandLineValue);
             return;
@@ -164,19 +155,17 @@ public final class CliArgumentsParser {
         }
     }
 
-    private List<TableRef> parseSelectedTables(final Map<String, String> valuesByFlag) {
-        final String tableList = valuesByFlag.get(TABLES);
-        final String tableFile = valuesByFlag.get(TABLES_FILE);
-        if (tableList != null && tableFile != null) {
+    private List<TableRef> parseSelectedTables(final CliParseOptions options) {
+        if (options.tables != null && options.tablesFile != null) {
             throw new IllegalArgumentException("Only one table source is allowed: use either -t or --tables-file");
         }
-        if (tableList == null && tableFile == null) {
+        if (options.tables == null && options.tablesFile == null) {
             throw new IllegalArgumentException("Missing required arguments: -t or --tables-file");
         }
-        if (tableFile != null) {
-            return parseTablesFile(tableFile);
+        if (options.tablesFile != null) {
+            return parseTablesFile(options.tablesFile);
         }
-        return parseTables(tableList);
+        return parseTables(options.tables);
     }
 
     private List<TableRef> parseTables(final String tableList) {
@@ -241,5 +230,39 @@ public final class CliArgumentsParser {
             throw new IllegalArgumentException("Invalid table reference '%s'. Expected schema.table".formatted(token));
         }
         return new TableRef(schemaName, tableName);
+    }
+
+    @Command(name = "sqlcomparer", sortOptions = false)
+    private static final class CliParseOptions {
+
+        @Option(names = {"-S", "--server"})
+        private String server;
+
+        @Option(names = {"-U", "--username"})
+        private String username;
+
+        @Option(names = {"-P", "--password"})
+        private String password;
+
+        @Option(names = {"-l", "--left-database"})
+        private String leftDatabase;
+
+        @Option(names = {"-r", "--right-database"})
+        private String rightDatabase;
+
+        @Option(names = {"-t", "--tables"})
+        private String tables;
+
+        @Option(names = {"-F", "--tables-file"})
+        private String tablesFile;
+
+        @Option(names = {"-e", "--env-file"})
+        private String envFile;
+
+        @Option(names = {"-f", "--output-format"})
+        private String outputFormat;
+
+        @Option(names = {"-o", "--output-file"})
+        private String outputFile;
     }
 }

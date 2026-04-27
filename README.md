@@ -114,6 +114,12 @@ This writes JSON output instead of the default text output:
 ./comparedb.sh --env-file demo/.env --tables-file demo/tables.txt --output-format json
 ```
 
+Equivalent short-flag example (passed through by the wrapper):
+
+```bash
+./comparedb.sh --env-file demo/.env --tables-file demo/tables.txt -f json
+```
+
 This writes JSON output to a file:
 
 ```bash
@@ -176,25 +182,25 @@ java -jar sqlcomparer-cli/target/sqlcomparer-cli-0.0.1-SNAPSHOT.jar \
 
 The CLI supports these connection options:
 
-- `-S`: SQL Server host, optionally including a port such as `localhost:14333`.
-- `-U`: SQL Server username.
-- `-P`: SQL Server password.
-- `-l`: left database name.
-- `-r`: right database name.
+- `-S` / `--server`: SQL Server host, optionally including a port such as `localhost:14333`.
+- `-U` / `--username`: SQL Server username.
+- `-P` / `--password`: SQL Server password.
+- `-l` / `--left-database`: left database name.
+- `-r` / `--right-database`: right database name.
 
 The CLI supports these table-selection options:
 
-- `-t`: comma-separated `schema.table` list.
-- `--tables-file`: path to a flat file with one `schema.table` reference per line.
+- `-t` / `--tables`: comma-separated `schema.table` list.
+- `-F` / `--tables-file`: path to a flat file with one `schema.table` reference per line.
 
-The CLI supports this dotenv option:
+The CLI supports these dotenv options:
 
-- `--env-file`: path to a file containing `SQLCOMPARER_SERVER`, `SQLCOMPARER_USERNAME`, `SQLCOMPARER_PASSWORD`, `SQLCOMPARER_LEFT_DATABASE`, and `SQLCOMPARER_RIGHT_DATABASE`.
+- `-e` / `--env-file`: path to a file containing `SQLCOMPARER_SERVER`, `SQLCOMPARER_USERNAME`, `SQLCOMPARER_PASSWORD`, `SQLCOMPARER_LEFT_DATABASE`, and `SQLCOMPARER_RIGHT_DATABASE`.
 
 The CLI supports these output options:
 
-- `--output-format`: one of `text`, `json`, or `excel`.
-- `-o`: optional output file path for successful output.
+- `-f` / `--output-format`: one of `text`, `json`, or `excel`.
+- `-o` / `--output-file`: optional output file path for successful output.
 
 `text` is the default when `--output-format` is omitted.
 Text and JSON are written to stdout as UTF-8 when `-o` is omitted.
