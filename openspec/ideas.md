@@ -8,6 +8,9 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 ## Candidate ideas
 
+- generalize the way to find a _BK, care only about the suffix.  So, PurchaseOrder__reference__BK would also be ok.
+- allow the cli to pick up credentials from a .env file
+- have the cli support Azure EntraID credentials
 - error handling if invalid table specified: for Excel format, for Json format
 - Specify multiple tables by way of a file
 - Configure ignored columns beyond the current default `id` and `version`.
