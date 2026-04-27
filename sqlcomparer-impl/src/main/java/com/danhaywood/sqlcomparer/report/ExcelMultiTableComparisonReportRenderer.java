@@ -6,6 +6,7 @@ import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
 import com.danhaywood.sqlcomparer.model.RowDifference;
 import com.danhaywood.sqlcomparer.model.RowKey;
 import com.danhaywood.sqlcomparer.model.TableComparisonResult;
+
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -16,6 +17,7 @@ import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.WorkbookUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
@@ -99,13 +101,23 @@ public final class ExcelMultiTableComparisonReportRenderer {
 
         final List<ColumnRef> keyColumns = result.businessKey().columns();
         final List<ColumnRef> displayedColumns = java.util.stream.Stream.concat(keyColumns.stream(), result.comparedColumns().stream()).toList();
-        final int headerRowIndex = rowIndex++;
-        final Row headerRow = sheet.createRow(headerRowIndex);
-        writeCell(headerRow, 0, "Result", styles.header());
+        final int topHeaderRowIndex = rowIndex++;
+        final int bottomHeaderRowIndex = rowIndex++;
+        final Row topHeaderRow = sheet.createRow(topHeaderRowIndex);
+        final Row bottomHeaderRow = sheet.createRow(bottomHeaderRowIndex);
+        writeCell(topHeaderRow, 0, "Result", styles.header());
+        writeCell(bottomHeaderRow, 0, "", styles.header());
+        sheet.addMergedRegion(new CellRangeAddress(topHeaderRowIndex, bottomHeaderRowIndex, 0, 0));
+
         int columnIndex = 1;
         for (ColumnRef displayedColumn : displayedColumns) {
-            writeCell(headerRow, columnIndex++, displayedColumn.name() + " (left)", styles.header());
-            writeCell(headerRow, columnIndex++, displayedColumn.name() + " (right)", styles.header());
+            final int leftColumnIndex = columnIndex++;
+            final int rightColumnIndex = columnIndex++;
+            writeCell(topHeaderRow, leftColumnIndex, displayedColumn.name(), styles.header());
+            writeCell(topHeaderRow, rightColumnIndex, "", styles.header());
+            sheet.addMergedRegion(new CellRangeAddress(topHeaderRowIndex, topHeaderRowIndex, leftColumnIndex, rightColumnIndex));
+            writeCell(bottomHeaderRow, leftColumnIndex, "<<<", styles.header());
+            writeCell(bottomHeaderRow, rightColumnIndex, ">>>", styles.header());
         }
 
         for (RowKey rowKey : result.rowsOnlyInLeft()) {
@@ -124,7 +136,7 @@ public final class ExcelMultiTableComparisonReportRenderer {
             writeRow(sheet, rowIndex, styles.present(), "No differences found");
         }
 
-        sheet.createFreezePane(1 + (keyColumns.size() * 2), headerRowIndex + 1);
+        sheet.createFreezePane(1 + (keyColumns.size() * 2), bottomHeaderRowIndex + 1);
         autosizeColumns(sheet, 1 + (displayedColumns.size() * 2));
     }
 

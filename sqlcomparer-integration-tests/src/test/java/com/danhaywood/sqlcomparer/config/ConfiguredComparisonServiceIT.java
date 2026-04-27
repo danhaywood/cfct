@@ -104,6 +104,14 @@ class ConfiguredComparisonServiceIT {
             assertThat(workbook.getSheet("Table of Contents").getRow(1).getCell(0).getHyperlink().getAddress()).isEqualTo("'dbo.Supplier'!A1");
             assertThat(workbook.getSheet("Table of Contents").getRow(2).getCell(0).getStringCellValue()).isEqualTo("dbo.Product");
             assertThat(workbook.getSheet("Table of Contents").getRow(2).getCell(0).getHyperlink().getAddress()).isEqualTo("'dbo.Product'!A1");
+
+            final var supplierSheet = workbook.getSheet("dbo.Supplier");
+            assertThat(supplierSheet.getRow(6).getCell(0).getStringCellValue()).isEqualTo("Result");
+            assertThat(supplierSheet.getRow(6).getCell(1).getStringCellValue()).isEqualTo("reference");
+            assertThat(supplierSheet.getRow(7).getCell(1).getStringCellValue()).isEqualTo("<<<");
+            assertThat(supplierSheet.getRow(7).getCell(2).getStringCellValue()).isEqualTo(">>>");
+            assertThat(supplierSheet.getMergedRegions()).anyMatch(region -> region.formatAsString().equals("A7:A8"));
+            assertThat(supplierSheet.getMergedRegions()).anyMatch(region -> region.formatAsString().equals("B7:C7"));
         }
     }
 
