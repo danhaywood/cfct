@@ -9,6 +9,7 @@ import com.danhaywood.sqlcomparer.report.JsonMultiTableComparisonReportRenderer;
 import com.danhaywood.sqlcomparer.sqlserver.SqlServerTableMetadataReader;
 import com.danhaywood.sqlcomparer.sqlserver.SqlServerTableRowReader;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.approvaltests.Approvals;
@@ -63,6 +64,12 @@ class ConfiguredComparisonServiceIT {
 
         assertThat(json).contains("\"name\" : \"Supplier\"");
         assertThat(json).contains("\"name\" : \"Product\"");
+        assertThat(json).contains("\"summary\" : {");
+        assertThat(json).contains("\"rowsOnlyInLeftCount\" : 1");
+        assertThat(json).contains("\"leftValues\" : {");
+        assertThat(json).contains("\"rightValues\" : {");
+        assertThat(json).contains("\"reference\" : \"SUP-003\"");
+        assertThat(json).contains("\"sku\" : \"SKU-004\"");
         assertThat(json).doesNotContain("PurchaseOrder_BK");
         Approvals.verify(json);
     }
@@ -97,6 +104,37 @@ class ConfiguredComparisonServiceIT {
             assertThat(workbook.getSheet("Table of Contents").getRow(2).getCell(0).getStringCellValue()).isEqualTo("dbo.Product");
             assertThat(workbook.getSheet("Table of Contents").getRow(2).getCell(0).getHyperlink().getAddress()).isEqualTo("'dbo.Product'!A1");
         }
+    }
+
+    @Test
+    void writesConfiguredComparisonApprovalArtifactsForInspection() throws Exception {
+        initializeFixture("purchase-order");
+        initializeFixture("supplier");
+        initializeFixture("product");
+
+        final String json;
+        final ConfiguredComparisonOutput excel;
+        try (Connection left = harness.openConnection(DatabaseSide.LEFT);
+             Connection right = harness.openConnection(DatabaseSide.RIGHT);
+             var jsonInputStream = ConfiguredComparisonServiceIT.class.getResourceAsStream("/sql/comparisons/supplier-product.json");
+             var excelInputStream = ConfiguredComparisonServiceIT.class.getResourceAsStream("/sql/comparisons/supplier-product-excel.json")) {
+            json = service.compare(left, right, jsonInputStream);
+            excel = service.compareOutput(left, right, excelInputStream);
+        }
+
+        final Path outputDirectory = Path.of("target", "comparison-output-approval-files");
+        final Path jsonOutputPath = outputDirectory.resolve("supplier-product-comparison.json");
+        final Path excelOutputPath = outputDirectory.resolve("supplier-product-comparison.xlsx");
+        Files.createDirectories(outputDirectory);
+        Files.writeString(jsonOutputPath, json);
+        Files.write(excelOutputPath, excel.bytes());
+
+        assertThat(jsonOutputPath).exists();
+        assertThat(excelOutputPath).exists();
+        assertThat(json).contains("\"summary\" : {");
+        assertThat(json).contains("\"leftValues\" : {");
+        assertThat(json).contains("\"rightValues\" : {");
+        assertThat(excel.outputType()).isEqualTo(ComparisonOutputType.EXCEL);
     }
 
     private static void initializeFixture(final String fixtureName) {

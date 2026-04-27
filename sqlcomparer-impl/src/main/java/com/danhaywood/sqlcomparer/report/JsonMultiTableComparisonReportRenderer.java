@@ -9,6 +9,7 @@ import com.danhaywood.sqlcomparer.model.TableComparisonResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
@@ -42,12 +43,37 @@ public final class JsonMultiTableComparisonReportRenderer {
     private Map<String, Object> toTableModel(final TableComparisonResult result) {
         final Map<String, Object> model = new LinkedHashMap<>();
         model.put("table", tableModel(result));
+        model.put("summary", summaryModel(result));
         model.put("businessKey", businessKeyModel(result));
         model.put("comparedColumns", columnNames(result.comparedColumns()));
         model.put("ignoredColumns", columnNames(result.ignoredColumns()));
-        model.put("rowsOnlyInLeft", rowKeys(result.rowsOnlyInLeft()));
-        model.put("rowsOnlyInRight", rowKeys(result.rowsOnlyInRight()));
-        model.put("differingRows", result.differingRows().stream().map(this::toRowDifferenceModel).toList());
+        model.put("rowsOnlyInLeft", result.rowsOnlyInLeft().stream().map(rowKey -> toMissingRowModel(
+                rowKey,
+                result.rowsOnlyInLeftValues().get(rowKey),
+                null,
+                result.businessKey().columns(),
+                result.comparedColumns())).toList());
+        model.put("rowsOnlyInRight", result.rowsOnlyInRight().stream().map(rowKey -> toMissingRowModel(
+                rowKey,
+                null,
+                result.rowsOnlyInRightValues().get(rowKey),
+                result.businessKey().columns(),
+                result.comparedColumns())).toList());
+        model.put("differingRows", result.differingRows().stream().map(rowDifference -> toRowDifferenceModel(
+                rowDifference,
+                result.businessKey().columns(),
+                result.comparedColumns())).toList());
+        return model;
+    }
+
+    private Map<String, Object> summaryModel(final TableComparisonResult result) {
+        final Map<String, Object> model = new LinkedHashMap<>();
+        model.put("comparedColumnCount", result.comparedColumns().size());
+        model.put("ignoredColumnCount", result.ignoredColumns().size());
+        model.put("rowsOnlyInLeftCount", result.rowsOnlyInLeft().size());
+        model.put("rowsOnlyInRightCount", result.rowsOnlyInRight().size());
+        model.put("differingRowCount", result.differingRows().size());
+        model.put("hasDifferences", result.hasDifferences());
         return model;
     }
 
@@ -65,10 +91,46 @@ public final class JsonMultiTableComparisonReportRenderer {
         return model;
     }
 
-    private Map<String, Object> toRowDifferenceModel(final RowDifference rowDifference) {
+    private Map<String, Object> toMissingRowModel(
+            final RowKey rowKey,
+            final Map<ColumnRef, String> leftValues,
+            final Map<ColumnRef, String> rightValues,
+            final List<ColumnRef> keyColumns,
+            final List<ColumnRef> comparedColumns) {
+        final Map<String, Object> model = new LinkedHashMap<>();
+        model.put("key", rowKey.values());
+        model.put("leftValues", valuesModel(rowKey, leftValues, keyColumns, comparedColumns));
+        model.put("rightValues", valuesModel(rowKey, rightValues, keyColumns, comparedColumns));
+        return model;
+    }
+
+    private Map<String, Object> toRowDifferenceModel(
+            final RowDifference rowDifference,
+            final List<ColumnRef> keyColumns,
+            final List<ColumnRef> comparedColumns) {
         final Map<String, Object> model = new LinkedHashMap<>();
         model.put("key", rowDifference.key().values());
+        model.put("leftValues", valuesModel(rowDifference.key(), rowDifference.leftValues(), keyColumns, comparedColumns));
+        model.put("rightValues", valuesModel(rowDifference.key(), rowDifference.rightValues(), keyColumns, comparedColumns));
         model.put("differences", rowDifference.columnDifferences().stream().map(this::toColumnDifferenceModel).toList());
+        return model;
+    }
+
+    private Map<String, String> valuesModel(
+            final RowKey rowKey,
+            final Map<ColumnRef, String> values,
+            final List<ColumnRef> keyColumns,
+            final List<ColumnRef> comparedColumns) {
+        if (values == null) {
+            return Map.of();
+        }
+        final Map<String, String> model = new LinkedHashMap<>();
+        for (int keyIndex = 0; keyIndex < keyColumns.size(); keyIndex++) {
+            model.put(keyColumns.get(keyIndex).name(), keyIndex < rowKey.values().size() ? rowKey.values().get(keyIndex) : "");
+        }
+        for (ColumnRef comparedColumn : comparedColumns) {
+            model.put(comparedColumn.name(), values.getOrDefault(comparedColumn, ""));
+        }
         return model;
     }
 
@@ -84,7 +146,4 @@ public final class JsonMultiTableComparisonReportRenderer {
         return columns.stream().map(ColumnRef::name).toList();
     }
 
-    private List<List<String>> rowKeys(final List<RowKey> rows) {
-        return rows.stream().map(RowKey::values).toList();
-    }
 }
