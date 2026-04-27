@@ -55,21 +55,25 @@ Run the webapp scaffold locally from the repository root:
 mvn -pl sqlcomparer-webapp -am spring-boot:run
 ```
 
-The webapp reads comparison defaults from `sqlcomparer-webapp/src/main/resources/application.yml` using `sqlcomparer.webapp.comparison.*` keys.
-These keys map to CLI concepts as follows:
+The webapp reads shared execution defaults from `sqlcomparer-webapp/src/main/resources/application.yml` using `sqlcomparer.webapp.comparison.*` keys.
+These shared keys map to CLI concepts as follows:
 
 - `connection.server` ↔ `-S` / `--server`
 - `connection.username` ↔ `-U` / `--username`
 - `connection.password` ↔ `-P` / `--password`
 - `connection.left-database` ↔ `-l` / `--left-database`
 - `connection.right-database` ↔ `-r` / `--right-database`
-- `table-selection.tables` ↔ `-t` / `--tables`
-- `table-selection.tables-file` ↔ `-F` / `--tables-file`
 - `env-file` ↔ `-e` / `--env-file`
 - `output.format` ↔ `-f` / `--output-format`
 - `output.file` ↔ `-o` / `--output-file`
 
-The webapp validates table source configuration and rejects startup when both `table-selection.tables` and `table-selection.tables-file` are configured simultaneously.
+Table selection in the webapp is strategy-driven via `SelectionPlan` and is intentionally decoupled from CLI table flags.
+The initial strategy is explicit-table based and configured with `sqlcomparer.webapp.selection-plan.explicit.tables` entries.
+
+Migration notes:
+- Removed: `sqlcomparer.webapp.comparison.table-selection.tables`
+- Removed: `sqlcomparer.webapp.comparison.table-selection.tables-file`
+- Replacement: `sqlcomparer.webapp.selection-plan.explicit.tables`
 
 ## Fixture SQL Server
 

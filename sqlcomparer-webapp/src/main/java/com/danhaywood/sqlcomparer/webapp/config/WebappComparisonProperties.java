@@ -4,27 +4,22 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.AssertTrue;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- * Maps Spring configuration to CLI-equivalent comparison options.
+ * Maps shared Spring configuration to CLI-equivalent execution options.
  * <p>
- * Mapping reference:
+ * Shared mapping reference:
  * <ul>
- *     <li>server -> CLI -S / --server</li>
- *     <li>username -> CLI -U / --username</li>
- *     <li>password -> CLI -P / --password</li>
- *     <li>left-database -> CLI -l / --left-database</li>
- *     <li>right-database -> CLI -r / --right-database</li>
- *     <li>tables -> CLI -t / --tables</li>
- *     <li>tables-file -> CLI -F / --tables-file</li>
+ *     <li>connection.server -> CLI -S / --server</li>
+ *     <li>connection.username -> CLI -U / --username</li>
+ *     <li>connection.password -> CLI -P / --password</li>
+ *     <li>connection.left-database -> CLI -l / --left-database</li>
+ *     <li>connection.right-database -> CLI -r / --right-database</li>
  *     <li>env-file -> CLI -e / --env-file</li>
- *     <li>output-format -> CLI -f / --output-format</li>
- *     <li>output-file -> CLI -o / --output-file</li>
+ *     <li>output.format -> CLI -f / --output-format</li>
+ *     <li>output.file -> CLI -o / --output-file</li>
  * </ul>
+ * Table selection is intentionally handled by SelectionPlan strategies and not by these shared properties.
  */
 @ConfigurationProperties(prefix = "sqlcomparer.webapp.comparison")
 @Validated
@@ -34,23 +29,9 @@ public class WebappComparisonProperties {
     private Connection connection = new Connection();
 
     @Valid
-    private TableSelection tableSelection = new TableSelection();
-
-    @Valid
     private Output output = new Output();
 
     private String envFile;
-
-    @AssertTrue(message = "Only one table source is allowed: configure either table-selection.tables or table-selection.tables-file")
-    public boolean isValidTableSelectionSource() {
-        final boolean hasInlineTables = tableSelection != null
-                && tableSelection.getTables() != null
-                && !tableSelection.getTables().isEmpty();
-        final boolean hasTablesFile = tableSelection != null
-                && tableSelection.getTablesFile() != null
-                && !tableSelection.getTablesFile().isBlank();
-        return !(hasInlineTables && hasTablesFile);
-    }
 
     public Connection getConnection() {
         return connection;
@@ -58,14 +39,6 @@ public class WebappComparisonProperties {
 
     public void setConnection(final Connection connection) {
         this.connection = connection;
-    }
-
-    public TableSelection getTableSelection() {
-        return tableSelection;
-    }
-
-    public void setTableSelection(final TableSelection tableSelection) {
-        this.tableSelection = tableSelection;
     }
 
     public Output getOutput() {
@@ -129,27 +102,6 @@ public class WebappComparisonProperties {
 
         public void setRightDatabase(final String rightDatabase) {
             this.rightDatabase = rightDatabase;
-        }
-    }
-
-    public static class TableSelection {
-        private List<String> tables = new ArrayList<>();
-        private String tablesFile;
-
-        public List<String> getTables() {
-            return tables;
-        }
-
-        public void setTables(final List<String> tables) {
-            this.tables = tables;
-        }
-
-        public String getTablesFile() {
-            return tablesFile;
-        }
-
-        public void setTablesFile(final String tablesFile) {
-            this.tablesFile = tablesFile;
         }
     }
 

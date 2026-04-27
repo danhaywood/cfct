@@ -8,9 +8,13 @@ sqlcomparer:
         left-database: left_db
         right-database: right_db
       env-file: .env
-      table-selection:
-        tables: []
-        tables-file:
       output:
         format: text
         file:
+    # Migration note: legacy keys removed
+    # - sqlcomparer.webapp.comparison.table-selection.tables
+    # - sqlcomparer.webapp.comparison.table-selection.tables-file
+    selection-plan:
+      explicit:
+        tables:
+          - dbo.Supplier
