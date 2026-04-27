@@ -50,7 +50,7 @@ The webapp SHALL consume resolved `List<TableRef>` output from `SelectionPlan` w
 - **THEN** it can plug into the same `SelectionPlan` contract and return `List<TableRef>` without changing core execution interfaces
 
 ### Requirement: Webapp validates configured SQL Server connectivity and databases
-The webapp SHALL validate that configured SQL Server connection settings can establish JDBC connectivity.
+The webapp SHALL validate configured SQL Server connectivity by acquiring JDBC connections from configured DataSource beans.
 The webapp SHALL validate that configured left and right logical databases exist and are reachable with the configured credentials.
 The webapp SHALL fail with clear diagnostics when connectivity fails, authentication fails, or configured databases are missing.
 
@@ -105,6 +105,7 @@ The webapp SHALL disable checkbox interaction for ineligible tables.
 ### Requirement: Webapp invokes comparison orchestration through API contracts
 The webapp SHALL invoke comparison orchestration through interfaces defined in `sqlcomparer-api`.
 The webapp SHALL obtain implementations of those interfaces via imported Spring configuration from `sqlcomparer-impl`.
+The webapp SHALL use DataSource-managed connection acquisition in its execution path rather than retaining externally-managed Connection state in web components.
 The webapp SHALL NOT directly reference non-configuration implementation classes from `sqlcomparer-impl`.
 
 #### Scenario: Webapp startup wiring resolves API comparison services

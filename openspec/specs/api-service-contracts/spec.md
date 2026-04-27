@@ -7,6 +7,7 @@ TBD - created by archiving change api-first-impl-decoupling-and-naming. Update P
 The API module SHALL define interfaces for application-facing comparison orchestration used by CLI and webapp entry points.
 The service contracts SHALL cover single-table and multi-table comparison use cases that are currently consumed via implementation classes.
 The contracts SHALL use API-owned request and result types so callers can execute comparison flows without importing implementation packages.
+The contracts SHALL support entry-point implementations that acquire connections through DataSource-managed lifecycle rather than requiring long-lived Connection ownership at the caller boundary.
 
 #### Scenario: CLI compiles against API service contracts
 - **WHEN** the CLI module is compiled
