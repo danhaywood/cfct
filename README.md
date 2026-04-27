@@ -133,20 +133,25 @@ These shared keys map to CLI concepts as follows:
 - `output.file` ↔ `-o` / `--output-file`
 
 Table selection in the webapp is now a two-stage workflow:
-- Stage 1: select eligible tables in the AppLayout navigation drawer.
-- Stage 2: run comparison from the main comparison area using the right-aligned `Compare` action.
+- Stage 1: select eligible tables in the AppLayout navigation drawer and trigger comparison using the right-aligned `Compare` action above the table grid.
+- Stage 2: view comparison output in the main comparison area.
 
 The navigation drawer lists discovered tables in a sortable and filterable Vaadin Grid.
 Tables that do not meet the `_PK` requirement are still shown, but their checkboxes are disabled and expose the eligibility reason as tooltip text.
-The footer/status bar shows the configured SQL Server endpoint, left database, right database, and current SQL connectivity status.
+The schema column auto-sizes, the select column is centered, and the select header text is intentionally blank.
+The footer/status bar shows compact connection context and right-aligns current SQL connectivity status.
 
 The initial table-selection view looks like this:
 
 ![Webapp table selection with footer status bar](docs/images/webapp-main.png)
 
-After selecting an eligible table, the main comparison-area `Compare` button is enabled:
+After selecting an eligible table, the navigation-area `Compare` button is enabled:
 
 ![Webapp table selection with Compare enabled](docs/images/webapp-selected.png)
+
+When the navigation drawer is collapsed, a collapsed-state indicator shows that hidden navigation items remain available:
+
+![Webapp with collapsed navigation indicator](docs/images/webapp-collapsed.png)
 
 Table selection remains strategy-driven via `SelectionPlan` and is intentionally decoupled from CLI table flags.
 This manual panel is the first user-facing stage and is designed to evolve toward auto-selection plus manual include/exclude overrides.

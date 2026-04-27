@@ -65,12 +65,12 @@ class MainViewTest {
 
         final String footerText = textOf(footer);
 
-        assertThat(footerText).contains("localhost:1433", "left_db", "right_db", "SQL connectivity status");
-        assertThat(footerText).doesNotContain("super-secret-password");
+        assertThat(footerText).contains("localhost:1433", "left_db", "right_db", "Status: OK");
+        assertThat(footerText).doesNotContain("super-secret-password", "SQL connectivity status");
     }
 
     @Test
-    void rendersSelectionPanelInNavigationAreaAndCompareButtonInMainActionBar() {
+    void rendersSelectionPanelInNavigationAreaAndCompareButtonAboveGrid() {
         final MainView view = new MainView(new ConnectionValidationStatusHolder(), catalogServiceWithDefaults(), propertiesWithDefaults());
 
         final Button compareButton = (Button) findByTestId(view, "compare-button").orElseThrow();
@@ -78,10 +78,12 @@ class MainViewTest {
         assertThat(compareButton.isEnabled()).isFalse();
         assertThat(findByTestId(view, "table-selection-panel")).isPresent();
         assertThat(findByTestId(view, "table-selection-grid")).isPresent();
+        assertThat(findByTestId(view, "navigation-compare-action-bar")).isPresent();
+        assertThat(findByTestId(view, "comparison-action-bar")).isEmpty();
         assertThat(findByTestId(view, "selected-table-feedback")).isEmpty();
         assertThat(findByTestId(view, "apply-table-filter")).isEmpty();
         assertThat(findByTestId(view, "comparison-stage-placeholder")).isPresent();
-        assertThat(findByTestId(view, "comparison-action-bar")).isPresent();
+        assertThat(findByTestId(view, "navigation-collapsed-indicator")).isPresent();
     }
 
     private Optional<Component> findByTestId(final Component root, final String testId) {

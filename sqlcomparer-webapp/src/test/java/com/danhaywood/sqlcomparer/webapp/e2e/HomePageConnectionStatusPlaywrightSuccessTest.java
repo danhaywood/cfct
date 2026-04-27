@@ -12,6 +12,9 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
+import java.nio.file.Path;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
@@ -46,6 +49,7 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
         try (Playwright playwright = Playwright.create();
              Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
              Page page = browser.newPage()) {
+            page.setViewportSize(1440, 900);
             page.navigate("http://localhost:" + serverPort + "/");
             page.waitForSelector("[data-testid='connection-status-state']");
             page.waitForSelector("[data-testid='table-selection-grid']");
@@ -56,17 +60,34 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
             assertThat(page.locator("[data-testid='hamburger-menu']").count()).isEqualTo(1);
             final String footerText = page.locator("[data-testid='connection-details-footer']").innerText();
-            assertThat(footerText).contains(PlaywrightSqlServerFixture.server(), LEFT_DB, RIGHT_DB, "SQL connectivity status");
-            assertThat(footerText).doesNotContain(PlaywrightSqlServerFixture.password());
+            assertThat(footerText).contains(PlaywrightSqlServerFixture.server(), LEFT_DB, RIGHT_DB, "Status: OK");
+            assertThat(footerText).doesNotContain(PlaywrightSqlServerFixture.password(), "SQL connectivity status");
 
             assertThat(page.locator("[data-testid='selected-table-feedback']").count()).isZero();
-            assertThat(page.locator("[data-testid='comparison-action-bar'] [data-testid='compare-button']").isDisabled()).isTrue();
+            assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isDisabled()).isTrue();
             assertThat(page.locator("[data-testid='apply-table-filter']").count()).isZero();
 
+            final double compareTop = positionOf(page, "[data-testid='navigation-compare-action-bar']")[1];
+            final double gridTop = positionOf(page, "[data-testid='table-selection-grid']")[1];
+            assertThat(compareTop).isLessThan(gridTop);
+
+            final double[] footerMetrics = footerStatusAlignmentMetrics(page);
+            assertThat(footerMetrics[0]).isGreaterThan(footerMetrics[1]);
+
             final String initialGridText = page.locator("[data-testid='table-selection-grid']").innerText();
-            assertThat(initialGridText).doesNotContain("Eligibility");
+            assertThat(initialGridText).doesNotContain("Eligibility", "Select");
             assertThat(page.locator("[data-testid='table-checkbox-dbo-playwrightineligible']").getAttribute("disabled")).isNotNull();
             assertThat(page.locator("[data-testid='table-checkbox-dbo-playwrightineligible']").getAttribute("title")).isNotBlank();
+
+            page.screenshot(new Page.ScreenshotOptions().setPath(screenshotPath("webapp-main.png")).setFullPage(true));
+
+            page.click("[data-testid='hamburger-menu']");
+            page.waitForTimeout(200);
+            assertThat(page.locator("[data-testid='navigation-collapsed-indicator']").isVisible()).isTrue();
+            page.screenshot(new Page.ScreenshotOptions().setPath(screenshotPath("webapp-collapsed.png")).setFullPage(true));
+
+            page.click("[data-testid='hamburger-menu']");
+            page.waitForTimeout(200);
 
             setFilter(page, PlaywrightSqlServerFixture.ELIGIBLE_TABLE);
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PlaywrightEligible') && !document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PlaywrightIneligible')");
@@ -83,10 +104,12 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
             toggleCheckbox(page, "[data-testid='table-checkbox-dbo-playwrighteligible']");
             page.waitForFunction("() => !document.querySelector('[data-testid=\"compare-button\"]').disabled");
-            assertThat(page.locator("[data-testid='comparison-action-bar'] [data-testid='compare-button']").isEnabled()).isTrue();
+            assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isEnabled()).isTrue();
 
             toggleCheckbox(page, "[data-testid='table-checkbox-dbo-playwrightineligible']");
-            assertThat(page.locator("[data-testid='comparison-action-bar'] [data-testid='compare-button']").isEnabled()).isTrue();
+            assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isEnabled()).isTrue();
+
+            page.screenshot(new Page.ScreenshotOptions().setPath(screenshotPath("webapp-selected.png")).setFullPage(true));
         }
     }
 
@@ -99,5 +122,33 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
     private void setFilter(final Page page, final String value) {
         page.locator("[data-testid='table-filter-table'] input").fill(value);
         page.keyboard().press("Tab");
+    }
+
+    private Path screenshotPath(final String fileName) {
+        final Path cwd = Path.of("").toAbsolutePath();
+        final Path repoDocs = cwd.resolve("../docs/images").normalize();
+        final Path localDocs = cwd.resolve("docs/images").normalize();
+        if (repoDocs.toFile().exists()) {
+            return repoDocs.resolve(fileName);
+        }
+        return localDocs.resolve(fileName);
+    }
+
+    private double[] positionOf(final Page page, final String selector) {
+        final Object evaluated = page.evaluate("(selector) => { const r = document.querySelector(selector)?.getBoundingClientRect(); return r ? [r.left, r.top, r.right, r.bottom] : [-1, -1, -1, -1]; }", selector);
+        return toDoubleArray((List<?>) evaluated);
+    }
+
+    private double[] footerStatusAlignmentMetrics(final Page page) {
+        final Object evaluated = page.evaluate("() => { const footer = document.querySelector('[data-testid=\"connection-details-footer\"]'); const state = document.querySelector('[data-testid=\"connection-status-state\"]'); if (!footer || !state) return [-1, -1]; const fr = footer.getBoundingClientRect(); const sr = state.getBoundingClientRect(); return [sr.right, fr.left + (fr.width / 2)]; }");
+        return toDoubleArray((List<?>) evaluated);
+    }
+
+    private double[] toDoubleArray(final List<?> values) {
+        final double[] array = new double[values.size()];
+        for (int i = 0; i < values.size(); i++) {
+            array[i] = ((Number) values.get(i)).doubleValue();
+        }
+        return array;
     }
 }

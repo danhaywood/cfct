@@ -14,6 +14,7 @@ import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.H2;
@@ -36,6 +37,7 @@ public class MainView extends AppLayout {
 
     private final ManualTableSelectionState selectionState;
     private final Button compareButton = new Button("Compare");
+    private final Span collapsedNavigationIndicator = new Span("Hidden navigation items available");
 
     public MainView(
             final ConnectionValidationStatusHolder statusHolder,
@@ -46,7 +48,7 @@ public class MainView extends AppLayout {
 
         setPrimarySection(Section.DRAWER);
         getElement().setAttribute("data-testid", "main-app-layout");
-        addToNavbar(buildDrawerToggle(), buildTitle());
+        addToNavbar(buildDrawerToggle(), buildCollapsedNavigationIndicator(), buildTitle());
         addToDrawer(buildSelectionPanel(tableCatalog));
         setContent(buildMainContent(properties, statusHolder.current()));
     }
@@ -61,6 +63,19 @@ public class MainView extends AppLayout {
         toggle.getElement().setAttribute("data-testid", "hamburger-menu");
         toggle.getElement().setAttribute("title", "Open navigation menu");
         return toggle;
+    }
+
+    private Span buildCollapsedNavigationIndicator() {
+        collapsedNavigationIndicator.getElement().setAttribute("data-testid", "navigation-collapsed-indicator");
+        collapsedNavigationIndicator.getStyle()
+                .set("margin-left", "var(--lumo-space-m)")
+                .set("padding", "0.1rem 0.4rem")
+                .set("border-radius", "var(--lumo-border-radius-s)")
+                .set("background", "var(--lumo-primary-color-10pct)")
+                .set("font-size", "var(--lumo-font-size-xs)")
+                .set("font-weight", "600")
+                .set("display", "inline-flex");
+        return collapsedNavigationIndicator;
     }
 
     private H2 buildTitle() {
@@ -104,18 +119,24 @@ public class MainView extends AppLayout {
                 .set("font-size", "var(--lumo-font-size-s)");
 
         final WebappComparisonProperties.Connection connection = properties.getConnection();
-        footer.add(
-                footerItem("connection-server", "Server", connection.getServer()),
-                footerItem("connection-left-database", "Left database", connection.getLeftDatabase()),
-                footerItem("connection-right-database", "Right database", connection.getRightDatabase()),
-                renderConnectionStatus(status));
-        return footer;
-    }
+        final Div connectionDetails = new Div();
+        connectionDetails.getElement().setAttribute("data-testid", "connection-details-inline");
+        connectionDetails.getStyle()
+                .set("display", "inline-flex")
+                .set("align-items", "center")
+                .set("gap", "var(--lumo-space-m)");
 
-    private Span footerItem(final String testId, final String label, final String value) {
-        final Span item = new Span(label + ": " + safe(value));
-        item.getElement().setAttribute("data-testid", testId);
-        return item;
+        final Span server = new Span(safe(connection.getServer()));
+        server.getElement().setAttribute("data-testid", "connection-server");
+        final Span databases = new Span(safe(connection.getLeftDatabase()) + " ↔ " + safe(connection.getRightDatabase()));
+        databases.getElement().setAttribute("data-testid", "connection-database-pair");
+        connectionDetails.add(server, databases);
+
+        final Div statusPanel = renderConnectionStatus(status);
+        statusPanel.getStyle().set("margin-left", "auto");
+
+        footer.add(connectionDetails, statusPanel);
+        return footer;
     }
 
     private String safe(final String value) {
@@ -139,7 +160,19 @@ public class MainView extends AppLayout {
         final TextField tableFilter = filterField("Filter table", "table-filter-table", dataProvider);
         tableFilter.setWidthFull();
         final Grid<TableCatalogEntry> tableGrid = buildSelectionGrid(dataProvider);
-        layout.add(tableFilter, tableGrid);
+
+        final Div actionBar = new Div(compareButton);
+        actionBar.getElement().setAttribute("data-testid", "navigation-compare-action-bar");
+        actionBar.getStyle()
+                .set("display", "flex")
+                .set("justify-content", "flex-end")
+                .set("width", "100%");
+
+        compareButton.setEnabled(selectionState.isCompareEnabled());
+        compareButton.getElement().setAttribute("data-testid", "compare-button");
+        compareButton.getElement().setAttribute("title", "Comparison execution is not implemented yet.");
+
+        layout.add(actionBar, tableFilter, tableGrid);
         panel.add(layout);
         return panel;
     }
@@ -169,10 +202,12 @@ public class MainView extends AppLayout {
                 compareButton.setEnabled(selectionState.isCompareEnabled());
             });
             return checkbox;
-        })).setHeader("Select").setAutoWidth(true).setFlexGrow(0);
+        })).setHeader("").setAutoWidth(true).setFlexGrow(0).setTextAlign(ColumnTextAlign.CENTER);
 
         grid.addColumn(entry -> entry.table().schemaName())
                 .setHeader("Schema")
+                .setAutoWidth(true)
+                .setFlexGrow(0)
                 .setSortable(true)
                 .setComparator(Comparator.comparing(entry -> entry.table().schemaName(), String.CASE_INSENSITIVE_ORDER))
                 .setKey("schema");
@@ -219,17 +254,7 @@ public class MainView extends AppLayout {
                 .set("padding", "var(--lumo-space-l)")
                 .set("border", "1px solid var(--lumo-contrast-10pct)")
                 .set("border-radius", "var(--lumo-border-radius-m)");
-        compareButton.setEnabled(selectionState.isCompareEnabled());
-        compareButton.getElement().setAttribute("data-testid", "compare-button");
-        compareButton.getElement().setAttribute("title", "Comparison execution is not implemented yet.");
-
-        final Div actionBar = new Div(compareButton);
-        actionBar.getElement().setAttribute("data-testid", "comparison-action-bar");
-        actionBar.getStyle()
-                .set("display", "flex")
-                .set("justify-content", "flex-end")
-                .set("margin-bottom", "var(--lumo-space-l)");
-        panel.add(actionBar, new H3("Comparison stage"), new Paragraph("Results will be shown here after an explicit run action."));
+        panel.add(new H3("Comparison stage"), new Paragraph("Results will be shown here after an explicit run action."));
         return panel;
     }
 
@@ -241,15 +266,15 @@ public class MainView extends AppLayout {
         final Div panel = new Div();
         panel.getElement().setAttribute("data-testid", "connection-status-panel");
         panel.getStyle()
-                .set("display", "flex")
+                .set("display", "inline-flex")
+                .set("justify-content", "flex-end")
                 .set("align-items", "center")
                 .set("gap", "var(--lumo-space-s)");
 
-        final Span label = new Span("SQL connectivity status");
-        label.getStyle().set("font-weight", "600");
         final Span state = new Span("Status: " + status.state());
         state.getElement().setAttribute("data-testid", "connection-status-state");
-        panel.add(label, state);
+        state.getStyle().set("font-weight", "600");
+        panel.add(state);
 
         if (status.state() == ConnectionValidationState.FAILED && status.summary() != null && !status.summary().isBlank()) {
             final Span summary = new Span(status.summary());
