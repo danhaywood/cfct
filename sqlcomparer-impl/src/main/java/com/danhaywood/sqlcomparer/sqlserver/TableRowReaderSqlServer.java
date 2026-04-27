@@ -5,7 +5,6 @@ import com.danhaywood.sqlcomparer.exception.ComparisonException;
 import com.danhaywood.sqlcomparer.model.RowKey;
 import com.danhaywood.sqlcomparer.model.TableMetadata;
 import com.danhaywood.sqlcomparer.spi.TableRowReader;
-import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -23,8 +22,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Service
-public final class SqlServerTableRowReader implements TableRowReader {
+public final class TableRowReaderSqlServer implements TableRowReader {
 
     @Override
     public Map<RowKey, Map<ColumnRef, String>> readRows(final Connection connection, final TableMetadata metadata) {

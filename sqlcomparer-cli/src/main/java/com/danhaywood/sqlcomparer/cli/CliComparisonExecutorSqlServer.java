@@ -1,7 +1,7 @@
 package com.danhaywood.sqlcomparer.cli;
 
-import com.danhaywood.sqlcomparer.comparison.MultiTableComparer;
 import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
+import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
 
 import org.springframework.stereotype.Service;
 
@@ -9,13 +9,13 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 
 @Service
-public final class SqlServerCliComparisonExecutor implements CliComparisonExecutor {
+public final class CliComparisonExecutorSqlServer implements CliComparisonExecutor {
 
-    private final MultiTableComparer comparer;
+    private final MultiTableComparisonService comparer;
     private final CliComparisonReportRenderer renderer;
 
-    public SqlServerCliComparisonExecutor(
-            final MultiTableComparer comparer,
+    public CliComparisonExecutorSqlServer(
+            final MultiTableComparisonService comparer,
             final CliComparisonReportRenderer renderer) {
         this.comparer = comparer;
         this.renderer = renderer;

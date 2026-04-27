@@ -5,20 +5,21 @@ import com.danhaywood.sqlcomparer.model.TableComparisonResult;
 import com.danhaywood.sqlcomparer.model.TableRef;
 import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
 import com.danhaywood.sqlcomparer.request.TableComparisonRequest;
-import org.springframework.stereotype.Service;
+import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
+import com.danhaywood.sqlcomparer.service.TableComparisonService;
 
 import java.sql.Connection;
 import java.util.ArrayList;
 
-@Service
-public final class MultiTableComparer {
+public final class MultiTableComparisonServiceDefault implements MultiTableComparisonService {
 
-    private final TableComparer tableComparer;
+    private final TableComparisonService tableComparer;
 
-    public MultiTableComparer(final TableComparer tableComparer) {
+    public MultiTableComparisonServiceDefault(final TableComparisonService tableComparer) {
         this.tableComparer = tableComparer;
     }
 
+    @Override
     public MultiTableComparisonResult compare(
             final Connection leftConnection,
             final Connection rightConnection,

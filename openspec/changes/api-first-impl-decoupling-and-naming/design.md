@@ -2,7 +2,7 @@
 
 `sqlcomparer-cli` and `sqlcomparer-webapp` currently reference concrete service and executor classes from `sqlcomparer-impl`.
 This creates compile-time coupling to implementation details and makes refactoring in `-impl` risky for application entry-point modules.
-At the same time, implementation naming is inconsistent, with patterns like `SqlServerCliComparisonExecutor implements CliComparisonExecutor` instead of a consistent interface-first naming style.
+At the same time, implementation naming is inconsistent, with patterns like `CliComparisonExecutorSqlServer implements CliComparisonExecutor` instead of a consistent interface-first naming style.
 The requested architecture is that `-cli` and `-webapp` depend on API contracts, while Spring wiring in `-impl` binds those contracts to implementations.
 
 ## Goals / Non-Goals
@@ -49,7 +49,7 @@ Selective import is explicit and easier to test than broad scanning.
 
 ### Decision: Adopt interface-first implementation naming (`FooXxx implements Foo`).
 For classes that implement a named interface, rename classes to the form `<Interface><Qualifier>`.
-For example, `SqlServerCliComparisonExecutor implements CliComparisonExecutor` becomes `CliComparisonExecutorSqlServer implements CliComparisonExecutor`.
+For example, `CliComparisonExecutorSqlServer implements CliComparisonExecutor` becomes `CliComparisonExecutorSqlServer implements CliComparisonExecutor`.
 Naming updates will be limited to classes implementing interfaces and touched by this change.
 
 **Alternatives considered:**

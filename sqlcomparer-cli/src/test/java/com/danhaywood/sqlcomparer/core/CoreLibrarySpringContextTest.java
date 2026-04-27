@@ -4,11 +4,9 @@ import com.danhaywood.sqlcomparer.SqlComparerApplication;
 import com.danhaywood.sqlcomparer.cli.CliArgumentsParser;
 import com.danhaywood.sqlcomparer.cli.CliCommandRunner;
 import com.danhaywood.sqlcomparer.cli.CliComparisonExecutor;
-import com.danhaywood.sqlcomparer.comparison.MultiTableComparer;
-import com.danhaywood.sqlcomparer.comparison.TableComparer;
-import com.danhaywood.sqlcomparer.config.ConfiguredComparisonService;
-import com.danhaywood.sqlcomparer.config.JsonComparisonRequestLoader;
-import com.danhaywood.sqlcomparer.report.JsonMultiTableComparisonReportRenderer;
+import com.danhaywood.sqlcomparer.service.MultiTableComparisonReportFormatter;
+import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
+import com.danhaywood.sqlcomparer.service.TableComparisonService;
 import com.danhaywood.sqlcomparer.spi.TableMetadataReader;
 import com.danhaywood.sqlcomparer.spi.TableRowReader;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,11 +27,9 @@ class CoreLibrarySpringContextTest {
                 .hasSingleBean(CliArgumentsParser.class)
                 .hasSingleBean(CliCommandRunner.class)
                 .hasSingleBean(CliComparisonExecutor.class)
-                .hasSingleBean(TableComparer.class)
-                .hasSingleBean(MultiTableComparer.class)
-                .hasSingleBean(JsonComparisonRequestLoader.class)
-                .hasSingleBean(ConfiguredComparisonService.class)
-                .hasSingleBean(JsonMultiTableComparisonReportRenderer.class)
+                .hasSingleBean(TableComparisonService.class)
+                .hasSingleBean(MultiTableComparisonService.class)
+                .hasSingleBean(MultiTableComparisonReportFormatter.class)
                 .hasSingleBean(ObjectMapper.class)
                 .hasSingleBean(TableMetadataReader.class)
                 .hasSingleBean(TableRowReader.class));

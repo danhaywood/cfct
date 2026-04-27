@@ -1,6 +1,6 @@
 package com.danhaywood.sqlcomparer.core;
 
-import com.danhaywood.sqlcomparer.comparison.TableComparer;
+import com.danhaywood.sqlcomparer.comparison.TableComparisonServiceDefault;
 import com.danhaywood.sqlcomparer.exception.MetadataException;
 import com.danhaywood.sqlcomparer.model.ColumnDifference;
 import com.danhaywood.sqlcomparer.model.ColumnRef;
@@ -14,8 +14,8 @@ import com.danhaywood.sqlcomparer.request.TableComparisonRequest;
 import com.danhaywood.sqlcomparer.harness.DatabaseSide;
 import com.danhaywood.sqlcomparer.harness.SqlServerTestHarness;
 import com.danhaywood.sqlcomparer.report.TextTableComparisonReportRenderer;
-import com.danhaywood.sqlcomparer.sqlserver.SqlServerTableMetadataReader;
-import com.danhaywood.sqlcomparer.sqlserver.SqlServerTableRowReader;
+import com.danhaywood.sqlcomparer.sqlserver.TableMetadataReaderSqlServer;
+import com.danhaywood.sqlcomparer.sqlserver.TableRowReaderSqlServer;
 import org.approvaltests.Approvals;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,9 +32,9 @@ class CoreSingleTableComparisonIT {
 
     private static SqlServerTestHarness harness;
 
-    private final TableComparer comparer = new TableComparer(
-            new SqlServerTableMetadataReader(),
-            new SqlServerTableRowReader());
+    private final TableComparisonServiceDefault comparer = new TableComparisonServiceDefault(
+            new TableMetadataReaderSqlServer(),
+            new TableRowReaderSqlServer());
     private final TextTableComparisonReportRenderer renderer = new TextTableComparisonReportRenderer();
 
     @BeforeAll
@@ -137,7 +137,7 @@ class CoreSingleTableComparisonIT {
 
     private TableMetadata readMetadata(final String tableName) throws Exception {
         try (Connection left = harness.openConnection(DatabaseSide.LEFT)) {
-            return new SqlServerTableMetadataReader().read(left, TableComparisonRequest.forTable("dbo", tableName));
+            return new TableMetadataReaderSqlServer().read(left, TableComparisonRequest.forTable("dbo", tableName));
         }
     }
 

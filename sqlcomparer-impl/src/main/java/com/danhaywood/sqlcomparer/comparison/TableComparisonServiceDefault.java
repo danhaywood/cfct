@@ -7,26 +7,26 @@ import com.danhaywood.sqlcomparer.model.RowKey;
 import com.danhaywood.sqlcomparer.model.TableComparisonResult;
 import com.danhaywood.sqlcomparer.model.TableMetadata;
 import com.danhaywood.sqlcomparer.request.TableComparisonRequest;
+import com.danhaywood.sqlcomparer.service.TableComparisonService;
 import com.danhaywood.sqlcomparer.spi.TableMetadataReader;
 import com.danhaywood.sqlcomparer.spi.TableRowReader;
-import org.springframework.stereotype.Service;
 
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeSet;
 
-@Service
-public final class TableComparer {
+public final class TableComparisonServiceDefault implements TableComparisonService {
 
     private final TableMetadataReader metadataReader;
     private final TableRowReader rowReader;
 
-    public TableComparer(final TableMetadataReader metadataReader, final TableRowReader rowReader) {
+    public TableComparisonServiceDefault(final TableMetadataReader metadataReader, final TableRowReader rowReader) {
         this.metadataReader = metadataReader;
         this.rowReader = rowReader;
     }
 
+    @Override
     public TableComparisonResult compare(
             final Connection leftConnection,
             final Connection rightConnection,

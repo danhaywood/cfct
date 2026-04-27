@@ -5,11 +5,7 @@ import com.danhaywood.sqlcomparer.model.ColumnRef;
 import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
 import com.danhaywood.sqlcomparer.model.TableComparisonResult;
 import com.danhaywood.sqlcomparer.model.TableRef;
-import com.danhaywood.sqlcomparer.report.ExcelMultiTableComparisonReportRenderer;
-import com.danhaywood.sqlcomparer.report.JsonMultiTableComparisonReportRenderer;
-import com.danhaywood.sqlcomparer.report.TextMultiTableComparisonReportRenderer;
-import com.danhaywood.sqlcomparer.report.TextTableComparisonReportRenderer;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.danhaywood.sqlcomparer.service.MultiTableComparisonReportFormatter;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -20,10 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class CliComparisonReportRendererTest {
 
-    private final CliComparisonReportRenderer renderer = new CliComparisonReportRenderer(
-            new TextMultiTableComparisonReportRenderer(new TextTableComparisonReportRenderer()),
-            new JsonMultiTableComparisonReportRenderer(new ObjectMapper()),
-            new ExcelMultiTableComparisonReportRenderer());
+    private final CliComparisonReportRenderer renderer = new CliComparisonReportRenderer(new StubFormatter());
 
     @Test
     void rendersTextOutput() {
@@ -54,6 +47,24 @@ class CliComparisonReportRendererTest {
         assertThat(output.outputFormat()).isEqualTo(CliOutputFormat.EXCEL);
         assertThat(output.mediaType()).isEqualTo("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         assertThat(output.bytes()).startsWith(new byte[]{0x50, 0x4b});
+    }
+
+    private static final class StubFormatter implements MultiTableComparisonReportFormatter {
+
+        @Override
+        public String renderText(final MultiTableComparisonResult result) {
+            return "Multi-table comparison\nTables: 1\n\n== dbo.Supplier ==\n";
+        }
+
+        @Override
+        public String renderJson(final MultiTableComparisonResult result) {
+            return "{\"tables\":[{\"table\":{\"name\":\"Supplier\"}}]}";
+        }
+
+        @Override
+        public byte[] renderExcel(final MultiTableComparisonResult result) {
+            return new byte[]{0x50, 0x4b, 0x03, 0x04};
+        }
     }
 
     private MultiTableComparisonResult result() {

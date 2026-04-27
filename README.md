@@ -15,6 +15,15 @@ It provides a reusable comparison API, an implementation module, a Spring Boot C
 - `demo/`: committed fixture example files for local comparison runs.
 - `scripts/`: local helper scripts for the fixture SQL Server.
 
+## Module boundaries and naming conventions
+
+`sqlcomparer-cli` and `sqlcomparer-webapp` consume comparison orchestration through API interfaces from `sqlcomparer-api`.
+These entry-point modules only reference `sqlcomparer-impl` for explicit Spring wiring import (`ComparisonImplementationConfiguration`).
+Direct references to non-configuration classes in `sqlcomparer-impl` are intentionally disallowed and covered by architecture tests.
+
+For classes that implement an interface, implementation names follow interface-first convention: `<Interface><Qualifier>`.
+Examples include `CliComparisonExecutorSqlServer`, `TableMetadataReaderSqlServer`, and `TableRowReaderSqlServer`.
+
 ## Prerequisites
 
 - Java 21 or later.

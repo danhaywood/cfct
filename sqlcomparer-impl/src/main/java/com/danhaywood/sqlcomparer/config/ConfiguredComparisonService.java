@@ -1,9 +1,9 @@
 package com.danhaywood.sqlcomparer.config;
 
-import com.danhaywood.sqlcomparer.comparison.MultiTableComparer;
 import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
 import com.danhaywood.sqlcomparer.report.ExcelMultiTableComparisonReportRenderer;
 import com.danhaywood.sqlcomparer.report.JsonMultiTableComparisonReportRenderer;
+import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
@@ -14,13 +14,13 @@ import java.sql.Connection;
 public final class ConfiguredComparisonService {
 
     private final JsonComparisonRequestLoader requestLoader;
-    private final MultiTableComparer comparer;
+    private final MultiTableComparisonService comparer;
     private final JsonMultiTableComparisonReportRenderer jsonRenderer;
     private final ExcelMultiTableComparisonReportRenderer excelRenderer;
 
     public ConfiguredComparisonService(
             final JsonComparisonRequestLoader requestLoader,
-            final MultiTableComparer comparer,
+            final MultiTableComparisonService comparer,
             final JsonMultiTableComparisonReportRenderer jsonRenderer,
             final ExcelMultiTableComparisonReportRenderer excelRenderer) {
         this.requestLoader = requestLoader;

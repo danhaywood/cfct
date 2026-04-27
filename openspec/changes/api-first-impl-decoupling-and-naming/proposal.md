@@ -7,7 +7,7 @@ The codebase also uses inconsistent implementation naming (`XxxFoo implements Fo
 
 - Introduce API-level service interfaces for core comparison use cases currently consumed by `-cli` and `-webapp`, and make those clients depend on API contracts instead of concrete implementation classes.
 - Move Spring wiring responsibility for implementation bindings into `-impl` configuration so `-cli` and `-webapp` only import implementation configuration, not implementation types.
-- Rename implementation classes to the `FooXxx implements Foo` convention across the affected modules, including examples such as `SqlServerCliComparisonExecutor`.
+- Rename implementation classes to the `FooXxx implements Foo` convention across the affected modules, including examples such as `CliComparisonExecutorSqlServer`.
 - Update tests and module-level checks to enforce that `-cli` and `-webapp` do not directly reference non-configuration types in `-impl`.
 - **BREAKING**: Public class names in implementation modules will change where they currently follow the old naming pattern.
 

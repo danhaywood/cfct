@@ -9,7 +9,6 @@ import com.danhaywood.sqlcomparer.request.TableComparisonRequest;
 import com.danhaywood.sqlcomparer.model.TableMetadata;
 import com.danhaywood.sqlcomparer.spi.TableMetadataReader;
 import com.danhaywood.sqlcomparer.model.TableRef;
-import org.springframework.stereotype.Service;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -23,8 +22,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-@Service
-public final class SqlServerTableMetadataReader implements TableMetadataReader {
+public final class TableMetadataReaderSqlServer implements TableMetadataReader {
 
     @Override
     public TableMetadata read(final Connection connection, final TableComparisonRequest request) {

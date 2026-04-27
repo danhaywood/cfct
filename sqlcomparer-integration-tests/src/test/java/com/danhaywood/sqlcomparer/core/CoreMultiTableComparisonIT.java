@@ -1,7 +1,7 @@
 package com.danhaywood.sqlcomparer.core;
 
-import com.danhaywood.sqlcomparer.comparison.MultiTableComparer;
-import com.danhaywood.sqlcomparer.comparison.TableComparer;
+import com.danhaywood.sqlcomparer.comparison.MultiTableComparisonServiceDefault;
+import com.danhaywood.sqlcomparer.comparison.TableComparisonServiceDefault;
 import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
 import com.danhaywood.sqlcomparer.model.RowDifference;
 import com.danhaywood.sqlcomparer.model.RowKey;
@@ -13,8 +13,8 @@ import com.danhaywood.sqlcomparer.harness.DatabaseSide;
 import com.danhaywood.sqlcomparer.harness.SqlServerTestHarness;
 import com.danhaywood.sqlcomparer.report.TextMultiTableComparisonReportRenderer;
 import com.danhaywood.sqlcomparer.report.TextTableComparisonReportRenderer;
-import com.danhaywood.sqlcomparer.sqlserver.SqlServerTableMetadataReader;
-import com.danhaywood.sqlcomparer.sqlserver.SqlServerTableRowReader;
+import com.danhaywood.sqlcomparer.sqlserver.TableMetadataReaderSqlServer;
+import com.danhaywood.sqlcomparer.sqlserver.TableRowReaderSqlServer;
 import org.approvaltests.Approvals;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,9 +32,9 @@ class CoreMultiTableComparisonIT {
 
     private static SqlServerTestHarness harness;
 
-    private final MultiTableComparer comparer = new MultiTableComparer(new TableComparer(
-            new SqlServerTableMetadataReader(),
-            new SqlServerTableRowReader()));
+    private final MultiTableComparisonServiceDefault comparer = new MultiTableComparisonServiceDefault(new TableComparisonServiceDefault(
+            new TableMetadataReaderSqlServer(),
+            new TableRowReaderSqlServer()));
     private final TextMultiTableComparisonReportRenderer renderer = new TextMultiTableComparisonReportRenderer(
             new TextTableComparisonReportRenderer());
 

@@ -1,13 +1,13 @@
 package com.danhaywood.sqlcomparer.config;
 
-import com.danhaywood.sqlcomparer.comparison.MultiTableComparer;
-import com.danhaywood.sqlcomparer.comparison.TableComparer;
+import com.danhaywood.sqlcomparer.comparison.MultiTableComparisonServiceDefault;
+import com.danhaywood.sqlcomparer.comparison.TableComparisonServiceDefault;
 import com.danhaywood.sqlcomparer.harness.DatabaseSide;
 import com.danhaywood.sqlcomparer.harness.SqlServerTestHarness;
 import com.danhaywood.sqlcomparer.report.ExcelMultiTableComparisonReportRenderer;
 import com.danhaywood.sqlcomparer.report.JsonMultiTableComparisonReportRenderer;
-import com.danhaywood.sqlcomparer.sqlserver.SqlServerTableMetadataReader;
-import com.danhaywood.sqlcomparer.sqlserver.SqlServerTableRowReader;
+import com.danhaywood.sqlcomparer.sqlserver.TableMetadataReaderSqlServer;
+import com.danhaywood.sqlcomparer.sqlserver.TableRowReaderSqlServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.poi.ss.usermodel.Workbook;
@@ -34,7 +34,7 @@ class ConfiguredComparisonServiceIT {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConfiguredComparisonService service = new ConfiguredComparisonService(
             new JsonComparisonRequestLoader(objectMapper),
-            new MultiTableComparer(new TableComparer(new SqlServerTableMetadataReader(), new SqlServerTableRowReader())),
+            new MultiTableComparisonServiceDefault(new TableComparisonServiceDefault(new TableMetadataReaderSqlServer(), new TableRowReaderSqlServer())),
             new JsonMultiTableComparisonReportRenderer(objectMapper),
             new ExcelMultiTableComparisonReportRenderer());
 
