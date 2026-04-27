@@ -7,9 +7,9 @@ CREATE TABLE dbo.AmbiguousBusinessKey (
     payload NVARCHAR(40) NOT NULL
 );
 GO
-CREATE UNIQUE INDEX AmbiguousBusinessKey_BK
+CREATE UNIQUE INDEX AmbiguousBusinessKey_PK
 ON dbo.AmbiguousBusinessKey(reference);
 GO
-CREATE UNIQUE INDEX AmbiguousBusinessKeyExternal_BK
+CREATE UNIQUE INDEX AmbiguousBusinessKeyExternal_PK
 ON dbo.AmbiguousBusinessKey(external_reference);
 GO

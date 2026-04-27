@@ -114,7 +114,7 @@ class SqlServerHarnessIT {
                 JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
                 JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
                 WHERE i.object_id = OBJECT_ID('dbo.PurchaseOrder')
-                  AND i.name = 'PurchaseOrder_BK'
+                  AND i.name = 'PurchaseOrder_PK'
                   AND i.is_unique = 1
                   AND c.name = 'reference'
                   AND ic.key_ordinal = 1
@@ -127,7 +127,7 @@ class SqlServerHarnessIT {
                 FROM sys.indexes i
                 JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
                 WHERE i.object_id = OBJECT_ID('dbo.PurchaseOrder')
-                  AND i.name = 'PurchaseOrder_BK'
+                  AND i.name = 'PurchaseOrder_PK'
                   AND ic.key_ordinal > 0
                 """;
     }
@@ -158,7 +158,7 @@ class SqlServerHarnessIT {
                 FROM sys.indexes i
                 WHERE i.object_id = OBJECT_ID('dbo.%s')
                   AND i.is_unique = 1
-                  AND i.name LIKE '%%[_]BK'
+                  AND i.name LIKE '%%[_]PK'
                 """.formatted(tableName);
     }
 

@@ -16,7 +16,7 @@ public record ComparisonOptions(String businessKeyIndexSuffix, Set<String> ignor
     }
 
     public static ComparisonOptions defaults() {
-        return new ComparisonOptions("_BK", Set.of("id", "version"));
+        return new ComparisonOptions("_PK", Set.of("version"));
     }
 
     public boolean ignores(final String columnName) {

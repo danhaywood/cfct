@@ -10,6 +10,6 @@ CREATE TABLE dbo.Product (
     [version] DATETIME2(3) NOT NULL
 );
 GO
-CREATE UNIQUE INDEX Product_BK
+CREATE UNIQUE INDEX Product_PK
 ON dbo.Product(sku);
 GO

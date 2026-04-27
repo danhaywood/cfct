@@ -8,6 +8,8 @@ import com.danhaywood.sqlcomparer.model.RowDifference;
 import com.danhaywood.sqlcomparer.model.RowKey;
 import com.danhaywood.sqlcomparer.model.TableComparisonResult;
 import com.danhaywood.sqlcomparer.model.TableMetadata;
+import com.danhaywood.sqlcomparer.model.TableRef;
+import com.danhaywood.sqlcomparer.request.ComparisonOptions;
 import com.danhaywood.sqlcomparer.request.TableComparisonRequest;
 import com.danhaywood.sqlcomparer.harness.DatabaseSide;
 import com.danhaywood.sqlcomparer.harness.SqlServerTestHarness;
@@ -48,16 +50,41 @@ class CoreSingleTableComparisonIT {
     }
 
     @Test
-    void comparesPurchaseOrderByBusinessKeyAndIgnoresTechnicalColumns() throws Exception {
+    void comparesPurchaseOrderByBusinessKeyAndComparesIdentityByDefault() throws Exception {
         initializeFixture("purchase-order");
 
         final TableComparisonResult result = comparePurchaseOrders();
 
-        assertThat(result.businessKey().indexName()).isEqualTo("PurchaseOrder_BK");
+        assertThat(result.businessKey().indexName()).isEqualTo("PurchaseOrder_PK");
         assertThat(result.businessKey().columns()).containsExactly(new ColumnRef("reference"));
-        assertThat(result.ignoredColumns()).containsExactly(new ColumnRef("id"), new ColumnRef("version"));
+        assertThat(result.ignoredColumns()).containsExactly(new ColumnRef("version"));
         assertThat(result.rowsOnlyInLeft()).containsExactly(new RowKey(java.util.List.of("PO-003")));
         assertThat(result.rowsOnlyInRight()).containsExactly(new RowKey(java.util.List.of("PO-004")));
+        assertThat(result.differingRows()).extracting(RowDifference::key)
+                .containsExactly(
+                        new RowKey(java.util.List.of("PO-002")),
+                        new RowKey(java.util.List.of("PO-005")),
+                        new RowKey(java.util.List.of("PO-006")));
+        assertThat(result.differingRows().get(0).columnDifferences())
+                .containsExactly(
+                        new ColumnDifference(new ColumnRef("id"), "102", "202"),
+                        new ColumnDifference(new ColumnRef("status"), "DRAFT", "APPROVED"));
+        assertThat(result.differingRows().get(1).columnDifferences())
+                .containsExactly(
+                        new ColumnDifference(new ColumnRef("id"), "105", "205"),
+                        new ColumnDifference(new ColumnRef("net_amount"), "100.00", "100.01"),
+                        new ColumnDifference(new ColumnRef("gross_amount"), "100.00", "100.01"));
+        assertThat(result.differingRows().get(2).columnDifferences())
+                .containsExactly(new ColumnDifference(new ColumnRef("id"), "106", "9006"));
+    }
+
+    @Test
+    void explicitlyIgnoringIdRemovesIdentityOnlyDifferences() throws Exception {
+        initializeFixture("purchase-order");
+
+        final TableComparisonResult result = comparePurchaseOrdersWithOptions(new ComparisonOptions("_PK", java.util.Set.of("id", "version")));
+
+        assertThat(result.ignoredColumns()).containsExactly(new ColumnRef("id"), new ColumnRef("version"));
         assertThat(result.differingRows()).extracting(RowDifference::key)
                 .containsExactly(new RowKey(java.util.List.of("PO-002")), new RowKey(java.util.List.of("PO-005")));
         assertThat(result.differingRows().get(0).columnDifferences())
@@ -82,7 +109,7 @@ class CoreSingleTableComparisonIT {
         assertThatThrownBy(() -> readMetadata("PurchaseOrderWithoutBusinessKey"))
                 .isInstanceOf(MetadataException.class)
                 .hasMessageContaining("dbo.PurchaseOrderWithoutBusinessKey")
-                .hasMessageContaining("_BK");
+                .hasMessageContaining("_PK");
     }
 
     @Test
@@ -93,14 +120,18 @@ class CoreSingleTableComparisonIT {
                 .isInstanceOf(MetadataException.class)
                 .hasMessageContaining("dbo.AmbiguousBusinessKey")
                 .hasMessageContaining("multiple unique indexes")
-                .hasMessageContaining("AmbiguousBusinessKey_BK")
-                .hasMessageContaining("AmbiguousBusinessKeyExternal_BK");
+                .hasMessageContaining("AmbiguousBusinessKey_PK")
+                .hasMessageContaining("AmbiguousBusinessKeyExternal_PK");
     }
 
     private TableComparisonResult comparePurchaseOrders() throws Exception {
+        return comparePurchaseOrdersWithOptions(ComparisonOptions.defaults());
+    }
+
+    private TableComparisonResult comparePurchaseOrdersWithOptions(final ComparisonOptions options) throws Exception {
         try (Connection left = harness.openConnection(DatabaseSide.LEFT);
              Connection right = harness.openConnection(DatabaseSide.RIGHT)) {
-            return comparer.compare(left, right, TableComparisonRequest.forTable("dbo", "PurchaseOrder"));
+            return comparer.compare(left, right, new TableComparisonRequest(new TableRef("dbo", "PurchaseOrder"), options));
         }
     }
 

@@ -90,7 +90,7 @@ class MainViewTest {
         final SqlServerTableCatalogService service = Mockito.mock(SqlServerTableCatalogService.class);
         when(service.discoverTableCatalog()).thenReturn(List.of(
                 TableCatalogEntry.eligible(new TableRef("dbo", "Supplier")),
-                TableCatalogEntry.ineligible(new TableRef("dbo", "PurchaseOrderWithoutBusinessKey"), "No unique index ending with _BK.")));
+                TableCatalogEntry.ineligible(new TableRef("dbo", "PurchaseOrderWithoutBusinessKey"), "No unique index ending with _PK.")));
         return service;
     }
 

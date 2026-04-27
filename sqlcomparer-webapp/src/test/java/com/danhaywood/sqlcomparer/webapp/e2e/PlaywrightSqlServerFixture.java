@@ -46,7 +46,7 @@ final class PlaywrightSqlServerFixture {
     static void prepareManualSelectionTables(final String databaseName) {
         executeSql(databaseName, "DROP TABLE IF EXISTS dbo." + ELIGIBLE_TABLE + ";");
         executeSql(databaseName, "CREATE TABLE dbo." + ELIGIBLE_TABLE + " (id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, reference NVARCHAR(40) NOT NULL, [version] DATETIME2(3) NOT NULL);");
-        executeSql(databaseName, "CREATE UNIQUE INDEX " + ELIGIBLE_TABLE + "_BK ON dbo." + ELIGIBLE_TABLE + "(reference);");
+        executeSql(databaseName, "CREATE UNIQUE INDEX " + ELIGIBLE_TABLE + "_PK ON dbo." + ELIGIBLE_TABLE + "(reference);");
 
         executeSql(databaseName, "DROP TABLE IF EXISTS dbo." + INELIGIBLE_TABLE + ";");
         executeSql(databaseName, "CREATE TABLE dbo." + INELIGIBLE_TABLE + " (id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, reference NVARCHAR(40) NOT NULL, [version] DATETIME2(3) NOT NULL);");

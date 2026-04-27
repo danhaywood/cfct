@@ -125,7 +125,7 @@ Table selection in the webapp is now a two-stage workflow:
 - Stage 2: run comparison (right-hand comparison area is reserved for this stage).
 
 The left panel lists discovered tables and shows one checkbox per table.
-Tables that do not meet the `_BK` requirement are still shown but greyed out with disabled checkboxes.
+Tables that do not meet the `_PK` requirement are still shown but greyed out with disabled checkboxes.
 A live feedback label shows the current selected-table count.
 
 Table selection remains strategy-driven via `SelectionPlan` and is intentionally decoupled from CLI table flags.
@@ -298,6 +298,9 @@ The CLI supports these table-selection options:
 The CLI supports these dotenv options:
 
 - `-e` / `--env-file`: path to a file containing `SQLCOMPARER_SERVER`, `SQLCOMPARER_USERNAME`, `SQLCOMPARER_PASSWORD`, `SQLCOMPARER_LEFT_DATABASE`, and `SQLCOMPARER_RIGHT_DATABASE`.
+
+Default comparison behavior now discovers key indexes using the `_PK` suffix.
+By default, only `version` is ignored; identity `id` values are compared unless you explicitly ignore `id`.
 
 The CLI supports these output options:
 

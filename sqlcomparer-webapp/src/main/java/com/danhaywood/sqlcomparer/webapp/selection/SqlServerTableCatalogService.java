@@ -16,7 +16,7 @@ import java.util.List;
 @Service
 public class SqlServerTableCatalogService {
 
-    private static final String BK_SUFFIX = "_BK";
+    private static final String PK_SUFFIX = "_PK";
 
     private final WebappComparisonProperties properties;
 
@@ -45,7 +45,7 @@ public class SqlServerTableCatalogService {
 
         try (Connection jdbc = DriverManager.getConnection(jdbcUrl(server, database), username, password);
              PreparedStatement statement = jdbc.prepareStatement(sql)) {
-            statement.setString(1, "%" + BK_SUFFIX);
+            statement.setString(1, "%" + PK_SUFFIX);
             try (ResultSet resultSet = statement.executeQuery()) {
                 final List<TableCatalogEntry> rows = new ArrayList<>();
                 while (resultSet.next()) {
@@ -66,9 +66,9 @@ public class SqlServerTableCatalogService {
             return TableCatalogEntry.eligible(table);
         }
         if (bkIndexCount <= 0) {
-            return TableCatalogEntry.ineligible(table, "No unique index ending with _BK.");
+            return TableCatalogEntry.ineligible(table, "No unique index ending with _PK.");
         }
-        return TableCatalogEntry.ineligible(table, "Multiple unique indexes ending with _BK.");
+        return TableCatalogEntry.ineligible(table, "Multiple unique indexes ending with _PK.");
     }
 
     private String jdbcUrl(final String server, final String databaseName) {

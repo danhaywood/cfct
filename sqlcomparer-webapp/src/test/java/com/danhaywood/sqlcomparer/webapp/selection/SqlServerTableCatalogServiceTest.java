@@ -25,7 +25,7 @@ class SqlServerTableCatalogServiceTest {
                 0);
 
         assertThat(entry.eligible()).isFalse();
-        assertThat(entry.eligibilityReason()).contains("No unique index ending with _BK");
+        assertThat(entry.eligibilityReason()).contains("No unique index ending with _PK");
     }
 
     @Test
@@ -35,6 +35,6 @@ class SqlServerTableCatalogServiceTest {
                 2);
 
         assertThat(entry.eligible()).isFalse();
-        assertThat(entry.eligibilityReason()).contains("Multiple unique indexes ending with _BK");
+        assertThat(entry.eligibilityReason()).contains("Multiple unique indexes ending with _PK");
     }
 }

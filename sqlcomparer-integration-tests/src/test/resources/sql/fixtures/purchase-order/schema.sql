@@ -13,6 +13,6 @@ CREATE TABLE dbo.PurchaseOrder (
     [version] DATETIME2(3) NOT NULL
 );
 GO
-CREATE UNIQUE INDEX PurchaseOrder_BK
+CREATE UNIQUE INDEX PurchaseOrder_PK
 ON dbo.PurchaseOrder(reference);
 GO

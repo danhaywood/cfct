@@ -9,6 +9,6 @@ CREATE TABLE dbo.Supplier (
     [version] DATETIME2(3) NOT NULL
 );
 GO
-CREATE UNIQUE INDEX Supplier_BK
+CREATE UNIQUE INDEX Supplier_PK
 ON dbo.Supplier(reference);
 GO

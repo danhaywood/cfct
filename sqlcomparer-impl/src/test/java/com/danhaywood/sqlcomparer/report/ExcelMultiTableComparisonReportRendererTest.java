@@ -65,7 +65,7 @@ class ExcelMultiTableComparisonReportRendererTest {
             final var sheet = workbook.getSheet("dbo.Supplier");
             assertThat(sheet.getRow(0).getCell(0).getStringCellValue()).isEqualTo("Table");
             assertThat(sheet.getRow(0).getCell(1).getStringCellValue()).isEqualTo("dbo.Supplier");
-            assertThat(sheet.getRow(1).getCell(1).getStringCellValue()).isEqualTo("Supplier_BK");
+            assertThat(sheet.getRow(1).getCell(1).getStringCellValue()).isEqualTo("Supplier_PK");
             assertThat(sheet.getRow(2).getCell(1).getStringCellValue()).isEqualTo("reference");
             assertThat(sheet.getRow(3).getCell(1).getStringCellValue()).isEqualTo("name, status");
             assertThat(sheet.getRow(4).getCell(1).getStringCellValue()).isEqualTo("id");
@@ -150,7 +150,7 @@ class ExcelMultiTableComparisonReportRendererTest {
 
         return new TableComparisonResult(
                 new TableRef(schemaName, tableName),
-                new BusinessKey(tableName + "_BK", List.of(new ColumnRef("reference"))),
+                new BusinessKey(tableName + "_PK", List.of(new ColumnRef("reference"))),
                 List.of(name, status),
                 List.of(new ColumnRef("id")),
                 withDifferences ? List.of(leftOnly) : List.of(),

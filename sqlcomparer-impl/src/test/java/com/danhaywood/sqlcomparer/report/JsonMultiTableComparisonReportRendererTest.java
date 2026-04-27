@@ -80,7 +80,7 @@ class JsonMultiTableComparisonReportRendererTest {
 
         return new TableComparisonResult(
                 new TableRef("dbo", "Supplier"),
-                new BusinessKey("Supplier_BK", List.of(new ColumnRef("reference"))),
+                new BusinessKey("Supplier_PK", List.of(new ColumnRef("reference"))),
                 List.of(name, status),
                 List.of(new ColumnRef("id")),
                 List.of(leftOnly),

@@ -16,7 +16,7 @@ class ManualTableSelectionStateTest {
         final TableRef ineligible = new TableRef("dbo", "PurchaseOrderWithoutBusinessKey");
         final ManualTableSelectionState state = new ManualTableSelectionState(List.of(
                 TableCatalogEntry.eligible(eligible),
-                TableCatalogEntry.ineligible(ineligible, "No unique index ending with _BK.")));
+                TableCatalogEntry.ineligible(ineligible, "No unique index ending with _PK.")));
 
         state.updateSelection(eligible, true);
         state.updateSelection(ineligible, true);

@@ -71,7 +71,7 @@ class ConfiguredComparisonServiceIT {
         assertThat(json).contains("\"rightValues\" : {");
         assertThat(json).contains("\"reference\" : \"SUP-003\"");
         assertThat(json).contains("\"sku\" : \"SKU-004\"");
-        assertThat(json).doesNotContain("PurchaseOrder_BK");
+        assertThat(json).doesNotContain("PurchaseOrder_PK");
         Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 

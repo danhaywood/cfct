@@ -3,15 +3,15 @@ Tables: 2
 
 == dbo.Supplier ==
 Table: dbo.Supplier
-Business key: Supplier_BK(reference)
+Business key: Supplier_PK(reference)
 
 Compared columns:
+  id
   name
   status
   country_code
 
 Ignored columns:
-  id
   version
 
 Rows only in left:
@@ -21,22 +21,25 @@ Rows only in right:
   SUP-004
 
 Rows with differences:
+  SUP-001
+    id: left=301, right=401
   SUP-002
+    id: left=302, right=402
     status: left=ACTIVE, right=SUSPENDED
 
 
 == dbo.Product ==
 Table: dbo.Product
-Business key: Product_BK(sku)
+Business key: Product_PK(sku)
 
 Compared columns:
+  id
   name
   category
   unit_price
   status
 
 Ignored columns:
-  id
   version
 
 Rows only in left:
@@ -46,6 +49,9 @@ Rows only in right:
   SKU-004
 
 Rows with differences:
+  SKU-001
+    id: left=501, right=601
   SKU-002
+    id: left=502, right=602
     unit_price: left=10.00, right=10.50
 
