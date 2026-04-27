@@ -25,6 +25,8 @@ public final class CliArgumentsParser {
     private static final String TABLES = "-t";
     private static final String TABLES_FILE = "--tables-file";
     private static final String ENV_FILE = "--env-file";
+    private static final String OUTPUT_FORMAT = "--output-format";
+    private static final String OUTPUT_FILE = "-o";
 
     private static final String ENV_SERVER = "SQLCOMPARER_SERVER";
     private static final String ENV_USER = "SQLCOMPARER_USERNAME";
@@ -33,7 +35,7 @@ public final class CliArgumentsParser {
     private static final String ENV_RIGHT_DATABASE = "SQLCOMPARER_RIGHT_DATABASE";
 
     private static final List<String> CONNECTION_FLAGS = List.of(SERVER, USER, PASSWORD, LEFT_DATABASE, RIGHT_DATABASE);
-    private static final Set<String> ACCEPTED_FLAGS = Set.of(SERVER, USER, PASSWORD, LEFT_DATABASE, RIGHT_DATABASE, TABLES, TABLES_FILE, ENV_FILE);
+    private static final Set<String> ACCEPTED_FLAGS = Set.of(SERVER, USER, PASSWORD, LEFT_DATABASE, RIGHT_DATABASE, TABLES, TABLES_FILE, ENV_FILE, OUTPUT_FORMAT, OUTPUT_FILE);
 
     public CliArguments parse(final String[] args) {
         final Map<String, String> valuesByFlag = parseFlagValues(args == null ? new String[0] : args);
@@ -41,13 +43,19 @@ public final class CliArgumentsParser {
         final Map<String, String> resolvedValues = resolveConnectionValues(valuesByFlag, valuesByEnvKey);
         validateRequiredConnections(resolvedValues);
 
+        final CliOutputFormat outputFormat = CliOutputFormat.parse(valuesByFlag.get(OUTPUT_FORMAT));
+        final Path outputFile = parseOutputFile(valuesByFlag.get(OUTPUT_FILE));
+        validateOutputDestination(outputFormat, outputFile);
+
         return new CliArguments(
                 resolvedValues.get(SERVER).trim(),
                 resolvedValues.get(USER).trim(),
                 resolvedValues.get(PASSWORD),
                 resolvedValues.get(LEFT_DATABASE).trim(),
                 resolvedValues.get(RIGHT_DATABASE).trim(),
-                parseSelectedTables(valuesByFlag));
+                parseSelectedTables(valuesByFlag),
+                outputFormat,
+                outputFile);
     }
 
     private Map<String, String> parseFlagValues(final String[] args) {
@@ -140,6 +148,19 @@ public final class CliArgumentsParser {
         }
         if (!missing.isEmpty()) {
             throw new IllegalArgumentException("Missing required arguments: " + String.join(", ", missing));
+        }
+    }
+
+    private Path parseOutputFile(final String outputFile) {
+        if (outputFile == null || outputFile.isBlank()) {
+            return null;
+        }
+        return Path.of(outputFile.trim());
+    }
+
+    private void validateOutputDestination(final CliOutputFormat outputFormat, final Path outputFile) {
+        if (outputFormat == CliOutputFormat.EXCEL && outputFile == null) {
+            throw new IllegalArgumentException("Missing required argument: -o is required for excel output");
         }
     }
 

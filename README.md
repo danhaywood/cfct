@@ -96,6 +96,18 @@ For example, this overrides the server value from the demo env file:
 scripts/run-demo.sh -S localhost:14334
 ```
 
+This writes JSON output instead of the default text output:
+
+```bash
+scripts/run-demo.sh --output-format json
+```
+
+This writes Excel output to a workbook file:
+
+```bash
+scripts/run-demo.sh --output-format excel -o comparison.xlsx
+```
+
 ## Demo input files
 
 `demo/sqlcomparer.env` contains fixture-only connection values using the CLI-supported dotenv keys:
@@ -130,7 +142,8 @@ java -jar sqlcomparer-cli/target/sqlcomparer-cli-0.0.1-SNAPSHOT.jar \
   -P 'Str0ng_password!123' \
   -l left_db \
   -r right_db \
-  -t dbo.Supplier,dbo.Product,dbo.PurchaseOrder
+  -t dbo.Supplier,dbo.Product,dbo.PurchaseOrder \
+  --output-format text
 ```
 
 The CLI supports these connection options:
@@ -149,6 +162,16 @@ The CLI supports these table-selection options:
 The CLI supports this dotenv option:
 
 - `--env-file`: path to a file containing `SQLCOMPARER_SERVER`, `SQLCOMPARER_USERNAME`, `SQLCOMPARER_PASSWORD`, `SQLCOMPARER_LEFT_DATABASE`, and `SQLCOMPARER_RIGHT_DATABASE`.
+
+The CLI supports these output options:
+
+- `--output-format`: one of `text`, `json`, or `excel`.
+- `-o`: optional output file path for successful output.
+
+`text` is the default when `--output-format` is omitted.
+Text and JSON are written to stdout as UTF-8 when `-o` is omitted.
+When `-o` is supplied, successful output is written to that file instead.
+Excel output requires `-o`, for example `--output-format excel -o comparison.xlsx`.
 
 Explicit CLI values override values loaded from `--env-file`.
 Use either `-t` or `--tables-file`, not both.

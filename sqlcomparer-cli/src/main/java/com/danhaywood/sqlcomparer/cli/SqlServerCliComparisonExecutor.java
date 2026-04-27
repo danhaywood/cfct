@@ -2,7 +2,6 @@ package com.danhaywood.sqlcomparer.cli;
 
 import com.danhaywood.sqlcomparer.comparison.MultiTableComparer;
 import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
-import com.danhaywood.sqlcomparer.report.TextMultiTableComparisonReportRenderer;
 
 import org.springframework.stereotype.Service;
 
@@ -13,17 +12,17 @@ import java.sql.DriverManager;
 public final class SqlServerCliComparisonExecutor implements CliComparisonExecutor {
 
     private final MultiTableComparer comparer;
-    private final TextMultiTableComparisonReportRenderer renderer;
+    private final CliComparisonReportRenderer renderer;
 
     public SqlServerCliComparisonExecutor(
             final MultiTableComparer comparer,
-            final TextMultiTableComparisonReportRenderer renderer) {
+            final CliComparisonReportRenderer renderer) {
         this.comparer = comparer;
         this.renderer = renderer;
     }
 
     @Override
-    public String execute(final CliArguments arguments) throws Exception {
+    public CliExecutionOutput execute(final CliArguments arguments) throws Exception {
         final String leftJdbcUrl = jdbcUrl(arguments.server(), arguments.leftDatabase());
         final String rightJdbcUrl = jdbcUrl(arguments.server(), arguments.rightDatabase());
         try (Connection leftConnection = DriverManager.getConnection(leftJdbcUrl, arguments.username(), arguments.password());
@@ -32,7 +31,7 @@ public final class SqlServerCliComparisonExecutor implements CliComparisonExecut
                     leftConnection,
                     rightConnection,
                     MultiTableComparisonRequest.forTables(arguments.tables()));
-            return renderer.render(result);
+            return renderer.render(result, arguments.outputFormat());
         }
     }
 

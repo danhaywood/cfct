@@ -5,6 +5,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,6 +32,90 @@ class CliArgumentsParserTest {
         assertThat(arguments.rightDatabase()).isEqualTo("right_db");
         assertThat(arguments.tables()).extracting(table -> table.displayName())
                 .containsExactly("dbo.Supplier", "dbo.PurchaseOrder");
+        assertThat(arguments.outputFormat()).isEqualTo(CliOutputFormat.TEXT);
+        assertThat(arguments.outputFile()).isNull();
+    }
+
+    @Test
+    void parsesOptionalOutputFile() {
+        final CliArguments arguments = parser.parse(new String[]{
+                "-S", "server-host",
+                "-U", "sa",
+                "-P", "secret",
+                "-l", "left_db",
+                "-r", "right_db",
+                "-t", "dbo.Supplier",
+                "-o", "target/comparison.json"
+        });
+
+        assertThat(arguments.outputFile()).hasToString("target/comparison.json");
+    }
+
+    @Test
+    void requiresOutputFileForExcelOutput() {
+        assertThatThrownBy(() -> parser.parse(new String[]{
+                "-S", "server-host",
+                "-U", "sa",
+                "-P", "secret",
+                "-l", "left_db",
+                "-r", "right_db",
+                "-t", "dbo.Supplier",
+                "--output-format", "excel"
+        }))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("-o")
+                .hasMessageContaining("excel");
+    }
+
+    @Test
+    void acceptsExcelOutputWhenOutputFileIsProvided() {
+        final CliArguments arguments = parser.parse(new String[]{
+                "-S", "server-host",
+                "-U", "sa",
+                "-P", "secret",
+                "-l", "left_db",
+                "-r", "right_db",
+                "-t", "dbo.Supplier",
+                "--output-format", "excel",
+                "-o", "comparison.xlsx"
+        });
+
+        assertThat(arguments.outputFormat()).isEqualTo(CliOutputFormat.EXCEL);
+        assertThat(arguments.outputFile()).hasToString("comparison.xlsx");
+    }
+
+    @Test
+    void parsesSupportedNonExcelOutputFormatsWithoutOutputFile() {
+        for (CliOutputFormat outputFormat : List.of(CliOutputFormat.TEXT, CliOutputFormat.JSON)) {
+            final CliArguments arguments = parser.parse(new String[]{
+                    "-S", "server-host",
+                    "-U", "sa",
+                    "-P", "secret",
+                    "-l", "left_db",
+                    "-r", "right_db",
+                    "-t", "dbo.Supplier",
+                    "--output-format", outputFormat.argumentValue()
+            });
+
+            assertThat(arguments.outputFormat()).isEqualTo(outputFormat);
+        }
+    }
+
+    @Test
+    void rejectsUnsupportedOutputFormat() {
+        assertThatThrownBy(() -> parser.parse(new String[]{
+                "-S", "server-host",
+                "-U", "sa",
+                "-P", "secret",
+                "-l", "left_db",
+                "-r", "right_db",
+                "-t", "dbo.Supplier",
+                "--output-format", "pdf"
+        }))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unsupported output format")
+                .hasMessageContaining("pdf")
+                .hasMessageContaining("text, json, excel");
     }
 
     @Test

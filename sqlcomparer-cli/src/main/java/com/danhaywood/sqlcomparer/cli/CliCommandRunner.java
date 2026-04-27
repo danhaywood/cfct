@@ -2,7 +2,9 @@ package com.danhaywood.sqlcomparer.cli;
 
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
 
 @Component
 public final class CliCommandRunner {
@@ -22,8 +24,8 @@ public final class CliCommandRunner {
     int run(final String[] args, final PrintStream out, final PrintStream err) {
         try {
             final CliArguments parsed = parser.parse(args);
-            final String report = executor.execute(parsed);
-            out.print(report);
+            final CliExecutionOutput output = executor.execute(parsed);
+            writeOutput(parsed, output, out);
             return 0;
         } catch (IllegalArgumentException ex) {
             err.println("Error: " + ex.getMessage());
@@ -32,5 +34,15 @@ public final class CliCommandRunner {
             err.println("Error: " + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage()));
             return 1;
         }
+    }
+
+    private void writeOutput(final CliArguments arguments, final CliExecutionOutput output, final PrintStream out) throws IOException {
+        final byte[] bytes = output.bytes();
+        if (arguments.outputFile() != null) {
+            Files.write(arguments.outputFile(), bytes);
+            return;
+        }
+        out.write(bytes, 0, bytes.length);
+        out.flush();
     }
 }

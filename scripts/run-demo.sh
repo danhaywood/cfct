@@ -16,6 +16,7 @@ Builds or locates the SQL comparer CLI jar, then runs it with:
   --tables-file ${DEMO_TABLES}
 
 Additional arguments are appended to the CLI invocation.
+For example, pass --output-format json for JSON output or write Excel output with --output-format excel -o comparison.xlsx.
 Start the fixture first with:
   ${SCRIPT_DIR}/fixture-sqlserver.sh start
 

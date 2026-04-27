@@ -2,6 +2,7 @@ package com.danhaywood.sqlcomparer.cli;
 
 import com.danhaywood.sqlcomparer.model.TableRef;
 
+import java.nio.file.Path;
 import java.util.List;
 
 public record CliArguments(
@@ -10,10 +11,15 @@ public record CliArguments(
         String password,
         String leftDatabase,
         String rightDatabase,
-        List<TableRef> tables
+        List<TableRef> tables,
+        CliOutputFormat outputFormat,
+        Path outputFile
 ) {
 
     public CliArguments {
         tables = List.copyOf(tables);
+        if (outputFormat == null) {
+            outputFormat = CliOutputFormat.TEXT;
+        }
     }
 }
