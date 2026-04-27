@@ -21,6 +21,9 @@ It provides a reusable comparison API, an implementation module, a Spring Boot C
 These entry-point modules only reference `sqlcomparer-impl` for explicit Spring wiring import (`ComparisonImplementationConfiguration`).
 Direct references to non-configuration classes in `sqlcomparer-impl` are intentionally disallowed and covered by architecture tests.
 
+The webapp uses Spring-managed `DataSource` beans for SQL Server access at its service boundaries.
+Connectivity validation, table discovery, and webapp comparison execution acquire short-lived JDBC connections from these DataSources and close them within the service method.
+
 For classes that implement an interface, implementation names follow interface-first convention: `<Interface><Qualifier>`.
 Examples include `CliComparisonExecutorSqlServer`, `TableMetadataReaderSqlServer`, and `TableRowReaderSqlServer`.
 

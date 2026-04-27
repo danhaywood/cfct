@@ -1,12 +1,11 @@
 package com.danhaywood.sqlcomparer.webapp.selection;
 
 import com.danhaywood.sqlcomparer.model.TableRef;
-import com.danhaywood.sqlcomparer.webapp.config.WebappComparisonProperties;
+import com.danhaywood.sqlcomparer.webapp.config.WebappDataSources;
 
 import org.springframework.stereotype.Service;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,19 +17,13 @@ public class SqlServerTableCatalogService {
 
     private static final String PK_SUFFIX = "_PK";
 
-    private final WebappComparisonProperties properties;
+    private final WebappDataSources dataSources;
 
-    public SqlServerTableCatalogService(final WebappComparisonProperties properties) {
-        this.properties = properties;
+    public SqlServerTableCatalogService(final WebappDataSources dataSources) {
+        this.dataSources = dataSources;
     }
 
     public List<TableCatalogEntry> discoverTableCatalog() {
-        final WebappComparisonProperties.Connection connection = properties.getConnection();
-        final String server = connection.getServer();
-        final String username = connection.getUsername();
-        final String password = connection.getPassword();
-        final String database = connection.getLeftDatabase();
-
         final String sql = """
                 SELECT s.name AS schema_name,
                        t.name AS table_name,
@@ -43,7 +36,7 @@ public class SqlServerTableCatalogService {
                 ORDER BY s.name, t.name
                 """;
 
-        try (Connection jdbc = DriverManager.getConnection(jdbcUrl(server, database), username, password);
+        try (Connection jdbc = dataSources.left().getConnection();
              PreparedStatement statement = jdbc.prepareStatement(sql)) {
             statement.setString(1, "%" + PK_SUFFIX);
             try (ResultSet resultSet = statement.executeQuery()) {
@@ -69,10 +62,5 @@ public class SqlServerTableCatalogService {
             return TableCatalogEntry.ineligible(table, "No unique index ending with _PK.");
         }
         return TableCatalogEntry.ineligible(table, "Multiple unique indexes ending with _PK.");
-    }
-
-    private String jdbcUrl(final String server, final String databaseName) {
-        return "jdbc:sqlserver://%s;databaseName=%s;encrypt=false;trustServerCertificate=true"
-                .formatted(server, databaseName);
     }
 }

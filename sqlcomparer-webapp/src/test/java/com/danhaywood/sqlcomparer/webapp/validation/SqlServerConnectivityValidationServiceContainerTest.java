@@ -1,6 +1,8 @@
 package com.danhaywood.sqlcomparer.webapp.validation;
 
 import com.danhaywood.sqlcomparer.webapp.config.WebappComparisonProperties;
+import com.danhaywood.sqlcomparer.webapp.config.WebappDataSourceConfiguration;
+import com.danhaywood.sqlcomparer.webapp.config.WebappDataSources;
 
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MSSQLServerContainer;
@@ -31,8 +33,8 @@ class SqlServerConnectivityValidationServiceContainerTest {
         createDatabaseIfMissing("left_validation_db");
         createDatabaseIfMissing("right_validation_db");
 
-        final SqlServerConnectivityValidationService service = new SqlServerConnectivityValidationService(
-                properties(hostAndPort(), SQL_SERVER.getUsername(), SQL_SERVER.getPassword(), "left_validation_db", "right_validation_db"));
+        final SqlServerConnectivityValidationService service = service(
+                hostAndPort(), SQL_SERVER.getUsername(), SQL_SERVER.getPassword(), "left_validation_db", "right_validation_db");
 
         assertThatCode(service::validateConfiguredTargets).doesNotThrowAnyException();
     }
@@ -41,8 +43,8 @@ class SqlServerConnectivityValidationServiceContainerTest {
     void failsWhenConfiguredDatabaseIsMissing() throws Exception {
         createDatabaseIfMissing("left_existing_db");
 
-        final SqlServerConnectivityValidationService service = new SqlServerConnectivityValidationService(
-                properties(hostAndPort(), SQL_SERVER.getUsername(), SQL_SERVER.getPassword(), "left_existing_db", "missing_db"));
+        final SqlServerConnectivityValidationService service = service(
+                hostAndPort(), SQL_SERVER.getUsername(), SQL_SERVER.getPassword(), "left_existing_db", "missing_db");
 
         assertThatThrownBy(service::validateConfiguredTargets)
                 .isInstanceOf(SqlServerConnectivityValidationException.class)
@@ -51,8 +53,7 @@ class SqlServerConnectivityValidationServiceContainerTest {
 
     @Test
     void failsWithConnectivityMessageForUnreachableServer() {
-        final SqlServerConnectivityValidationService service = new SqlServerConnectivityValidationService(
-                properties("localhost:1", "sa", "bad-password", "left_db", "right_db"));
+        final SqlServerConnectivityValidationService service = service("localhost:1", "sa", "bad-password", "left_db", "right_db");
 
         assertThatThrownBy(service::validateConfiguredTargets)
                 .isInstanceOf(SqlServerConnectivityValidationException.class)
@@ -64,12 +65,26 @@ class SqlServerConnectivityValidationServiceContainerTest {
         createDatabaseIfMissing("left_validation_db");
         createDatabaseIfMissing("right_validation_db");
 
-        final SqlServerConnectivityValidationService service = new SqlServerConnectivityValidationService(
-                properties(hostAndPort(), SQL_SERVER.getUsername(), "wrong-password", "left_validation_db", "right_validation_db"));
+        final SqlServerConnectivityValidationService service = service(
+                hostAndPort(), SQL_SERVER.getUsername(), "wrong-password", "left_validation_db", "right_validation_db");
 
         assertThatThrownBy(service::validateConfiguredTargets)
                 .isInstanceOf(SqlServerConnectivityValidationException.class)
                 .hasMessageContaining("Authentication failed");
+    }
+
+    private static SqlServerConnectivityValidationService service(
+            final String server,
+            final String username,
+            final String password,
+            final String leftDatabase,
+            final String rightDatabase) {
+        final WebappComparisonProperties properties = properties(server, username, password, leftDatabase, rightDatabase);
+        final WebappDataSources dataSources = new WebappDataSources(
+                WebappDataSourceConfiguration.sqlServerDataSource(properties, "master"),
+                WebappDataSourceConfiguration.sqlServerDataSource(properties, leftDatabase),
+                WebappDataSourceConfiguration.sqlServerDataSource(properties, rightDatabase));
+        return new SqlServerConnectivityValidationService(properties, dataSources);
     }
 
     private static WebappComparisonProperties properties(

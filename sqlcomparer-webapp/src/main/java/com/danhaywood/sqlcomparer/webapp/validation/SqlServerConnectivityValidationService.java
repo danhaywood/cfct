@@ -1,11 +1,11 @@
 package com.danhaywood.sqlcomparer.webapp.validation;
 
 import com.danhaywood.sqlcomparer.webapp.config.WebappComparisonProperties;
+import com.danhaywood.sqlcomparer.webapp.config.WebappDataSources;
 
 import org.springframework.stereotype.Service;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,9 +15,13 @@ import java.util.Locale;
 public class SqlServerConnectivityValidationService {
 
     private final WebappComparisonProperties properties;
+    private final WebappDataSources dataSources;
 
-    public SqlServerConnectivityValidationService(final WebappComparisonProperties properties) {
+    public SqlServerConnectivityValidationService(
+            final WebappComparisonProperties properties,
+            final WebappDataSources dataSources) {
         this.properties = properties;
+        this.dataSources = dataSources;
     }
 
     public void validateConfiguredTargets() {
@@ -28,15 +32,15 @@ public class SqlServerConnectivityValidationService {
         final String leftDatabase = required(connection.getLeftDatabase(), "connection.left-database");
         final String rightDatabase = required(connection.getRightDatabase(), "connection.right-database");
 
-        try (Connection master = openConnection(server, "master", username, password)) {
+        try (Connection master = dataSources.master().getConnection()) {
             ensureDatabaseExists(master, leftDatabase);
             ensureDatabaseExists(master, rightDatabase);
         } catch (SQLException ex) {
             throw mapConnectionError(server, ex);
         }
 
-        validateDatabaseReachable(server, leftDatabase, username, password);
-        validateDatabaseReachable(server, rightDatabase, username, password);
+        validateDatabaseReachable(server, dataSources.left());
+        validateDatabaseReachable(server, dataSources.right());
     }
 
     private void ensureDatabaseExists(final Connection masterConnection, final String databaseName) throws SQLException {
@@ -53,27 +57,12 @@ public class SqlServerConnectivityValidationService {
 
     private void validateDatabaseReachable(
             final String server,
-            final String databaseName,
-            final String username,
-            final String password) {
-        try (Connection ignored = openConnection(server, databaseName, username, password)) {
+            final javax.sql.DataSource dataSource) {
+        try (Connection ignored = dataSource.getConnection()) {
             // no-op
         } catch (SQLException ex) {
             throw mapConnectionError(server, ex);
         }
-    }
-
-    private Connection openConnection(
-            final String server,
-            final String databaseName,
-            final String username,
-            final String password) throws SQLException {
-        return DriverManager.getConnection(jdbcUrl(server, databaseName), username, password);
-    }
-
-    private String jdbcUrl(final String server, final String databaseName) {
-        return "jdbc:sqlserver://%s;databaseName=%s;encrypt=false;trustServerCertificate=true"
-                .formatted(server, databaseName);
     }
 
     private SqlServerConnectivityValidationException mapConnectionError(final String server, final SQLException ex) {

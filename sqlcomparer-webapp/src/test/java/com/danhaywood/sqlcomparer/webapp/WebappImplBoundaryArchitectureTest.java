@@ -16,7 +16,8 @@ class WebappImplBoundaryArchitectureTest {
             "import com.danhaywood.sqlcomparer.comparison.",
             "import com.danhaywood.sqlcomparer.report.",
             "import com.danhaywood.sqlcomparer.sqlserver.",
-            "import com.danhaywood.sqlcomparer.config.");
+            "import com.danhaywood.sqlcomparer.config.",
+            "import java.sql.DriverManager;");
 
     @Test
     void mainSourcesOnlyImportImplConfigurationFromImplModule() throws IOException {
