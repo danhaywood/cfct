@@ -98,36 +98,34 @@ public final class ExcelMultiTableComparisonReportRenderer {
         rowIndex++;
 
         final List<ColumnRef> keyColumns = result.businessKey().columns();
+        final List<ColumnRef> displayedColumns = java.util.stream.Stream.concat(keyColumns.stream(), result.comparedColumns().stream()).toList();
         final int headerRowIndex = rowIndex++;
         final Row headerRow = sheet.createRow(headerRowIndex);
-        writeCell(headerRow, 0, "Difference Type", styles.header());
+        writeCell(headerRow, 0, "Result", styles.header());
         int columnIndex = 1;
-        for (ColumnRef keyColumn : keyColumns) {
-            writeCell(headerRow, columnIndex++, keyColumn.name(), styles.header());
-        }
-        for (ColumnRef comparedColumn : result.comparedColumns()) {
-            writeCell(headerRow, columnIndex++, comparedColumn.name(), styles.header());
+        for (ColumnRef displayedColumn : displayedColumns) {
+            writeCell(headerRow, columnIndex++, displayedColumn.name() + " (left)", styles.header());
+            writeCell(headerRow, columnIndex++, displayedColumn.name() + " (right)", styles.header());
         }
 
         for (RowKey rowKey : result.rowsOnlyInLeft()) {
-            rowIndex = writeActualRow(sheet, rowIndex, styles.onlyInLeft(), styles.changed(), "Only in left", rowKey, result.rowsOnlyInLeftValues().get(rowKey), keyColumns, result.comparedColumns(), Set.of());
+            rowIndex = writeActualRow(sheet, rowIndex, styles.onlyInLeft(), styles.onlyInLeft(), "Only in left", rowKey, result.rowsOnlyInLeftValues().get(rowKey), null, keyColumns, result.comparedColumns(), Set.of());
         }
         for (RowKey rowKey : result.rowsOnlyInRight()) {
-            rowIndex = writeActualRow(sheet, rowIndex, styles.onlyInRight(), styles.changed(), "Only in right", rowKey, result.rowsOnlyInRightValues().get(rowKey), keyColumns, result.comparedColumns(), Set.of());
+            rowIndex = writeActualRow(sheet, rowIndex, styles.onlyInRight(), styles.onlyInRight(), "Only in right", rowKey, null, result.rowsOnlyInRightValues().get(rowKey), keyColumns, result.comparedColumns(), Set.of());
         }
         for (RowDifference rowDifference : result.differingRows()) {
             final Set<ColumnRef> changedColumns = rowDifference.columnDifferences().stream()
                     .map(ColumnDifference::column)
                     .collect(Collectors.toSet());
-            rowIndex = writeActualRow(sheet, rowIndex, styles.present(), styles.changed(), "Left", rowDifference.key(), rowDifference.leftValues(), keyColumns, result.comparedColumns(), changedColumns);
-            rowIndex = writeActualRow(sheet, rowIndex, styles.present(), styles.changed(), "Right", rowDifference.key(), rowDifference.rightValues(), keyColumns, result.comparedColumns(), changedColumns);
+            rowIndex = writeActualRow(sheet, rowIndex, styles.present(), styles.changed(), "Differ", rowDifference.key(), rowDifference.leftValues(), rowDifference.rightValues(), keyColumns, result.comparedColumns(), changedColumns);
         }
         if (!result.hasDifferences()) {
             writeRow(sheet, rowIndex, styles.present(), "No differences found");
         }
 
-        sheet.createFreezePane(1 + keyColumns.size(), headerRowIndex + 1);
-        autosizeColumns(sheet, 1 + keyColumns.size() + result.comparedColumns().size());
+        sheet.createFreezePane(1 + (keyColumns.size() * 2), headerRowIndex + 1);
+        autosizeColumns(sheet, 1 + (displayedColumns.size() * 2));
     }
 
     private int writeActualRow(
@@ -137,21 +135,23 @@ public final class ExcelMultiTableComparisonReportRenderer {
             final CellStyle changedStyle,
             final String differenceType,
             final RowKey rowKey,
-            final Map<ColumnRef, String> values,
+            final Map<ColumnRef, String> leftValues,
+            final Map<ColumnRef, String> rightValues,
             final List<ColumnRef> keyColumns,
             final List<ColumnRef> comparedColumns,
             final Set<ColumnRef> changedColumns) {
         final Row row = sheet.createRow(rowIndex);
         writeCell(row, 0, differenceType, rowStyle);
         int columnIndex = 1;
-        for (String keyValue : rowKey.values()) {
-            writeCell(row, columnIndex++, keyValue, rowStyle);
-        }
-        for (int i = rowKey.values().size(); i < keyColumns.size(); i++) {
-            writeCell(row, columnIndex++, "", rowStyle);
+        for (int keyIndex = 0; keyIndex < keyColumns.size(); keyIndex++) {
+            final String keyValue = keyIndex < rowKey.values().size() ? rowKey.values().get(keyIndex) : "";
+            writeCell(row, columnIndex++, leftValues == null ? "" : keyValue, rowStyle);
+            writeCell(row, columnIndex++, rightValues == null ? "" : keyValue, rowStyle);
         }
         for (ColumnRef comparedColumn : comparedColumns) {
-            writeCell(row, columnIndex++, value(values, comparedColumn), changedColumns.contains(comparedColumn) ? changedStyle : rowStyle);
+            final CellStyle valueStyle = changedColumns.contains(comparedColumn) ? changedStyle : rowStyle;
+            writeCell(row, columnIndex++, value(leftValues, comparedColumn), valueStyle);
+            writeCell(row, columnIndex++, value(rightValues, comparedColumn), valueStyle);
         }
         return rowIndex + 1;
     }
