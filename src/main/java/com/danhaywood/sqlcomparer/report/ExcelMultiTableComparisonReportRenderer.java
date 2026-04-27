@@ -6,10 +6,13 @@ import com.danhaywood.sqlcomparer.core.MultiTableComparisonResult;
 import com.danhaywood.sqlcomparer.core.RowDifference;
 import com.danhaywood.sqlcomparer.core.RowKey;
 import com.danhaywood.sqlcomparer.core.TableComparisonResult;
+import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -19,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,8 +38,9 @@ public final class ExcelMultiTableComparisonReportRenderer {
     public byte[] render(final MultiTableComparisonResult result) {
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             final Styles styles = createStyles(workbook);
-            createTableOfContentsSheet(workbook, styles, result);
-            createTableSheets(workbook, styles, result);
+            final List<TableSheet> tableSheets = tableSheets(result);
+            createTableOfContentsSheet(workbook, styles, tableSheets);
+            createTableSheets(workbook, styles, tableSheets);
             workbook.write(outputStream);
             return outputStream.toByteArray();
         } catch (IOException ex) {
@@ -43,32 +48,45 @@ public final class ExcelMultiTableComparisonReportRenderer {
         }
     }
 
-    private void createTableOfContentsSheet(final Workbook workbook, final Styles styles, final MultiTableComparisonResult result) {
+    private void createTableOfContentsSheet(final Workbook workbook, final Styles styles, final List<TableSheet> tableSheets) {
         final Sheet sheet = workbook.createSheet(TABLE_OF_CONTENTS);
+        final CreationHelper creationHelper = workbook.getCreationHelper();
         sheet.createFreezePane(2, 1);
         int rowIndex = 0;
-        writeRow(sheet, rowIndex++, styles.header(), "Schema", "Table", "Compared Columns", "Ignored Columns", "Rows Only In Left", "Rows Only In Right", "Differing Rows", "Has Differences");
-        for (TableComparisonResult tableResult : result.tableResults()) {
-            writeRow(sheet, rowIndex++, tableResult.hasDifferences() ? styles.changed() : styles.present(),
-                    tableResult.table().schemaName(),
-                    tableResult.table().tableName(),
-                    tableResult.comparedColumns().size(),
-                    tableResult.ignoredColumns().size(),
-                    tableResult.rowsOnlyInLeft().size(),
-                    tableResult.rowsOnlyInRight().size(),
-                    tableResult.differingRows().size(),
-                    tableResult.hasDifferences());
+        writeRow(sheet, rowIndex++, styles.header(), "Table", "Link", "Compared Columns", "Ignored Columns", "Rows Only In Left", "Rows Only In Right", "Differing Rows", "Has Differences");
+        for (TableSheet tableSheet : tableSheets) {
+            final TableComparisonResult tableResult = tableSheet.result();
+            final Row row = sheet.createRow(rowIndex++);
+            writeCell(row, 0, tableResult.table().displayName(), null);
+            final Cell linkCell = writeCell(row, 1, "Open", styles.hyperlink());
+            final Hyperlink hyperlink = creationHelper.createHyperlink(HyperlinkType.DOCUMENT);
+            hyperlink.setAddress("'" + tableSheet.sheetName().replace("'", "''") + "'!A1");
+            linkCell.setHyperlink(hyperlink);
+            writeCell(row, 2, tableResult.comparedColumns().size(), null);
+            writeCell(row, 3, tableResult.ignoredColumns().size(), null);
+            writeCell(row, 4, tableResult.rowsOnlyInLeft().size(), null);
+            writeCell(row, 5, tableResult.rowsOnlyInRight().size(), null);
+            writeCell(row, 6, tableResult.differingRows().size(), null);
+            writeCell(row, 7, tableResult.hasDifferences(), null);
         }
         autosizeColumns(sheet, 8);
     }
 
-    private void createTableSheets(final Workbook workbook, final Styles styles, final MultiTableComparisonResult result) {
+    private void createTableSheets(final Workbook workbook, final Styles styles, final List<TableSheet> tableSheets) {
+        for (TableSheet tableSheet : tableSheets) {
+            final Sheet sheet = workbook.createSheet(tableSheet.sheetName());
+            populateTableSheet(sheet, styles, tableSheet.result());
+        }
+    }
+
+    private List<TableSheet> tableSheets(final MultiTableComparisonResult result) {
         final Set<String> usedNames = new HashSet<>();
         usedNames.add(TABLE_OF_CONTENTS);
+        final List<TableSheet> tableSheets = new ArrayList<>();
         for (TableComparisonResult tableResult : result.tableResults()) {
-            final Sheet sheet = workbook.createSheet(safeSheetName(tableResult.table().displayName(), usedNames));
-            populateTableSheet(sheet, styles, tableResult);
+            tableSheets.add(new TableSheet(tableResult, safeSheetName(tableResult.table().displayName(), usedNames)));
         }
+        return List.copyOf(tableSheets);
     }
 
     private void populateTableSheet(final Sheet sheet, final Styles styles, final TableComparisonResult result) {
@@ -176,7 +194,7 @@ public final class ExcelMultiTableComparisonReportRenderer {
         }
     }
 
-    private void writeCell(final Row row, final int columnIndex, final Object value, final CellStyle style) {
+    private Cell writeCell(final Row row, final int columnIndex, final Object value, final CellStyle style) {
         final Cell cell = row.createCell(columnIndex);
         if (value instanceof Number number) {
             cell.setCellValue(number.doubleValue());
@@ -188,6 +206,7 @@ public final class ExcelMultiTableComparisonReportRenderer {
         if (style != null) {
             cell.setCellStyle(style);
         }
+        return cell;
     }
 
     private void autosizeColumns(final Sheet sheet, final int columnCount) {
@@ -221,7 +240,16 @@ public final class ExcelMultiTableComparisonReportRenderer {
         onlyInRight.setFillForegroundColor(IndexedColors.ROSE.getIndex());
         onlyInRight.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-        return new Styles(header, metadata, changed, present, onlyInLeft, onlyInRight);
+        final CellStyle hyperlink = workbook.createCellStyle();
+        final var hyperlinkFont = workbook.createFont();
+        hyperlinkFont.setUnderline(org.apache.poi.ss.usermodel.Font.U_SINGLE);
+        hyperlinkFont.setColor(IndexedColors.BLUE.getIndex());
+        hyperlink.setFont(hyperlinkFont);
+
+        return new Styles(header, metadata, changed, present, onlyInLeft, onlyInRight, hyperlink);
+    }
+
+    private record TableSheet(TableComparisonResult result, String sheetName) {
     }
 
     private record Styles(
@@ -230,7 +258,8 @@ public final class ExcelMultiTableComparisonReportRenderer {
             CellStyle changed,
             CellStyle present,
             CellStyle onlyInLeft,
-            CellStyle onlyInRight
+            CellStyle onlyInRight,
+            CellStyle hyperlink
     ) {
     }
 }

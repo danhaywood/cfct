@@ -37,14 +37,18 @@ class ExcelMultiTableComparisonReportRendererTest {
             assertThat(workbook.getSheetName(2)).isEqualTo("dbo.Product");
 
             final var contents = workbook.getSheet("Table of Contents");
-            assertThat(contents.getRow(0).getCell(0).getStringCellValue()).isEqualTo("Schema");
-            assertThat(contents.getRow(1).getCell(0).getStringCellValue()).isEqualTo("dbo");
-            assertThat(contents.getRow(1).getCell(1).getStringCellValue()).isEqualTo("Supplier");
+            assertThat(contents.getRow(0).getCell(0).getStringCellValue()).isEqualTo("Table");
+            assertThat(contents.getRow(0).getCell(1).getStringCellValue()).isEqualTo("Link");
+            assertThat(contents.getRow(1).getCell(0).getStringCellValue()).isEqualTo("dbo.Supplier");
+            assertThat(contents.getRow(1).getCell(1).getStringCellValue()).isEqualTo("Open");
+            assertThat(contents.getRow(1).getCell(1).getHyperlink().getAddress()).isEqualTo("'dbo.Supplier'!A1");
             assertThat(contents.getRow(1).getCell(2).getNumericCellValue()).isEqualTo(2);
             assertThat(contents.getRow(1).getCell(4).getNumericCellValue()).isEqualTo(1);
             assertThat(contents.getRow(1).getCell(5).getNumericCellValue()).isEqualTo(1);
             assertThat(contents.getRow(1).getCell(6).getNumericCellValue()).isEqualTo(1);
             assertThat(contents.getRow(1).getCell(7).getBooleanCellValue()).isTrue();
+            assertThat(contents.getRow(2).getCell(0).getStringCellValue()).isEqualTo("dbo.Product");
+            assertThat(contents.getRow(2).getCell(1).getHyperlink().getAddress()).isEqualTo("'dbo.Product'!A1");
             assertThat(contents.getRow(2).getCell(7).getBooleanCellValue()).isFalse();
             assertThat(contents.getPaneInformation().getVerticalSplitPosition()).isEqualTo((short) 2);
             assertThat(contents.getPaneInformation().getHorizontalSplitPosition()).isEqualTo((short) 1);
