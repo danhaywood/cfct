@@ -11,11 +11,14 @@ The wrapper SHALL not automatically build or rebuild jar artifacts.
 The wrapper SHALL use production-oriented variable names and environment overrides rather than `DEMO_`-prefixed names.
 The wrapper SHALL use `.env` in the current working directory as its default env file.
 The wrapper SHALL not define a default tables file.
-The wrapper SHALL support table selection by pass-through CLI arguments or by `SQLCOMPARER_TABLES_FILE`.
+The wrapper SHALL support table selection by pass-through CLI arguments or by `COMPAREDB_TABLES_FILE`.
 The wrapper SHALL allow callers to pass additional CLI arguments without editing the script.
+The wrapper SHALL support env-file selection via `--env-file <path>`.
+The wrapper SHALL support env-file selection via `COMPAREDB_ENV_FILE`.
+The wrapper SHALL prioritize `--env-file <path>` over `COMPAREDB_ENV_FILE` when both are provided.
 
 #### Scenario: Comparison wrapper runs with explicit fixture example inputs
-- **WHEN** the fixture SQL Server is running, required jars are built, and the user runs `./comparedb.sh` with `SQLCOMPARER_ENV_FILE=demo/.env` and `--tables-file demo/tables.txt`
+- **WHEN** the fixture SQL Server is running, required jars are built, and the user runs `./comparedb.sh` with `COMPAREDB_ENV_FILE=demo/.env` and `--tables-file demo/tables.txt`
 - **THEN** the wrapper invokes the CLI with `demo/.env` and `demo/tables.txt`
 
 #### Scenario: Comparison wrapper accepts additional arguments
@@ -23,8 +26,16 @@ The wrapper SHALL allow callers to pass additional CLI arguments without editing
 - **THEN** the wrapper passes those arguments through to the CLI invocation
 
 #### Scenario: Comparison wrapper supports tables file environment override
-- **WHEN** the user runs `./comparedb.sh` with `SQLCOMPARER_TABLES_FILE` set
+- **WHEN** the user runs `./comparedb.sh` with `COMPAREDB_TABLES_FILE` set
 - **THEN** the wrapper passes that file path to the CLI table-file option
+
+#### Scenario: Comparison wrapper supports env-file argument override
+- **WHEN** the user runs `./comparedb.sh --env-file custom.env --tables-file demo/tables.txt`
+- **THEN** the wrapper invokes the CLI using `custom.env` as the env file input
+
+#### Scenario: Comparison wrapper prioritizes explicit env-file argument
+- **WHEN** the user runs `./comparedb.sh --env-file custom.env` with `COMPAREDB_ENV_FILE=demo/.env`
+- **THEN** the wrapper invokes the CLI using `custom.env` instead of `demo/.env`
 
 #### Scenario: Comparison wrapper reports missing jar artifacts
 - **WHEN** the user runs `./comparedb.sh` before required jar artifacts have been built
@@ -84,3 +95,4 @@ The README SHALL remove or correct information that no longer matches current pr
 #### Scenario: README documents direct CLI invocation
 - **WHEN** a user wants to bypass the wrapper script
 - **THEN** the README shows the supported CLI options for server, username, password, left database, right database, table list, table file, environment file, output format, and output file
+
