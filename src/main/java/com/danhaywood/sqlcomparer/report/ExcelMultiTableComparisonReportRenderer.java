@@ -6,6 +6,10 @@ import com.danhaywood.sqlcomparer.core.MultiTableComparisonResult;
 import com.danhaywood.sqlcomparer.core.RowDifference;
 import com.danhaywood.sqlcomparer.core.RowKey;
 import com.danhaywood.sqlcomparer.core.TableComparisonResult;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -17,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,8 +33,9 @@ public final class ExcelMultiTableComparisonReportRenderer {
 
     public byte[] render(final MultiTableComparisonResult result) {
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            createTableOfContentsSheet(workbook, result);
-            createTableSheets(workbook, result);
+            final Styles styles = createStyles(workbook);
+            createTableOfContentsSheet(workbook, styles, result);
+            createTableSheets(workbook, styles, result);
             workbook.write(outputStream);
             return outputStream.toByteArray();
         } catch (IOException ex) {
@@ -37,12 +43,13 @@ public final class ExcelMultiTableComparisonReportRenderer {
         }
     }
 
-    private void createTableOfContentsSheet(final Workbook workbook, final MultiTableComparisonResult result) {
+    private void createTableOfContentsSheet(final Workbook workbook, final Styles styles, final MultiTableComparisonResult result) {
         final Sheet sheet = workbook.createSheet(TABLE_OF_CONTENTS);
+        sheet.createFreezePane(2, 1);
         int rowIndex = 0;
-        writeRow(sheet, rowIndex++, "Schema", "Table", "Compared Columns", "Ignored Columns", "Rows Only In Left", "Rows Only In Right", "Differing Rows", "Has Differences");
+        writeRow(sheet, rowIndex++, styles.header(), "Schema", "Table", "Compared Columns", "Ignored Columns", "Rows Only In Left", "Rows Only In Right", "Differing Rows", "Has Differences");
         for (TableComparisonResult tableResult : result.tableResults()) {
-            writeRow(sheet, rowIndex++,
+            writeRow(sheet, rowIndex++, tableResult.hasDifferences() ? styles.changed() : styles.present(),
                     tableResult.table().schemaName(),
                     tableResult.table().tableName(),
                     tableResult.comparedColumns().size(),
@@ -55,61 +62,88 @@ public final class ExcelMultiTableComparisonReportRenderer {
         autosizeColumns(sheet, 8);
     }
 
-    private void createTableSheets(final Workbook workbook, final MultiTableComparisonResult result) {
+    private void createTableSheets(final Workbook workbook, final Styles styles, final MultiTableComparisonResult result) {
         final Set<String> usedNames = new HashSet<>();
         usedNames.add(TABLE_OF_CONTENTS);
         for (TableComparisonResult tableResult : result.tableResults()) {
             final Sheet sheet = workbook.createSheet(safeSheetName(tableResult.table().displayName(), usedNames));
-            populateTableSheet(sheet, tableResult);
+            populateTableSheet(sheet, styles, tableResult);
         }
     }
 
-    private void populateTableSheet(final Sheet sheet, final TableComparisonResult result) {
+    private void populateTableSheet(final Sheet sheet, final Styles styles, final TableComparisonResult result) {
         int rowIndex = 0;
-        writeRow(sheet, rowIndex++, "Table", result.table().displayName());
-        writeRow(sheet, rowIndex++, "Business Key Index", result.businessKey().indexName());
-        writeRow(sheet, rowIndex++, "Business Key Columns", columnNames(result.businessKey().columns()));
-        writeRow(sheet, rowIndex++, "Compared Columns", columnNames(result.comparedColumns()));
-        writeRow(sheet, rowIndex++, "Ignored Columns", columnNames(result.ignoredColumns()));
+        writeRow(sheet, rowIndex++, styles.metadata(), "Table", result.table().displayName());
+        writeRow(sheet, rowIndex++, styles.metadata(), "Business Key Index", result.businessKey().indexName());
+        writeRow(sheet, rowIndex++, styles.metadata(), "Business Key Columns", columnNames(result.businessKey().columns()));
+        writeRow(sheet, rowIndex++, styles.metadata(), "Compared Columns", columnNames(result.comparedColumns()));
+        writeRow(sheet, rowIndex++, styles.metadata(), "Ignored Columns", columnNames(result.ignoredColumns()));
         rowIndex++;
 
-        rowIndex = writeRowKeysSection(sheet, rowIndex, "Rows Only In Left", result.rowsOnlyInLeft());
-        rowIndex = writeRowKeysSection(sheet, rowIndex, "Rows Only In Right", result.rowsOnlyInRight());
-        writeDifferingRowsSection(sheet, rowIndex, result.differingRows());
-        autosizeColumns(sheet, 5);
+        final List<ColumnRef> keyColumns = result.businessKey().columns();
+        final int headerRowIndex = rowIndex++;
+        final Row headerRow = sheet.createRow(headerRowIndex);
+        writeCell(headerRow, 0, "Difference Type", styles.header());
+        int columnIndex = 1;
+        for (ColumnRef keyColumn : keyColumns) {
+            writeCell(headerRow, columnIndex++, keyColumn.name(), styles.header());
+        }
+        for (ColumnRef comparedColumn : result.comparedColumns()) {
+            writeCell(headerRow, columnIndex++, comparedColumn.name(), styles.header());
+        }
+
+        for (RowKey rowKey : result.rowsOnlyInLeft()) {
+            rowIndex = writeActualRow(sheet, rowIndex, styles.onlyInLeft(), styles.changed(), "Only in left", rowKey, result.rowsOnlyInLeftValues().get(rowKey), keyColumns, result.comparedColumns(), Set.of());
+        }
+        for (RowKey rowKey : result.rowsOnlyInRight()) {
+            rowIndex = writeActualRow(sheet, rowIndex, styles.onlyInRight(), styles.changed(), "Only in right", rowKey, result.rowsOnlyInRightValues().get(rowKey), keyColumns, result.comparedColumns(), Set.of());
+        }
+        for (RowDifference rowDifference : result.differingRows()) {
+            final Set<ColumnRef> changedColumns = rowDifference.columnDifferences().stream()
+                    .map(ColumnDifference::column)
+                    .collect(Collectors.toSet());
+            rowIndex = writeActualRow(sheet, rowIndex, styles.present(), styles.changed(), "Left", rowDifference.key(), rowDifference.leftValues(), keyColumns, result.comparedColumns(), changedColumns);
+            rowIndex = writeActualRow(sheet, rowIndex, styles.present(), styles.changed(), "Right", rowDifference.key(), rowDifference.rightValues(), keyColumns, result.comparedColumns(), changedColumns);
+        }
+        if (!result.hasDifferences()) {
+            writeRow(sheet, rowIndex, styles.present(), "No differences found");
+        }
+
+        sheet.createFreezePane(1 + keyColumns.size(), headerRowIndex + 1);
+        autosizeColumns(sheet, 1 + keyColumns.size() + result.comparedColumns().size());
     }
 
-    private int writeRowKeysSection(final Sheet sheet, final int startRowIndex, final String title, final List<RowKey> rowKeys) {
-        int rowIndex = startRowIndex;
-        writeRow(sheet, rowIndex++, title);
-        writeRow(sheet, rowIndex++, "Key");
-        if (rowKeys.isEmpty()) {
-            writeRow(sheet, rowIndex++, "<none>");
-        } else {
-            for (RowKey rowKey : rowKeys) {
-                writeRow(sheet, rowIndex++, rowKey.display());
-            }
+    private int writeActualRow(
+            final Sheet sheet,
+            final int rowIndex,
+            final CellStyle rowStyle,
+            final CellStyle changedStyle,
+            final String differenceType,
+            final RowKey rowKey,
+            final Map<ColumnRef, String> values,
+            final List<ColumnRef> keyColumns,
+            final List<ColumnRef> comparedColumns,
+            final Set<ColumnRef> changedColumns) {
+        final Row row = sheet.createRow(rowIndex);
+        writeCell(row, 0, differenceType, rowStyle);
+        int columnIndex = 1;
+        for (String keyValue : rowKey.values()) {
+            writeCell(row, columnIndex++, keyValue, rowStyle);
+        }
+        for (int i = rowKey.values().size(); i < keyColumns.size(); i++) {
+            writeCell(row, columnIndex++, "", rowStyle);
+        }
+        for (ColumnRef comparedColumn : comparedColumns) {
+            writeCell(row, columnIndex++, value(values, comparedColumn), changedColumns.contains(comparedColumn) ? changedStyle : rowStyle);
         }
         return rowIndex + 1;
     }
 
-    private void writeDifferingRowsSection(final Sheet sheet, final int startRowIndex, final List<RowDifference> differingRows) {
-        int rowIndex = startRowIndex;
-        writeRow(sheet, rowIndex++, "Differing Rows");
-        writeRow(sheet, rowIndex++, "Key", "Column", "Left", "Right");
-        if (differingRows.isEmpty()) {
-            writeRow(sheet, rowIndex, "<none>");
-            return;
+    private String value(final Map<ColumnRef, String> values, final ColumnRef column) {
+        if (values == null) {
+            return "";
         }
-        for (RowDifference rowDifference : differingRows) {
-            for (ColumnDifference columnDifference : rowDifference.columnDifferences()) {
-                writeRow(sheet, rowIndex++,
-                        rowDifference.key().display(),
-                        columnDifference.column().name(),
-                        columnDifference.leftValue(),
-                        columnDifference.rightValue());
-            }
-        }
+        return values.getOrDefault(column, "");
     }
 
     private String safeSheetName(final String requestedName, final Set<String> usedNames) {
@@ -135,16 +169,24 @@ public final class ExcelMultiTableComparisonReportRenderer {
         return columns.stream().map(ColumnRef::name).collect(Collectors.joining(", "));
     }
 
-    private void writeRow(final Sheet sheet, final int rowIndex, final Object... values) {
+    private void writeRow(final Sheet sheet, final int rowIndex, final CellStyle style, final Object... values) {
         final Row row = sheet.createRow(rowIndex);
         for (int columnIndex = 0; columnIndex < values.length; columnIndex++) {
-            if (values[columnIndex] instanceof Number number) {
-                row.createCell(columnIndex).setCellValue(number.doubleValue());
-            } else if (values[columnIndex] instanceof Boolean bool) {
-                row.createCell(columnIndex).setCellValue(bool);
-            } else {
-                row.createCell(columnIndex).setCellValue(values[columnIndex] == null ? "" : values[columnIndex].toString());
-            }
+            writeCell(row, columnIndex, values[columnIndex], style);
+        }
+    }
+
+    private void writeCell(final Row row, final int columnIndex, final Object value, final CellStyle style) {
+        final Cell cell = row.createCell(columnIndex);
+        if (value instanceof Number number) {
+            cell.setCellValue(number.doubleValue());
+        } else if (value instanceof Boolean bool) {
+            cell.setCellValue(bool);
+        } else {
+            cell.setCellValue(value == null ? "" : value.toString());
+        }
+        if (style != null) {
+            cell.setCellStyle(style);
         }
     }
 
@@ -152,5 +194,43 @@ public final class ExcelMultiTableComparisonReportRenderer {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
             sheet.autoSizeColumn(columnIndex);
         }
+    }
+
+    private Styles createStyles(final Workbook workbook) {
+        final CellStyle header = workbook.createCellStyle();
+        header.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        header.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        final CellStyle metadata = workbook.createCellStyle();
+        metadata.setFillForegroundColor(IndexedColors.LIGHT_CORNFLOWER_BLUE.getIndex());
+        metadata.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        final CellStyle changed = workbook.createCellStyle();
+        changed.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+        changed.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        final CellStyle present = workbook.createCellStyle();
+        present.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
+        present.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        final CellStyle onlyInLeft = workbook.createCellStyle();
+        onlyInLeft.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
+        onlyInLeft.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        final CellStyle onlyInRight = workbook.createCellStyle();
+        onlyInRight.setFillForegroundColor(IndexedColors.ROSE.getIndex());
+        onlyInRight.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        return new Styles(header, metadata, changed, present, onlyInLeft, onlyInRight);
+    }
+
+    private record Styles(
+            CellStyle header,
+            CellStyle metadata,
+            CellStyle changed,
+            CellStyle present,
+            CellStyle onlyInLeft,
+            CellStyle onlyInRight
+    ) {
     }
 }

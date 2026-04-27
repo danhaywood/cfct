@@ -54,7 +54,7 @@ public final class TableComparer {
                 }
             }
             if (!columnDifferences.isEmpty()) {
-                differingRows.add(new RowDifference(key, columnDifferences));
+                differingRows.add(new RowDifference(key, leftValues, rightValues, columnDifferences));
             }
         }
 
@@ -65,6 +65,18 @@ public final class TableComparer {
                 metadata.ignoredColumns(),
                 rowsOnlyInLeft,
                 rowsOnlyInRight,
-                differingRows);
+                differingRows,
+                valuesFor(rowsOnlyInLeft, leftRows),
+                valuesFor(rowsOnlyInRight, rightRows));
+    }
+
+    private Map<RowKey, Map<ColumnRef, String>> valuesFor(
+            final java.util.List<RowKey> rowKeys,
+            final Map<RowKey, Map<ColumnRef, String>> rows) {
+        final Map<RowKey, Map<ColumnRef, String>> values = new java.util.LinkedHashMap<>();
+        for (RowKey rowKey : rowKeys) {
+            values.put(rowKey, rows.get(rowKey));
+        }
+        return values;
     }
 }

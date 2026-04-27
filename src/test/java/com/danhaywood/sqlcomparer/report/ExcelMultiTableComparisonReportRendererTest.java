@@ -16,6 +16,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -45,6 +46,8 @@ class ExcelMultiTableComparisonReportRendererTest {
             assertThat(contents.getRow(1).getCell(6).getNumericCellValue()).isEqualTo(1);
             assertThat(contents.getRow(1).getCell(7).getBooleanCellValue()).isTrue();
             assertThat(contents.getRow(2).getCell(7).getBooleanCellValue()).isFalse();
+            assertThat(contents.getPaneInformation().getVerticalSplitPosition()).isEqualTo((short) 2);
+            assertThat(contents.getPaneInformation().getHorizontalSplitPosition()).isEqualTo((short) 1);
         }
     }
 
@@ -60,12 +63,26 @@ class ExcelMultiTableComparisonReportRendererTest {
             assertThat(sheet.getRow(2).getCell(1).getStringCellValue()).isEqualTo("reference");
             assertThat(sheet.getRow(3).getCell(1).getStringCellValue()).isEqualTo("name, status");
             assertThat(sheet.getRow(4).getCell(1).getStringCellValue()).isEqualTo("id");
-            assertThat(sheet.getRow(8).getCell(0).getStringCellValue()).isEqualTo("SUP-LEFT");
-            assertThat(sheet.getRow(12).getCell(0).getStringCellValue()).isEqualTo("SUP-RIGHT");
-            assertThat(sheet.getRow(16).getCell(0).getStringCellValue()).isEqualTo("SUP-DIFF");
-            assertThat(sheet.getRow(16).getCell(1).getStringCellValue()).isEqualTo("status");
-            assertThat(sheet.getRow(16).getCell(2).getStringCellValue()).isEqualTo("ACTIVE");
-            assertThat(sheet.getRow(16).getCell(3).getStringCellValue()).isEqualTo("INACTIVE");
+            assertThat(sheet.getRow(6).getCell(0).getStringCellValue()).isEqualTo("Difference Type");
+            assertThat(sheet.getRow(6).getCell(1).getStringCellValue()).isEqualTo("reference");
+            assertThat(sheet.getRow(6).getCell(2).getStringCellValue()).isEqualTo("name");
+            assertThat(sheet.getRow(6).getCell(3).getStringCellValue()).isEqualTo("status");
+            assertThat(sheet.getRow(7).getCell(0).getStringCellValue()).isEqualTo("Only in left");
+            assertThat(sheet.getRow(7).getCell(1).getStringCellValue()).isEqualTo("SUP-LEFT");
+            assertThat(sheet.getRow(7).getCell(2).getStringCellValue()).isEqualTo("Left-only supplier");
+            assertThat(sheet.getRow(8).getCell(0).getStringCellValue()).isEqualTo("Only in right");
+            assertThat(sheet.getRow(8).getCell(1).getStringCellValue()).isEqualTo("SUP-RIGHT");
+            assertThat(sheet.getRow(8).getCell(2).getStringCellValue()).isEqualTo("Right-only supplier");
+            assertThat(sheet.getRow(9).getCell(0).getStringCellValue()).isEqualTo("Left");
+            assertThat(sheet.getRow(9).getCell(1).getStringCellValue()).isEqualTo("SUP-DIFF");
+            assertThat(sheet.getRow(9).getCell(3).getStringCellValue()).isEqualTo("ACTIVE");
+            assertThat(sheet.getRow(10).getCell(0).getStringCellValue()).isEqualTo("Right");
+            assertThat(sheet.getRow(10).getCell(1).getStringCellValue()).isEqualTo("SUP-DIFF");
+            assertThat(sheet.getRow(10).getCell(3).getStringCellValue()).isEqualTo("INACTIVE");
+            assertThat(sheet.getRow(9).getCell(3).getCellStyle().getFillForegroundColor())
+                    .isEqualTo(sheet.getRow(10).getCell(3).getCellStyle().getFillForegroundColor());
+            assertThat(sheet.getPaneInformation().getVerticalSplitPosition()).isEqualTo((short) 2);
+            assertThat(sheet.getPaneInformation().getHorizontalSplitPosition()).isEqualTo((short) 7);
         }
     }
 
@@ -99,17 +116,31 @@ class ExcelMultiTableComparisonReportRendererTest {
     }
 
     private TableComparisonResult tableResult(final String schemaName, final String tableName, final boolean withDifferences) {
+        final ColumnRef name = new ColumnRef("name");
+        final ColumnRef status = new ColumnRef("status");
+        final RowKey leftOnly = new RowKey(List.of("SUP-LEFT"));
+        final RowKey rightOnly = new RowKey(List.of("SUP-RIGHT"));
+        final RowKey differing = new RowKey(List.of("SUP-DIFF"));
+        final Map<ColumnRef, String> leftOnlyValues = Map.of(name, "Left-only supplier", status, "ACTIVE");
+        final Map<ColumnRef, String> rightOnlyValues = Map.of(name, "Right-only supplier", status, "ACTIVE");
+        final Map<ColumnRef, String> differingLeftValues = Map.of(name, "Shared supplier", status, "ACTIVE");
+        final Map<ColumnRef, String> differingRightValues = Map.of(name, "Shared supplier", status, "INACTIVE");
+
         return new TableComparisonResult(
                 new TableRef(schemaName, tableName),
                 new BusinessKey(tableName + "_BK", List.of(new ColumnRef("reference"))),
-                List.of(new ColumnRef("name"), new ColumnRef("status")),
+                List.of(name, status),
                 List.of(new ColumnRef("id")),
-                withDifferences ? List.of(new RowKey(List.of("SUP-LEFT"))) : List.of(),
-                withDifferences ? List.of(new RowKey(List.of("SUP-RIGHT"))) : List.of(),
+                withDifferences ? List.of(leftOnly) : List.of(),
+                withDifferences ? List.of(rightOnly) : List.of(),
                 withDifferences
                         ? List.of(new RowDifference(
-                        new RowKey(List.of("SUP-DIFF")),
-                        List.of(new ColumnDifference(new ColumnRef("status"), "ACTIVE", "INACTIVE"))))
-                        : List.of());
+                        differing,
+                        differingLeftValues,
+                        differingRightValues,
+                        List.of(new ColumnDifference(status, "ACTIVE", "INACTIVE"))))
+                        : List.of(),
+                withDifferences ? Map.of(leftOnly, leftOnlyValues) : Map.of(),
+                withDifferences ? Map.of(rightOnly, rightOnlyValues) : Map.of());
     }
 }
