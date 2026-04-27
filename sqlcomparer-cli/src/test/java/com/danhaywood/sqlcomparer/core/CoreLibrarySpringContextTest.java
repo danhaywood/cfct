@@ -1,6 +1,9 @@
 package com.danhaywood.sqlcomparer.core;
 
 import com.danhaywood.sqlcomparer.SqlComparerApplication;
+import com.danhaywood.sqlcomparer.cli.CliArgumentsParser;
+import com.danhaywood.sqlcomparer.cli.CliCommandRunner;
+import com.danhaywood.sqlcomparer.cli.CliComparisonExecutor;
 import com.danhaywood.sqlcomparer.comparison.MultiTableComparer;
 import com.danhaywood.sqlcomparer.comparison.TableComparer;
 import com.danhaywood.sqlcomparer.config.ConfiguredComparisonService;
@@ -9,6 +12,7 @@ import com.danhaywood.sqlcomparer.report.JsonMultiTableComparisonReportRenderer;
 import com.danhaywood.sqlcomparer.spi.TableMetadataReader;
 import com.danhaywood.sqlcomparer.spi.TableRowReader;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
@@ -22,6 +26,9 @@ class CoreLibrarySpringContextTest {
     @Test
     void coreComparisonServicesCanBeSpringManaged() {
         contextRunner.run(context -> assertThat(context)
+                .hasSingleBean(CliArgumentsParser.class)
+                .hasSingleBean(CliCommandRunner.class)
+                .hasSingleBean(CliComparisonExecutor.class)
                 .hasSingleBean(TableComparer.class)
                 .hasSingleBean(MultiTableComparer.class)
                 .hasSingleBean(JsonComparisonRequestLoader.class)
