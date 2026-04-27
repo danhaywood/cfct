@@ -101,6 +101,7 @@ The webapp SHALL disable checkbox interaction for ineligible tables.
 #### Scenario: Ineligible table is visible but disabled
 - **WHEN** the table list includes a table that does not satisfy `_PK` requirement rules
 - **THEN** the table row is shown in greyed or disabled styling and its checkbox cannot be selected
+
 ### Requirement: Webapp invokes comparison orchestration through API contracts
 The webapp SHALL invoke comparison orchestration through interfaces defined in `sqlcomparer-api`.
 The webapp SHALL obtain implementations of those interfaces via imported Spring configuration from `sqlcomparer-impl`.
@@ -114,4 +115,18 @@ The webapp SHALL NOT directly reference non-configuration implementation classes
 #### Scenario: Webapp source avoids direct implementation-type coupling
 - **WHEN** webapp source imports are inspected
 - **THEN** no non-configuration type from `sqlcomparer-impl` is referenced by webapp code
+
+### Requirement: Home page footer surfaces configured connection context
+The webapp home page SHALL display configured connection context and SQL connectivity status in a fixed footer/status bar.
+The footer/status bar SHALL read its displayed values from the same typed configuration properties used by the webapp startup and connectivity validation paths.
+The footer/status bar SHALL display the SQL Server identity, left database name, right database name, and current SQL connectivity status.
+The footer/status bar SHALL omit or mask sensitive credential values.
+
+#### Scenario: Footer uses configured properties
+- **WHEN** the webapp starts with configured SQL Server and database values
+- **THEN** the home page footer/status bar displays those configured connection values and SQL connectivity status
+
+#### Scenario: Footer protects credentials
+- **WHEN** the home page footer/status bar displays configured connection context
+- **THEN** sensitive credential values are omitted or masked
 
