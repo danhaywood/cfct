@@ -1,4 +1,5 @@
 .idea/
+/.env
 target/
 **/*.received.*
 /.approval_tests_temp/.approved_files.log
