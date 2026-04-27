@@ -41,8 +41,27 @@ if [[ ! -f "${DEMO_TABLES}" ]]; then
   exit 1
 fi
 
-if [[ ! -f "${CLI_JAR}" ]]; then
-  echo "CLI jar not found; building sqlcomparer-cli..."
+jar_needs_build() {
+  if [[ ! -f "${CLI_JAR}" ]]; then
+    return 0
+  fi
+
+  if find "${REPO_ROOT}/pom.xml" \
+          "${REPO_ROOT}/sqlcomparer-api" \
+          "${REPO_ROOT}/sqlcomparer-impl" \
+          "${REPO_ROOT}/sqlcomparer-cli" \
+          -type f \
+          \( -name 'pom.xml' -o -name '*.java' -o -name '*.properties' -o -name '*.xml' \) \
+          -newer "${CLI_JAR}" \
+          -print -quit | grep -q .; then
+    return 0
+  fi
+
+  return 1
+}
+
+if jar_needs_build; then
+  echo "Building sqlcomparer-cli..."
   (cd "${REPO_ROOT}" && mvn -pl sqlcomparer-cli -am package -DskipTests)
 fi
 
