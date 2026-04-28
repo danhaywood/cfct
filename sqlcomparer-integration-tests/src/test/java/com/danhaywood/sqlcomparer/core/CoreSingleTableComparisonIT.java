@@ -50,36 +50,30 @@ class CoreSingleTableComparisonIT {
     }
 
     @Test
-    void comparesPurchaseOrderByBusinessKeyAndComparesIdentityByDefault() throws Exception {
+    void comparesPurchaseOrderByBusinessKeyAndIgnoresIdentityByDefault() throws Exception {
         initializeFixture("purchase-order");
 
         final TableComparisonResult result = comparePurchaseOrders();
 
         assertThat(result.businessKey().indexName()).isEqualTo("PurchaseOrder_PK");
         assertThat(result.businessKey().columns()).containsExactly(new ColumnRef("reference"));
-        assertThat(result.ignoredColumns()).containsExactly(new ColumnRef("version"));
+        assertThat(result.ignoredColumns()).containsExactly(new ColumnRef("id"), new ColumnRef("version"));
         assertThat(result.rowsOnlyInLeft()).containsExactly(new RowKey(java.util.List.of("PO-003")));
         assertThat(result.rowsOnlyInRight()).containsExactly(new RowKey(java.util.List.of("PO-004")));
         assertThat(result.differingRows()).extracting(RowDifference::key)
                 .containsExactly(
                         new RowKey(java.util.List.of("PO-002")),
-                        new RowKey(java.util.List.of("PO-005")),
-                        new RowKey(java.util.List.of("PO-006")));
+                        new RowKey(java.util.List.of("PO-005")));
         assertThat(result.differingRows().get(0).columnDifferences())
-                .containsExactly(
-                        new ColumnDifference(new ColumnRef("id"), "102", "202"),
-                        new ColumnDifference(new ColumnRef("status"), "DRAFT", "APPROVED"));
+                .containsExactly(new ColumnDifference(new ColumnRef("status"), "DRAFT", "APPROVED"));
         assertThat(result.differingRows().get(1).columnDifferences())
                 .containsExactly(
-                        new ColumnDifference(new ColumnRef("id"), "105", "205"),
                         new ColumnDifference(new ColumnRef("net_amount"), "100.00", "100.01"),
                         new ColumnDifference(new ColumnRef("gross_amount"), "100.00", "100.01"));
-        assertThat(result.differingRows().get(2).columnDifferences())
-                .containsExactly(new ColumnDifference(new ColumnRef("id"), "106", "9006"));
     }
 
     @Test
-    void explicitlyIgnoringIdRemovesIdentityOnlyDifferences() throws Exception {
+    void explicitlyIgnoringIdStillProducesSameDifferencesAsDefault() throws Exception {
         initializeFixture("purchase-order");
 
         final TableComparisonResult result = comparePurchaseOrdersWithOptions(new ComparisonOptions("_PK", java.util.Set.of("id", "version")));
@@ -110,6 +104,25 @@ class CoreSingleTableComparisonIT {
                 .isInstanceOf(MetadataException.class)
                 .hasMessageContaining("dbo.PurchaseOrderWithoutBusinessKey")
                 .hasMessageContaining("_PK");
+    }
+
+    @Test
+    void excludesGuidUuidAndUniqueIdentifierColumnsFromComparison() throws Exception {
+        initializeFixture("guid-noise");
+
+        final TableComparisonResult result;
+        try (Connection left = harness.openConnection(DatabaseSide.LEFT);
+             Connection right = harness.openConnection(DatabaseSide.RIGHT)) {
+            result = comparer.compare(left, right, new TableComparisonRequest(new TableRef("dbo", "GuidNoise"), ComparisonOptions.defaults()));
+        }
+
+        assertThat(result.businessKey().columns()).containsExactly(new ColumnRef("reference"));
+        assertThat(result.comparedColumns()).containsExactly(new ColumnRef("name"));
+        assertThat(result.ignoredColumns()).containsExactly(new ColumnRef("id"), new ColumnRef("Guid"), new ColumnRef("uuid"), new ColumnRef("version"));
+        assertThat(result.differingRows()).extracting(RowDifference::key)
+                .containsExactly(new RowKey(java.util.List.of("GN-002")));
+        assertThat(result.differingRows().get(0).columnDifferences())
+                .containsExactly(new ColumnDifference(new ColumnRef("name"), "Bravo-LEFT", "Bravo-RIGHT"));
     }
 
     @Test

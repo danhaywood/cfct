@@ -327,7 +327,8 @@ The CLI supports these dotenv options:
 - `-e` / `--env-file`: path to a file containing `SQLCOMPARER_SERVER`, `SQLCOMPARER_USERNAME`, `SQLCOMPARER_PASSWORD`, `SQLCOMPARER_LEFT_DATABASE`, and `SQLCOMPARER_RIGHT_DATABASE`.
 
 Default comparison behavior now discovers key indexes using the `_PK` suffix.
-By default, only `version` is ignored; identity `id` values are compared unless you explicitly ignore `id`.
+By default, technical identifier columns are ignored for value comparison, including identity-backed columns, columns named `guid` or `uuid`, and SQL Server `UNIQUEIDENTIFIER` columns.
+The default ignored set still includes `version`.
 
 The CLI supports these output options:
 

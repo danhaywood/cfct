@@ -1,0 +1,15 @@
+DROP TABLE IF EXISTS dbo.GuidNoise;
+GO
+
+CREATE TABLE dbo.GuidNoise (
+    id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    reference NVARCHAR(40) NOT NULL,
+    Guid UNIQUEIDENTIFIER NOT NULL,
+    uuid UNIQUEIDENTIFIER NOT NULL,
+    name NVARCHAR(80) NOT NULL,
+    version DATETIME2(3) NOT NULL
+);
+GO
+
+CREATE UNIQUE INDEX GuidNoise_PK ON dbo.GuidNoise(reference);
+GO

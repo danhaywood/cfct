@@ -40,7 +40,7 @@ public final class TableMetadataReaderSqlServer implements TableMetadataReader {
             if (keyColumnNames.contains(columnName.toLowerCase(Locale.ROOT))) {
                 continue;
             }
-            if (request.options().ignores(columnName)) {
+            if (builtInIgnore(column) || request.options().ignores(columnName)) {
                 ignoredColumns.add(column.column());
                 continue;
             }
@@ -51,10 +51,11 @@ public final class TableMetadataReaderSqlServer implements TableMetadataReader {
 
     private List<ColumnMetadata> readColumns(final Connection connection, final TableRef table) {
         final String sql = """
-                SELECT c.name, c.is_identity
+                SELECT c.name, c.is_identity, ty.name AS sql_type_name
                 FROM sys.schemas s
                 JOIN sys.tables t ON s.schema_id = t.schema_id
                 JOIN sys.columns c ON t.object_id = c.object_id
+                JOIN sys.types ty ON c.user_type_id = ty.user_type_id
                 WHERE s.name = ? AND t.name = ?
                 ORDER BY c.column_id
                 """;
@@ -66,7 +67,8 @@ public final class TableMetadataReaderSqlServer implements TableMetadataReader {
                 while (resultSet.next()) {
                     columns.add(new ColumnMetadata(
                             new ColumnRef(resultSet.getString("name")),
-                            resultSet.getBoolean("is_identity")));
+                            resultSet.getBoolean("is_identity"),
+                            resultSet.getString("sql_type_name")));
                 }
                 return columns;
             }
@@ -120,6 +122,14 @@ public final class TableMetadataReaderSqlServer implements TableMetadataReader {
         } catch (SQLException ex) {
             throw new MetadataException("Failed to read business-key index for table %s".formatted(table.displayName()), ex);
         }
+    }
+
+    private boolean builtInIgnore(final ColumnMetadata column) {
+        final String normalized = column.column().name().toLowerCase(Locale.ROOT);
+        return column.identity()
+                || "guid".equals(normalized)
+                || "uuid".equals(normalized)
+                || column.uniqueIdentifierType();
     }
 
     private Set<String> lowerCaseColumnNames(final List<ColumnRef> columns) {

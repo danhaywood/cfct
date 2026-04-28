@@ -2,7 +2,6 @@ Table: dbo.PurchaseOrder
 Business key: PurchaseOrder_PK(reference)
 
 Compared columns:
-  id
   order_date
   status
   supplier_reference
@@ -12,6 +11,7 @@ Compared columns:
   gross_amount
 
 Ignored columns:
+  id
   version
 
 Rows only in left:
@@ -22,12 +22,8 @@ Rows only in right:
 
 Rows with differences:
   PO-002
-    id: left=102, right=202
     status: left=DRAFT, right=APPROVED
   PO-005
-    id: left=105, right=205
     net_amount: left=100.00, right=100.01
     gross_amount: left=100.00, right=100.01
-  PO-006
-    id: left=106, right=9006
 

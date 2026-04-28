@@ -8,21 +8,28 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 ## Candidate ideas
 
+### Cosmetic
+
+- webapp:
+  - colour the cells in the webapp
+  - status line still ugly
+  - download buttons , show above filter, right align.
+  - wide grid, add scroll
+  - in grid, if the values are the same, then show only one.
+- excel spreadsheet
+  - for detail sheets, don't autosize the 2nd column (should be same width as the 3rd column)
+  - if the values are the same, then show only one.
+
 ### New features
 
+- webapp:
+  - login for webapp, use the existing as default values
 - Render comparison results as YAML, in the cli and download
 - ignored columns
   - Identify ignored columns from extended properties.
   - Make it a strategy as to how to ignore columns, with a fallback as per the above rules.
 - generalize the way to find a _PK, care only about the suffix.  So, PurchaseOrder__reference__PK would also be ok.
 - have the cli/webapp support Azure EntraID credentials
-
-### Cosmetic
-
-- excel spreadsheet, for detail sheets, don't autosize the 2nd column (should be same width as the 3rd column)
-- status line still ugly
-- download buttons , show above filter, right align.
-- colour the cells in the webapp
 
 ### Programming Style
 

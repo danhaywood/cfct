@@ -6,24 +6,23 @@
       "name" : "Supplier"
     },
     "summary" : {
-      "comparedColumnCount" : 4,
-      "ignoredColumnCount" : 1,
+      "comparedColumnCount" : 3,
+      "ignoredColumnCount" : 2,
       "rowsOnlyInLeftCount" : 1,
       "rowsOnlyInRightCount" : 1,
-      "differingRowCount" : 2,
+      "differingRowCount" : 1,
       "hasDifferences" : true
     },
     "businessKey" : {
       "index" : "Supplier_PK",
       "columns" : [ "reference" ]
     },
-    "comparedColumns" : [ "id", "name", "status", "country_code" ],
-    "ignoredColumns" : [ "version" ],
+    "comparedColumns" : [ "name", "status", "country_code" ],
+    "ignoredColumns" : [ "id", "version" ],
     "rowsOnlyInLeft" : [ {
       "key" : [ "SUP-003" ],
       "leftValues" : {
         "reference" : "SUP-003",
-        "id" : "303",
         "name" : "Gamma Logistics",
         "status" : "ACTIVE",
         "country_code" : "DE"
@@ -35,54 +34,26 @@
       "leftValues" : { },
       "rightValues" : {
         "reference" : "SUP-004",
-        "id" : "404",
         "name" : "Delta Industrial",
         "status" : "ACTIVE",
         "country_code" : "FR"
       }
     } ],
     "differingRows" : [ {
-      "key" : [ "SUP-001" ],
-      "leftValues" : {
-        "reference" : "SUP-001",
-        "id" : "301",
-        "name" : "Acme Supplies",
-        "status" : "ACTIVE",
-        "country_code" : "GB"
-      },
-      "rightValues" : {
-        "reference" : "SUP-001",
-        "id" : "401",
-        "name" : "Acme Supplies",
-        "status" : "ACTIVE",
-        "country_code" : "GB"
-      },
-      "differences" : [ {
-        "column" : "id",
-        "left" : "301",
-        "right" : "401"
-      } ]
-    }, {
       "key" : [ "SUP-002" ],
       "leftValues" : {
         "reference" : "SUP-002",
-        "id" : "302",
         "name" : "Beta Components",
         "status" : "ACTIVE",
         "country_code" : "GB"
       },
       "rightValues" : {
         "reference" : "SUP-002",
-        "id" : "402",
         "name" : "Beta Components",
         "status" : "SUSPENDED",
         "country_code" : "GB"
       },
       "differences" : [ {
-        "column" : "id",
-        "left" : "302",
-        "right" : "402"
-      }, {
         "column" : "status",
         "left" : "ACTIVE",
         "right" : "SUSPENDED"
@@ -94,24 +65,23 @@
       "name" : "Product"
     },
     "summary" : {
-      "comparedColumnCount" : 5,
-      "ignoredColumnCount" : 1,
+      "comparedColumnCount" : 4,
+      "ignoredColumnCount" : 2,
       "rowsOnlyInLeftCount" : 1,
       "rowsOnlyInRightCount" : 1,
-      "differingRowCount" : 2,
+      "differingRowCount" : 1,
       "hasDifferences" : true
     },
     "businessKey" : {
       "index" : "Product_PK",
       "columns" : [ "sku" ]
     },
-    "comparedColumns" : [ "id", "name", "category", "unit_price", "status" ],
-    "ignoredColumns" : [ "version" ],
+    "comparedColumns" : [ "name", "category", "unit_price", "status" ],
+    "ignoredColumns" : [ "id", "version" ],
     "rowsOnlyInLeft" : [ {
       "key" : [ "SKU-003" ],
       "leftValues" : {
         "sku" : "SKU-003",
-        "id" : "503",
         "name" : "Left Only Part",
         "category" : "Spares",
         "unit_price" : "25.00",
@@ -124,7 +94,6 @@
       "leftValues" : { },
       "rightValues" : {
         "sku" : "SKU-004",
-        "id" : "604",
         "name" : "Right Only Part",
         "category" : "Spares",
         "unit_price" : "30.00",
@@ -132,33 +101,9 @@
       }
     } ],
     "differingRows" : [ {
-      "key" : [ "SKU-001" ],
-      "leftValues" : {
-        "sku" : "SKU-001",
-        "id" : "501",
-        "name" : "Widget",
-        "category" : "Hardware",
-        "unit_price" : "10.00",
-        "status" : "ACTIVE"
-      },
-      "rightValues" : {
-        "sku" : "SKU-001",
-        "id" : "601",
-        "name" : "Widget",
-        "category" : "Hardware",
-        "unit_price" : "10.00",
-        "status" : "ACTIVE"
-      },
-      "differences" : [ {
-        "column" : "id",
-        "left" : "501",
-        "right" : "601"
-      } ]
-    }, {
       "key" : [ "SKU-002" ],
       "leftValues" : {
         "sku" : "SKU-002",
-        "id" : "502",
         "name" : "Gadget",
         "category" : "Hardware",
         "unit_price" : "10.00",
@@ -166,17 +111,12 @@
       },
       "rightValues" : {
         "sku" : "SKU-002",
-        "id" : "602",
         "name" : "Gadget",
         "category" : "Hardware",
         "unit_price" : "10.50",
         "status" : "ACTIVE"
       },
       "differences" : [ {
-        "column" : "id",
-        "left" : "502",
-        "right" : "602"
-      }, {
         "column" : "unit_price",
         "left" : "10.00",
         "right" : "10.50"
