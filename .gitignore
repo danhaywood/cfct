@@ -2,7 +2,5 @@
 /.env
 target/
 **/*.received.*
-/.approval_tests_temp/.approved_files.log
-/.approval_tests_temp/.failed_comparison.log
-/comparison.xlsx
-/sqlcomparer-webapp/src/main/frontend/generated/
+/.approval_tests_temp/
+*.xlsx
