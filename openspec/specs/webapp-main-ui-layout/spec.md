@@ -10,6 +10,8 @@ The shell SHALL place table-selection functionality in the AppLayout navigation 
 The shell SHALL place primary selection-stage actions in the navigation area above the table-selection grid.
 The shell SHALL preserve the existing main content area for comparison-stage functionality.
 The shell SHALL keep the navbar minimal without persistent collapsed-state labels.
+The shell SHALL provide a top-right account menu area in the navbar for authenticated session actions.
+The shell SHALL place logout inside the account menu instead of the left navigation area.
 
 #### Scenario: Hamburger menu is available
 - **WHEN** the home page is rendered
@@ -22,6 +24,10 @@ The shell SHALL keep the navbar minimal without persistent collapsed-state label
 #### Scenario: Collapsed navigation keeps minimal navbar
 - **WHEN** the navigation panel is collapsed
 - **THEN** the navbar does not add persistent collapsed-state labels
+
+#### Scenario: Authenticated navbar includes account menu actions
+- **WHEN** an authenticated user views the main UI shell
+- **THEN** the top-right navbar shows an account menu with a logout action and no standalone logout button in the left navigation area
 
 ### Requirement: Webapp footer displays non-sensitive connection details
 The webapp SHALL display configured connection details and SQL connectivity status in a fixed footer/status bar on the main UI.
