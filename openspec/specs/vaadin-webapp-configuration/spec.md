@@ -18,17 +18,22 @@ The webapp module SHALL use a stable Vaadin Flow release line, selecting the lat
 - **THEN** Spring Boot and Vaadin initialize successfully and render a minimal placeholder view
 
 ### Requirement: Webapp configuration models the same logical inputs as CLI
-The webapp SHALL provide typed configuration properties that represent server, username, password, left database, right database, env-file path, output format, and output file.
-The webapp SHALL load defaults from `application.yml` and allow externalized overrides through Spring configuration sources.
-The webapp SHALL document how each shared webapp property maps to the equivalent CLI argument concept.
+The webapp SHALL provide typed configuration properties for login defaults and execution preferences such as server, database names, username, password, env-file path, output format, and output file.
+The webapp SHALL use configured property values only as initial login defaults and SHALL allow users to edit any field before authentication.
+The webapp SHALL NOT require these properties to be present for interactive webapp use.
+The webapp SHALL document how runtime login inputs and configuration defaults map to equivalent CLI argument concepts.
 The webapp SHALL treat table selection as a strategy concern and SHALL NOT require parity with CLI table-input flags.
 
-#### Scenario: Webapp properties bind shared execution settings from application.yml
-- **WHEN** the webapp starts with configured values in `application.yml`
-- **THEN** typed configuration properties are populated with server, credential, database, env-file, and output settings
+#### Scenario: Webapp starts without configured credentials
+- **WHEN** the webapp starts without username or password values in `application.yml`
+- **THEN** typed configuration still binds non-secret defaults and the application starts successfully
 
-#### Scenario: Webapp properties can be overridden externally
-- **WHEN** a deploy environment provides overriding Spring configuration values
+#### Scenario: Configured defaults pre-populate login form
+- **WHEN** the webapp has connection-related properties configured in `application.yml` or externalized configuration
+- **THEN** those values are shown as initial editable defaults in the login form
+
+#### Scenario: Configuration defaults can be overridden externally
+- **WHEN** a deploy environment provides overriding Spring configuration values for login defaults
 - **THEN** the webapp resolves those values over defaults from `application.yml`
 
 ### Requirement: Webapp resolves table targets through SelectionPlan strategies
@@ -50,21 +55,17 @@ The webapp SHALL consume resolved `List<TableRef>` output from `SelectionPlan` w
 - **THEN** it can plug into the same `SelectionPlan` contract and return `List<TableRef>` without changing core execution interfaces
 
 ### Requirement: Webapp validates configured SQL Server connectivity and databases
-The webapp SHALL validate configured SQL Server connectivity by acquiring JDBC connections from configured DataSource beans.
-The webapp SHALL validate that configured left and right logical databases exist and are reachable with the configured credentials.
-The webapp SHALL fail with clear diagnostics when connectivity fails, authentication fails, or configured databases are missing.
+The webapp SHALL validate SQL Server connectivity and database reachability using runtime login credentials instead of startup-time static credentials.
+The webapp SHALL execute connectivity validation during login or explicit connection test flow before granting access to comparison workflows.
+The webapp SHALL fail login with clear diagnostics when connectivity fails, authentication fails, or requested databases are missing.
 
-#### Scenario: Valid connectivity and databases allow startup
-- **WHEN** the configured SQL Server endpoint is reachable and both configured logical databases exist
-- **THEN** the webapp connectivity validation passes and application startup continues
+#### Scenario: Valid runtime credentials allow authentication to complete
+- **WHEN** runtime login credentials can connect to the SQL Server endpoint and both requested databases exist
+- **THEN** connectivity validation succeeds and the user is authenticated for comparison workflows
 
-#### Scenario: Missing configured database fails validation
-- **WHEN** one of the configured logical database names does not exist in the target SQL Server instance
-- **THEN** the webapp startup fails with a clear validation error identifying the missing database
-
-#### Scenario: Unreachable SQL Server fails validation
-- **WHEN** the configured SQL Server endpoint cannot be reached with the provided settings
-- **THEN** the webapp startup fails with a clear connectivity error
+#### Scenario: Invalid runtime credentials fail authentication
+- **WHEN** runtime login credentials are invalid or one requested database is unavailable
+- **THEN** authentication fails with a clear validation error and comparison workflows remain inaccessible
 
 ### Requirement: Home page surfaces SQL connectivity validation status
 The webapp home page SHALL display SQL connectivity validation status as an explicit state that is either OK or FAILED.
@@ -121,22 +122,18 @@ The webapp SHALL NOT directly reference non-configuration implementation classes
 - **THEN** no non-configuration type from `sqlcomparer-impl` is referenced by webapp code
 
 ### Requirement: Home page footer surfaces configured connection context
-The webapp home page SHALL display configured connection context and SQL connectivity status in a fixed footer/status bar.
-The footer/status bar SHALL read its displayed values from the same typed configuration properties used by the webapp startup and connectivity validation paths.
-The footer/status bar SHALL display the SQL Server identity, left database name, right database name, and current SQL connectivity status.
-The footer/status bar SHALL present connection details with compact spacing and without redundant field labels.
-The footer/status bar SHALL right-align the SQL connectivity status text.
-The footer/status bar SHALL omit or mask sensitive credential values.
+The webapp home page SHALL display authenticated connection context and SQL connectivity status in a fixed footer or status bar after login succeeds.
+The footer or status bar SHALL read displayed values from the active authenticated session context rather than static startup credential configuration.
+The footer or status bar SHALL display SQL Server identity, source database name, target database name, and current SQL connectivity status.
+The footer or status bar SHALL present connection details with compact spacing and without redundant field labels.
+The footer or status bar SHALL right-align SQL connectivity status text.
+The footer or status bar SHALL omit or mask sensitive credential values.
 
-#### Scenario: Footer uses configured properties
-- **WHEN** the webapp starts with configured SQL Server and database values
-- **THEN** the home page footer/status bar displays those configured connection values and SQL connectivity status
+#### Scenario: Footer reflects authenticated session context
+- **WHEN** a user is logged in with runtime connection details
+- **THEN** the home page footer or status bar displays the authenticated connection context and SQL connectivity status
 
-#### Scenario: Footer right-aligns status with compact presentation
-- **WHEN** the home page footer/status bar renders connection context
-- **THEN** connection details are shown with compact spacing, redundant labels are absent, and the SQL status text is right-aligned
-
-#### Scenario: Footer protects credentials
-- **WHEN** the home page footer/status bar displays configured connection context
+#### Scenario: Footer protects credentials for authenticated users
+- **WHEN** the home page footer or status bar renders authenticated connection context
 - **THEN** sensitive credential values are omitted or masked
 
