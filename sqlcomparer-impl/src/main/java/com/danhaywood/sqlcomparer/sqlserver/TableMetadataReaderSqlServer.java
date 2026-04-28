@@ -99,29 +99,38 @@ public final class TableMetadataReaderSqlServer implements TableMetadataReader {
             statement.setString(1, table.schemaName());
             statement.setString(2, table.tableName());
             try (ResultSet resultSet = statement.executeQuery()) {
-                final Map<String, List<ColumnRef>> matchingIndexes = new LinkedHashMap<>();
+                final Map<String, List<ColumnRef>> matchingKeyObjects = new LinkedHashMap<>();
                 while (resultSet.next()) {
-                    final String indexName = resultSet.getString("index_name");
-                    if (!indexName.endsWith(options.businessKeyIndexSuffix())) {
+                    final String keyObjectName = resultSet.getString("index_name");
+                    if (!hasBusinessKeySuffix(keyObjectName, options.businessKeyIndexSuffix())) {
                         continue;
                     }
-                    matchingIndexes.computeIfAbsent(indexName, ignored -> new ArrayList<>())
+                    matchingKeyObjects.computeIfAbsent(keyObjectName, ignored -> new ArrayList<>())
                             .add(new ColumnRef(resultSet.getString("column_name")));
                 }
-                if (matchingIndexes.isEmpty()) {
-                    throw new MetadataException("Table %s has no unique index ending with %s".formatted(
+                if (matchingKeyObjects.isEmpty()) {
+                    throw new MetadataException("Table %s has no unique index or unique constraint ending with %s".formatted(
                             table.displayName(), options.businessKeyIndexSuffix()));
                 }
-                if (matchingIndexes.size() > 1) {
-                    throw new MetadataException("Table %s has multiple unique indexes ending with %s: %s".formatted(
-                            table.displayName(), options.businessKeyIndexSuffix(), String.join(", ", matchingIndexes.keySet())));
+                if (matchingKeyObjects.size() > 1) {
+                    throw new MetadataException("Table %s has multiple unique indexes or unique constraints ending with %s: %s".formatted(
+                            table.displayName(), options.businessKeyIndexSuffix(), String.join(", ", matchingKeyObjects.keySet())));
                 }
-                final Map.Entry<String, List<ColumnRef>> entry = matchingIndexes.entrySet().iterator().next();
+                final Map.Entry<String, List<ColumnRef>> entry = matchingKeyObjects.entrySet().iterator().next();
                 return new BusinessKey(entry.getKey(), entry.getValue());
             }
         } catch (SQLException ex) {
-            throw new MetadataException("Failed to read business-key index for table %s".formatted(table.displayName()), ex);
+            throw new MetadataException("Failed to read business-key index or constraint for table %s".formatted(table.displayName()), ex);
         }
+    }
+
+    static boolean hasBusinessKeySuffix(final String candidateName, final String expectedSuffix) {
+        if (candidateName == null || expectedSuffix == null) {
+            return false;
+        }
+        final String normalizedName = candidateName.toLowerCase(Locale.ROOT);
+        final String normalizedSuffix = expectedSuffix.toLowerCase(Locale.ROOT);
+        return normalizedName.endsWith(normalizedSuffix);
     }
 
     private boolean builtInIgnore(final ColumnMetadata column) {

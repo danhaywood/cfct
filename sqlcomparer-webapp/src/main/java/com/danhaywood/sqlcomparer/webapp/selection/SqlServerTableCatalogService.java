@@ -34,7 +34,7 @@ public class SqlServerTableCatalogService {
         final String sql = """
                 SELECT s.name AS schema_name,
                        t.name AS table_name,
-                       SUM(CASE WHEN i.is_unique = 1 AND i.name IS NOT NULL AND i.name LIKE ? THEN 1 ELSE 0 END) AS bk_index_count
+                       SUM(CASE WHEN i.is_unique = 1 AND i.name IS NOT NULL AND i.name LIKE ? THEN 1 ELSE 0 END) AS bk_key_object_count
                 FROM sys.tables t
                 JOIN sys.schemas s ON s.schema_id = t.schema_id
                 LEFT JOIN sys.indexes i ON i.object_id = t.object_id
@@ -51,8 +51,8 @@ public class SqlServerTableCatalogService {
                 while (resultSet.next()) {
                     final String schemaName = resultSet.getString("schema_name");
                     final String tableName = resultSet.getString("table_name");
-                    final int bkIndexCount = resultSet.getInt("bk_index_count");
-                    rows.add(mapDiscoveredTable(new TableRef(schemaName, tableName), bkIndexCount));
+                    final int bkKeyObjectCount = resultSet.getInt("bk_key_object_count");
+                    rows.add(mapDiscoveredTable(new TableRef(schemaName, tableName), bkKeyObjectCount));
                 }
                 return rows;
             }
@@ -61,13 +61,13 @@ public class SqlServerTableCatalogService {
         }
     }
 
-    static TableCatalogEntry mapDiscoveredTable(final TableRef table, final int bkIndexCount) {
-        if (bkIndexCount == 1) {
+    static TableCatalogEntry mapDiscoveredTable(final TableRef table, final int bkKeyObjectCount) {
+        if (bkKeyObjectCount == 1) {
             return TableCatalogEntry.eligible(table);
         }
-        if (bkIndexCount <= 0) {
-            return TableCatalogEntry.ineligible(table, "No unique index ending with _PK.");
+        if (bkKeyObjectCount <= 0) {
+            return TableCatalogEntry.ineligible(table, "No unique index or unique constraint ending with _PK.");
         }
-        return TableCatalogEntry.ineligible(table, "Multiple unique indexes ending with _PK.");
+        return TableCatalogEntry.ineligible(table, "Multiple unique indexes or unique constraints ending with _PK.");
     }
 }

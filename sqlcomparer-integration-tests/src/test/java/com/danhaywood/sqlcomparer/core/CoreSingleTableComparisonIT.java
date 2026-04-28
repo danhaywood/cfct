@@ -132,9 +132,31 @@ class CoreSingleTableComparisonIT {
         assertThatThrownBy(() -> readMetadata("AmbiguousBusinessKey"))
                 .isInstanceOf(MetadataException.class)
                 .hasMessageContaining("dbo.AmbiguousBusinessKey")
-                .hasMessageContaining("multiple unique indexes")
+                .hasMessageContaining("multiple unique indexes or unique constraints")
                 .hasMessageContaining("AmbiguousBusinessKey_PK")
                 .hasMessageContaining("AmbiguousBusinessKeyExternal_PK");
+    }
+
+    @Test
+    void acceptsBusinessKeyUniqueConstraintBySuffix() throws Exception {
+        initializeSchema("business-key-constraint-suffix");
+
+        final TableMetadata metadata = readMetadata("BusinessKeyConstraintSuffix");
+
+        assertThat(metadata.businessKey().indexName()).isEqualTo("BusinessKeyConstraintSuffix__reference__PK");
+        assertThat(metadata.businessKey().columns()).containsExactly(new ColumnRef("reference"));
+    }
+
+    @Test
+    void failsClearlyWhenBusinessKeyObjectsAreAmbiguousAcrossIndexAndConstraint() {
+        initializeSchema("ambiguous-business-key-mixed");
+
+        assertThatThrownBy(() -> readMetadata("AmbiguousBusinessKeyMixed"))
+                .isInstanceOf(MetadataException.class)
+                .hasMessageContaining("dbo.AmbiguousBusinessKeyMixed")
+                .hasMessageContaining("multiple unique indexes or unique constraints")
+                .hasMessageContaining("AmbiguousBusinessKeyMixed__external_reference__PK")
+                .hasMessageContaining("AmbiguousBusinessKeyMixed__reference__PK");
     }
 
     private TableComparisonResult comparePurchaseOrders() throws Exception {

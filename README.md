@@ -128,7 +128,7 @@ Webapp usage is now a three-stage workflow.
 - Stage 3: view comparison output in the main comparison area as dynamic tabs, one tab per selected table.
 
 The navigation drawer lists discovered tables in a sortable and filterable Vaadin Grid.
-Tables that do not meet the `_PK` requirement are still shown, but their checkboxes are disabled and expose the eligibility reason as tooltip text.
+Tables that do not meet the `_PK` suffix requirement on a unique index or unique constraint are still shown, but their checkboxes are disabled and expose the eligibility reason as tooltip text.
 The schema column auto-sizes, the select column is centered, and the select header text is intentionally blank.
 The footer/status bar shows compact connection context and right-aligns current SQL connectivity status.
 Logout is now in the top-right account menu.
@@ -336,7 +336,7 @@ The CLI supports these dotenv options:
 
 - `-e` / `--env-file`: path to a file containing `SQLCOMPARER_SERVER`, `SQLCOMPARER_USERNAME`, `SQLCOMPARER_PASSWORD`, `SQLCOMPARER_LEFT_DATABASE`, and `SQLCOMPARER_RIGHT_DATABASE`.
 
-Default comparison behavior now discovers key indexes using the `_PK` suffix.
+Default comparison behavior now discovers business-key objects (unique indexes or unique constraints) using the `_PK` suffix.
 By default, technical identifier columns are ignored for value comparison, including identity-backed columns, columns named `guid` or `uuid`, and SQL Server `UNIQUEIDENTIFIER` columns.
 The default ignored set still includes `version`.
 

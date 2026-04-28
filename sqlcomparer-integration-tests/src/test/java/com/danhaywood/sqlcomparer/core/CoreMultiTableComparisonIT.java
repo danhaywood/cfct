@@ -72,13 +72,13 @@ class CoreMultiTableComparisonIT {
         assertThat(result.tableResults().get(0).rowsOnlyInRight())
                 .containsExactly(new RowKey(List.of("SUP-004")));
         assertThat(result.tableResults().get(0).differingRows()).extracting(RowDifference::key)
-                .containsExactly(new RowKey(List.of("SUP-001")), new RowKey(List.of("SUP-002")));
+                .containsExactly(new RowKey(List.of("SUP-002")));
         assertThat(result.tableResults().get(1).rowsOnlyInLeft())
                 .containsExactly(new RowKey(List.of("SKU-003")));
         assertThat(result.tableResults().get(1).rowsOnlyInRight())
                 .containsExactly(new RowKey(List.of("SKU-004")));
         assertThat(result.tableResults().get(1).differingRows()).extracting(RowDifference::key)
-                .containsExactly(new RowKey(List.of("SKU-001")), new RowKey(List.of("SKU-002")));
+                .containsExactly(new RowKey(List.of("SKU-002")));
     }
 
     @Test
