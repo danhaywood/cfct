@@ -130,6 +130,14 @@ Webapp usage is now a three-stage workflow.
 Comparison grids use Excel-like visual cues.
 Cells with differing values are highlighted, and side-only rows highlight missing-side values for faster scanning.
 When result grids are wider or taller than the visible comparison area, horizontal and vertical scrollbars keep all rows and columns navigable.
+In the results stage, JSON/Excel downloads are grouped as right-aligned global actions on the same row as the table filter, with the downloads on the right.
+Compare action spacing in the navigation drawer and results-stage action grouping evidence:
+
+![Compare and results actions alignment evidence](docs/images/compare-actions-alignment-evidence-v2-2026-04-28T16-41-37-634Z.png)
+
+Latest evidence showing filter and downloads on the same row (downloads right-aligned):
+
+![Filter and downloads same-row evidence](docs/images/compare-filter-download-same-row-evidence-2026-04-28T18-09-18-836Z.png)
 
 The navigation drawer lists discovered tables in a sortable and filterable Vaadin Grid.
 Tables that do not meet the `_PK` suffix requirement on a unique index or unique constraint are still shown, but their checkboxes are disabled and expose the eligibility reason as tooltip text.

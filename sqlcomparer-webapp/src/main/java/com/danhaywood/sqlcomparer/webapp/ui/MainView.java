@@ -33,6 +33,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.menubar.MenuBar;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
@@ -83,6 +84,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Anchor downloadJson = new Anchor();
     private final Anchor downloadExcel = new Anchor();
     private final HorizontalLayout resultActions = new HorizontalLayout();
+    private final HorizontalLayout resultExportActions = new HorizontalLayout();
 
     private final Span connectionServer = new Span();
     private final Span connectionDatabases = new Span();
@@ -196,9 +198,20 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         downloadExcel.getElement().setAttribute("download", true);
 
         resultActions.setWidthFull();
+        resultActions.setPadding(false);
         resultActions.setSpacing(true);
+        resultActions.setAlignItems(FlexComponent.Alignment.END);
+        resultActions.addClassName("comparison-result-actions");
         resultActions.getElement().setAttribute("data-testid", "comparison-result-actions");
-        resultActions.add(comparedTableFilter, downloadJson, downloadExcel);
+
+        resultExportActions.setPadding(false);
+        resultExportActions.setSpacing(true);
+        resultExportActions.addClassName("comparison-result-export-actions");
+        resultExportActions.getElement().setAttribute("data-testid", "comparison-result-export-actions");
+        resultExportActions.add(downloadJson, downloadExcel);
+
+        resultActions.add(comparedTableFilter, resultExportActions);
+        resultActions.expand(comparedTableFilter);
         resultActions.setVisible(false);
 
         comparisonError.getElement().setAttribute("data-testid", "comparison-stage-error");
@@ -289,11 +302,12 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         final Div actionBar = new Div(compareButton);
         actionBar.getElement().setAttribute("data-testid", "navigation-compare-action-bar");
+        actionBar.addClassName("navigation-compare-action-bar");
         actionBar.getStyle()
                 .set("display", "flex")
                 .set("justify-content", "flex-end")
                 .set("width", "100%")
-                .set("margin-top", "var(--lumo-space-s)")
+                .set("margin-top", "calc(var(--lumo-size-xl) + var(--lumo-space-xl))")
                 .set("margin-bottom", "var(--lumo-space-xs)");
 
         compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());

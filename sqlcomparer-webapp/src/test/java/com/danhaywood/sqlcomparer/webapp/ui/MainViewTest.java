@@ -88,6 +88,20 @@ class MainViewTest {
     }
 
     @Test
+    void compareActionBarUsesAlignmentClass() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        final Component actionBar = findByTestId(view, "navigation-compare-action-bar").orElseThrow();
+        assertThat(actionBar.getElement().getAttribute("class")).contains("navigation-compare-action-bar");
+    }
+
+    @Test
     void rendersFooterConnectionDetailsWithoutPassword() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
@@ -124,6 +138,8 @@ class MainViewTest {
         invokeExecuteComparison(view);
 
         verify(comparisonExecutionService).compare(Mockito.any(MultiTableComparisonRequest.class));
+        assertThat(findByTestId(view, "comparison-result-export-actions")).isPresent();
+        assertThat(findByTestId(view, "comparison-result-actions")).isPresent();
         assertThat(findByTestId(view, "comparison-table-filter")).isPresent();
         assertThat(findByTestId(view, "download-json")).isPresent();
         assertThat(findByTestId(view, "download-excel")).isPresent();

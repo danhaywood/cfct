@@ -2,6 +2,19 @@
   box-sizing: border-box;
 }
 
+.navigation-compare-action-bar {
+  margin-top: calc(var(--lumo-size-l) + var(--lumo-space-m));
+}
+
+.comparison-result-actions {
+  gap: var(--lumo-space-s);
+}
+
+.comparison-result-export-actions {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
 .comparison-results-container,
 .comparison-results-tab-content {
   width: 100%;
