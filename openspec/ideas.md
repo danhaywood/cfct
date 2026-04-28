@@ -15,11 +15,11 @@ Until then, ideas here are notes only and do not represent current system behavi
   - status line still ugly
   - download buttons , show above filter, right align.
   - wide grid, add scroll
-  - in grid, if the values are the same, then show only one.
   - theming
+  - start with focus on the selection table, on 'select' column.
+  - space should toggle selection.  up/down + l/r arrows should behave appropriately 
 - excel spreadsheet
   - for detail sheets, don't autosize the 2nd column (should be same width as the 3rd column)
-  - if the values are the same, then show only one.
 
 ### New features
 
