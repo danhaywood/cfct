@@ -12,6 +12,9 @@ The Grid SHALL make ineligible rows non-selectable and expose the eligibility re
 The Grid SHALL support sorting table rows by visible table-identity columns.
 The Grid SHALL support filtering table rows by visible table-identity values without requiring a separate apply-filter action.
 The selection drawer SHALL NOT display a `Select tables` heading or selected-table count.
+The schema column SHALL auto-size to fit visible schema values.
+The selection control column SHALL be center-aligned.
+The selection control column header SHALL be blank and SHALL NOT render `Select` text.
 The manual selection state SHALL be available as input to the later comparison-execution stage.
 
 #### Scenario: Catalog lists candidate tables
@@ -33,6 +36,14 @@ The manual selection state SHALL be available as input to the later comparison-e
 #### Scenario: Ineligible row is non-selectable
 - **WHEN** the table-selection Grid includes an ineligible table
 - **THEN** the table row cannot be selected and exposes an eligibility reason tooltip
+
+#### Scenario: Schema column auto-sizes for content
+- **WHEN** the table-selection Grid renders schema values
+- **THEN** the schema column width auto-sizes to fit visible schema content without unnecessary truncation
+
+#### Scenario: Select column is centered with blank header
+- **WHEN** the table-selection Grid renders selection controls
+- **THEN** the selection control column is center-aligned and its header does not display `Select`
 
 #### Scenario: Selected tables become execution input
 - **WHEN** a user marks eligible tables as selected
