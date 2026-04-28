@@ -2,7 +2,7 @@
 
 - [x] 1.1 Move the `Compare` button into the AppLayout navigation area and render it above the table-selection grid.
 - [x] 1.2 Right-align the navigation-area compare action row and preserve current enable/disable behavior based on eligible selections.
-- [x] 1.3 Add a collapsed-navigation affordance indicating hidden actions/content remain available when the drawer is collapsed.
+- [x] 1.3 Remove the experimental collapsed-navigation label and keep the navbar minimal.
 
 ## 2. Footer/status bar improvements
 
@@ -22,7 +22,7 @@
 
 - [x] 4.1 Update Playwright assertions for the compare action position in the navigation panel and updated footer alignment.
 - [x] 4.2 Refresh baseline screenshot assets for the expanded navigation state.
-- [x] 4.3 Add a collapsed-navigation screenshot baseline and assertion for hidden-content affordance visibility.
+- [x] 4.3 Add a collapsed-navigation screenshot baseline and assertion for collapsed drawer state visibility.
 - [x] 4.4 Run headless Playwright tests and update approval artifacts for deterministic CI execution.
 
 ## 5. Validation and readiness checks

@@ -9,7 +9,7 @@ The Compare action placement, footer/status formatting, and table column present
 - Refine the footer/status bar by removing redundant labels, adding spacing, and right-aligning the `Status: OK` indicator.
 - Improve table grid presentation by auto-sizing the schema column, center-aligning the select column, and removing `Select` header text.
 - Refresh UI screenshots to reflect the updated layout and add a screenshot with the navigation bar collapsed.
-- Add a collapsed-navigation affordance so users can see there is hidden content/actions when the navigation area is collapsed.
+- Capture and verify the collapsed-navigation visual state in screenshots without introducing new persistent navigation labels.
 
 ## Capabilities
 
@@ -20,7 +20,7 @@ The Compare action placement, footer/status formatting, and table column present
 ### Modified Capabilities
 
 - `vaadin-webapp-configuration`: Update page-level layout and positioning rules for compare actions and status presentation.
-- `webapp-main-ui-layout`: Update top-level UI composition behavior for toolbar/menu placement and collapsed-navigation affordance.
+- `webapp-main-ui-layout`: Update top-level UI composition behavior for toolbar/menu placement and removal of redundant navbar labeling.
 - `webapp-manual-table-selection`: Update grid column behavior for schema auto-sizing and select-column header/alignment.
 - `webapp-playwright-connectivity-status`: Refresh screenshot and visual-regression expectations for expanded and collapsed navigation states.
 

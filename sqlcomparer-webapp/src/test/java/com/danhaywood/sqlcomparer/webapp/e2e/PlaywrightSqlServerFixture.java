@@ -10,8 +10,8 @@ import java.sql.Statement;
 
 final class PlaywrightSqlServerFixture {
 
-    static final String ELIGIBLE_TABLE = "PlaywrightEligible";
-    static final String INELIGIBLE_TABLE = "PlaywrightIneligible";
+    static final String ELIGIBLE_TABLE = "Supplier";
+    static final String INELIGIBLE_TABLE = "PurchaseOrderWithoutBusinessKey";
 
     private static final MSSQLServerContainer<?> SQL_SERVER = new MSSQLServerContainer<>(
             DockerImageName.parse("mcr.microsoft.com/mssql/server:2022-latest"))

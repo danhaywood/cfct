@@ -3,7 +3,7 @@
 The Vaadin webapp already supports manual table selection, connectivity status, and comparison execution.
 Recent UI changes introduced a navigation area and screenshots, but interaction priorities are still unclear in the main screen.
 The Compare action is not visually anchored near primary navigation context, footer labels add noise, and table column behavior is not optimized for readability.
-Playwright screenshot expectations currently cover existing expanded state presentation but do not sufficiently communicate collapsed-navigation affordance.
+Playwright screenshot expectations currently cover existing expanded state presentation but need refreshed coverage for the collapsed-navigation visual state.
 The design must keep existing comparison behavior intact while improving layout, clarity, and screenshot coverage.
 
 ## Goals / Non-Goals
@@ -12,13 +12,13 @@ The design must keep existing comparison behavior intact while improving layout,
 - Place the Compare action in the navigation/menu region above the table and right-aligned.
 - Simplify footer/status rendering by removing redundant labels, adding spacing, and right-aligning the status indicator.
 - Improve table readability by auto-sizing schema column width and center-aligning selection controls without `Select` header text.
-- Provide a clear collapsed-navigation affordance indicating hidden actions/content.
+- Capture and verify a stable collapsed-navigation visual state in screenshots.
 - Refresh Playwright screenshots for updated expanded and collapsed navigation states.
 
 **Non-Goals:**
 - No change to comparison backend logic, datasource behavior, or selection-plan semantics.
 - No redesign of business-key eligibility rules beyond layout/presentation updates.
-- No introduction of new navigation features beyond visual affordance for collapsed state.
+- No introduction of new persistent navigation labels or badges in the navbar.
 
 ## Decisions
 
@@ -34,10 +34,10 @@ The design must keep existing comparison behavior intact while improving layout,
   - Rationale: schema values vary in length and selection controls are visually cleaner when centered under an unlabeled utility column.
   - Alternative considered: fixed schema width and existing `Select` header.
   - Rejected because it wastes space and adds redundant header noise.
-- Add a collapsed-navigation indicator element, such as a badge, icon, or hint marker on the collapse toggle region.
-  - Rationale: users need a visible cue that hidden actions remain accessible when collapsed.
-  - Alternative considered: no additional cue.
-  - Rejected because discoverability drops when navigation is collapsed.
+- Keep the navbar minimal by removing the experimental collapsed-state label and relying on drawer behavior plus screenshot coverage.
+  - Rationale: the label added noise and did not improve usability in practice.
+  - Alternative considered: keep persistent collapsed-state text.
+  - Rejected because it distracted from primary actions.
 - Update Playwright screenshot generation/approval files to include collapsed-navigation capture and revised expanded layout.
   - Rationale: protects the intended UX contract and avoids regressions in future UI updates.
 
@@ -54,5 +54,5 @@ The design must keep existing comparison behavior intact while improving layout,
 
 ## Implementation note
 
-The collapsed-navigation affordance is implemented as a persistent navbar hint so the hidden-navigation cue remains visible across viewport modes.
-This slightly exceeds the original collapsed-only intent, but improves discoverability and keeps Playwright assertions deterministic across environments.
+The experimental collapsed-state navbar hint was removed after review because it added clutter without improving interaction clarity.
+Collapsed-state behavior is still covered by deterministic Playwright screenshots.

@@ -149,9 +149,9 @@ After selecting an eligible table, the navigation-area `Compare` button is enabl
 
 ![Webapp table selection with Compare enabled](docs/images/webapp-selected.png)
 
-When the navigation drawer is collapsed, a collapsed-state indicator shows that hidden navigation items remain available:
+When the navigation drawer is collapsed, the collapsed state is captured for visual regression coverage:
 
-![Webapp with collapsed navigation indicator](docs/images/webapp-collapsed.png)
+![Webapp with collapsed navigation](docs/images/webapp-collapsed.png)
 
 Table selection remains strategy-driven via `SelectionPlan` and is intentionally decoupled from CLI table flags.
 This manual panel is the first user-facing stage and is designed to evolve toward auto-selection plus manual include/exclude overrides.

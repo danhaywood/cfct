@@ -5,7 +5,7 @@ The project SHALL provide headless Playwright tests for webapp home-page SQL con
 Playwright tests SHALL verify both success and failure status rendering on the home page.
 Playwright tests SHALL verify manual table-selection behavior including checkbox toggling, disabled ineligible tables, and omission of redundant selection labels.
 Playwright tests SHALL verify the happy path for the AppLayout shell, connection-details and status footer/status bar, navigation-area table-selection Grid sorting and filtering, ineligible non-selectable rows, and right-aligned navigation-area `Compare` button enablement.
-Playwright tests SHALL validate presence of a collapsed-navigation affordance when the navigation panel is collapsed.
+Playwright tests SHALL validate collapsed-navigation state behavior without requiring persistent collapsed-state labels.
 Playwright tests SHALL refresh screenshot baselines for the updated expanded navigation layout.
 Playwright tests SHALL include a screenshot baseline for the collapsed navigation state.
 Playwright tests SHALL run against Testcontainers-provisioned SQL Server scenarios to preserve reproducibility.
@@ -32,4 +32,4 @@ Playwright tests SHALL run against Testcontainers-provisioned SQL Server scenari
 
 #### Scenario: Playwright captures collapsed navigation screenshot
 - **WHEN** a headless Playwright test collapses the navigation panel
-- **THEN** the test captures a baseline screenshot that includes the collapsed-navigation hidden-content affordance
+- **THEN** the test captures a baseline screenshot for the collapsed navigation state

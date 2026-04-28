@@ -17,7 +17,6 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Footer;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
@@ -37,7 +36,6 @@ public class MainView extends AppLayout {
 
     private final ManualTableSelectionState selectionState;
     private final Button compareButton = new Button("Compare");
-    private final Span collapsedNavigationIndicator = new Span("Hidden navigation items available");
 
     public MainView(
             final ConnectionValidationStatusHolder statusHolder,
@@ -48,7 +46,7 @@ public class MainView extends AppLayout {
 
         setPrimarySection(Section.DRAWER);
         getElement().setAttribute("data-testid", "main-app-layout");
-        addToNavbar(buildDrawerToggle(), buildCollapsedNavigationIndicator(), buildTitle());
+        addToNavbar(buildDrawerToggle());
         addToDrawer(buildSelectionPanel(tableCatalog));
         setContent(buildMainContent(properties, statusHolder.current()));
     }
@@ -63,28 +61,6 @@ public class MainView extends AppLayout {
         toggle.getElement().setAttribute("data-testid", "hamburger-menu");
         toggle.getElement().setAttribute("title", "Open navigation menu");
         return toggle;
-    }
-
-    private Span buildCollapsedNavigationIndicator() {
-        collapsedNavigationIndicator.getElement().setAttribute("data-testid", "navigation-collapsed-indicator");
-        collapsedNavigationIndicator.getStyle()
-                .set("margin-left", "var(--lumo-space-m)")
-                .set("padding", "0.1rem 0.4rem")
-                .set("border-radius", "var(--lumo-border-radius-s)")
-                .set("background", "var(--lumo-primary-color-10pct)")
-                .set("font-size", "var(--lumo-font-size-xs)")
-                .set("font-weight", "600")
-                .set("display", "inline-flex");
-        return collapsedNavigationIndicator;
-    }
-
-    private H2 buildTitle() {
-        final H2 title = new H2("sqlcomparer");
-        title.getElement().setAttribute("data-testid", "main-shell-header");
-        title.getStyle()
-                .set("margin", "0")
-                .set("padding", "var(--lumo-space-m)");
-        return title;
     }
 
     private VerticalLayout buildMainContent(final WebappComparisonProperties properties, final ConnectionValidationStatus status) {
@@ -112,8 +88,8 @@ public class MainView extends AppLayout {
                 .set("display", "flex")
                 .set("flex-wrap", "wrap")
                 .set("align-items", "center")
-                .set("gap", "var(--lumo-space-l)")
-                .set("padding", "var(--lumo-space-m)")
+                .set("gap", "var(--lumo-space-xl)")
+                .set("padding", "var(--lumo-space-m) var(--lumo-space-l)")
                 .set("background", "var(--lumo-base-color)")
                 .set("border-top", "1px solid var(--lumo-contrast-10pct)")
                 .set("font-size", "var(--lumo-font-size-s)");
@@ -166,7 +142,9 @@ public class MainView extends AppLayout {
         actionBar.getStyle()
                 .set("display", "flex")
                 .set("justify-content", "flex-end")
-                .set("width", "100%");
+                .set("width", "100%")
+                .set("margin-top", "var(--lumo-space-s)")
+                .set("margin-bottom", "var(--lumo-space-xs)");
 
         compareButton.setEnabled(selectionState.isCompareEnabled());
         compareButton.getElement().setAttribute("data-testid", "compare-button");
@@ -269,7 +247,8 @@ public class MainView extends AppLayout {
                 .set("display", "inline-flex")
                 .set("justify-content", "flex-end")
                 .set("align-items", "center")
-                .set("gap", "var(--lumo-space-s)");
+                .set("gap", "var(--lumo-space-m)")
+                .set("padding-left", "var(--lumo-space-m)");
 
         final Span state = new Span("Status: " + status.state());
         state.getElement().setAttribute("data-testid", "connection-status-state");

@@ -76,37 +76,36 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
             final String initialGridText = page.locator("[data-testid='table-selection-grid']").innerText();
             assertThat(initialGridText).doesNotContain("Eligibility", "Select");
-            assertThat(page.locator("[data-testid='table-checkbox-dbo-playwrightineligible']").getAttribute("disabled")).isNotNull();
-            assertThat(page.locator("[data-testid='table-checkbox-dbo-playwrightineligible']").getAttribute("title")).isNotBlank();
+            assertThat(page.locator("[data-testid='table-checkbox-dbo-purchaseorderwithoutbusinesskey']").getAttribute("disabled")).isNotNull();
+            assertThat(page.locator("[data-testid='table-checkbox-dbo-purchaseorderwithoutbusinesskey']").getAttribute("title")).isNotBlank();
 
             page.screenshot(new Page.ScreenshotOptions().setPath(screenshotPath("webapp-main.png")).setFullPage(true));
 
             page.click("[data-testid='hamburger-menu']");
             page.waitForTimeout(200);
-            assertThat(page.locator("[data-testid='navigation-collapsed-indicator']").isVisible()).isTrue();
             page.screenshot(new Page.ScreenshotOptions().setPath(screenshotPath("webapp-collapsed.png")).setFullPage(true));
 
             page.click("[data-testid='hamburger-menu']");
             page.waitForTimeout(200);
 
             setFilter(page, PlaywrightSqlServerFixture.ELIGIBLE_TABLE);
-            page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PlaywrightEligible') && !document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PlaywrightIneligible')");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('Supplier') && !document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PurchaseOrderWithoutBusinessKey')");
             final String filteredText = page.locator("[data-testid='table-selection-grid']").innerText();
-            assertThat(filteredText).contains("PlaywrightEligible");
-            assertThat(filteredText).doesNotContain("PlaywrightIneligible");
+            assertThat(filteredText).contains("Supplier");
+            assertThat(filteredText).doesNotContain("PurchaseOrderWithoutBusinessKey");
 
             setFilter(page, "");
-            page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PlaywrightIneligible')");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PurchaseOrderWithoutBusinessKey')");
             page.locator("vaadin-grid-sorter[aria-label='Sort by Table']").click();
             page.waitForTimeout(250);
             final String sortedGridText = page.locator("[data-testid='table-selection-grid']").innerText();
-            assertThat(sortedGridText.indexOf("PlaywrightEligible")).isLessThan(sortedGridText.indexOf("PlaywrightIneligible"));
+            assertThat(sortedGridText.indexOf("PurchaseOrderWithoutBusinessKey")).isLessThan(sortedGridText.indexOf("Supplier"));
 
-            toggleCheckbox(page, "[data-testid='table-checkbox-dbo-playwrighteligible']");
+            toggleCheckbox(page, "[data-testid='table-checkbox-dbo-supplier']");
             page.waitForFunction("() => !document.querySelector('[data-testid=\"compare-button\"]').disabled");
             assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isEnabled()).isTrue();
 
-            toggleCheckbox(page, "[data-testid='table-checkbox-dbo-playwrightineligible']");
+            toggleCheckbox(page, "[data-testid='table-checkbox-dbo-purchaseorderwithoutbusinesskey']");
             assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isEnabled()).isTrue();
 
             page.screenshot(new Page.ScreenshotOptions().setPath(screenshotPath("webapp-selected.png")).setFullPage(true));

@@ -6,7 +6,7 @@ The hamburger menu control SHALL have a deterministic accessible label suitable 
 The shell SHALL place table-selection functionality in the AppLayout navigation area.
 The shell SHALL place primary selection-stage actions in the navigation area above the table-selection grid.
 The shell SHALL preserve the existing main content area for comparison-stage functionality.
-The shell SHALL provide a visual collapsed-navigation affordance indicating hidden actions or content remain available.
+The shell SHALL keep the navbar minimal without persistent collapsed-state labels.
 
 #### Scenario: Hamburger menu is available
 - **WHEN** the home page is rendered
@@ -16,9 +16,9 @@ The shell SHALL provide a visual collapsed-navigation affordance indicating hidd
 - **WHEN** the main UI shell is rendered
 - **THEN** the comparison-stage region remains visible in the content area and the table-selection region remains visible in the navigation area
 
-#### Scenario: Collapsed navigation shows hidden-content affordance
+#### Scenario: Collapsed navigation keeps minimal navbar
 - **WHEN** the navigation panel is collapsed
-- **THEN** the UI shows an indicator that actions or content are available in the collapsed navigation area
+- **THEN** the navbar does not add persistent collapsed-state labels
 
 ### Requirement: Comparison area exposes a placeholder compare action
 The webapp SHALL provide a `Compare` button in the navigation-area selection stage.

@@ -34,7 +34,7 @@ class MainViewTest {
 
         assertThat(view.getElement().getAttribute("data-testid")).isEqualTo("main-app-layout");
         assertThat(findByTestId(view, "hamburger-menu")).isPresent();
-        assertThat(findByTestId(view, "main-shell-header")).isPresent();
+        assertThat(findByTestId(view, "main-shell-header")).isEmpty();
 
         final Span status = (Span) findByTestId(view, "connection-status-state").orElseThrow();
         assertThat(status.getText()).contains(ConnectionValidationState.OK.name());
@@ -83,7 +83,7 @@ class MainViewTest {
         assertThat(findByTestId(view, "selected-table-feedback")).isEmpty();
         assertThat(findByTestId(view, "apply-table-filter")).isEmpty();
         assertThat(findByTestId(view, "comparison-stage-placeholder")).isPresent();
-        assertThat(findByTestId(view, "navigation-collapsed-indicator")).isPresent();
+        assertThat(findByTestId(view, "navigation-collapsed-indicator")).isEmpty();
     }
 
     private Optional<Component> findByTestId(final Component root, final String testId) {
