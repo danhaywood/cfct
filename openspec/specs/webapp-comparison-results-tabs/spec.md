@@ -22,6 +22,7 @@ Each per-table tab SHALL render a Vaadin Grid that presents row-level comparison
 The grid SHALL include row classification signals that distinguish matching rows, differing rows, and side-only rows.
 For logical fields whose compared values are equal, the grid SHALL render one shared value column.
 For logical fields whose compared values differ, the grid SHALL render paired `L:` and `R:` columns for that field.
+The grid SHALL apply cell-level highlight styling for value differences and side-only missing values using deterministic semantic CSS classes.
 The grid SHALL keep table identity and row-order presentation deterministic for test assertions.
 
 #### Scenario: Equal values are rendered once
@@ -35,6 +36,14 @@ The grid SHALL keep table identity and row-order presentation deterministic for 
 #### Scenario: Grid highlights row difference classification
 - **WHEN** compared rows include differences or side-only rows
 - **THEN** the grid visually indicates row classification for those rows using Excel-like status color coding
+
+#### Scenario: Differing cells are highlighted
+- **WHEN** a displayed row contains a logical field where left and right values differ
+- **THEN** the corresponding value cells are rendered with the deterministic difference highlight class
+
+#### Scenario: Missing-side cells are highlighted
+- **WHEN** a displayed row exists only on one side
+- **THEN** cells representing the missing side are rendered with deterministic missing-value highlight classes
 
 ### Requirement: Compare execution controls are action-oriented in the results stage
 The comparison stage SHALL omit non-informative placeholder labels once compare execution is implemented.
