@@ -18,17 +18,21 @@ import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationState;
 import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationStatus;
 import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationStatusHolder;
 
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
@@ -46,6 +50,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -57,10 +62,17 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
     private static final DateTimeFormatter FILE_TS = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
 
-    private final ManualTableSelectionState selectionState;
+    private ManualTableSelectionState selectionState;
     private final WebappComparisonExecutionService comparisonExecutionService;
     private final AuthenticatedConnectionContextHolder authenticatedContextHolder;
     private final WebappAuthenticationService authenticationService;
+    private final SqlServerTableCatalogService tableCatalogService;
+    private final ConnectionValidationStatusHolder statusHolder;
+    private final WebappComparisonProperties properties;
+
+    private final List<TableCatalogEntry> tableCatalogEntries = new ArrayList<>();
+    private final ListDataProvider<TableCatalogEntry> selectionDataProvider;
+    private final Dialog loginDialog = new Dialog();
 
     private final Button compareButton = new Button("Compare");
     private final Span comparisonError = new Span();
@@ -69,6 +81,12 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Anchor downloadJson = new Anchor();
     private final Anchor downloadExcel = new Anchor();
     private final HorizontalLayout resultActions = new HorizontalLayout();
+
+    private final Span connectionServer = new Span();
+    private final Span connectionDatabases = new Span();
+    private final Span connectionStatusState = new Span();
+    private final Span connectionStatusSummary = new Span();
+    private final MenuBar accountMenu = new MenuBar();
 
     private WebappComparisonExecutionService.ComparisonExecutionOutcome latestOutcome;
 
@@ -82,17 +100,25 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         this.comparisonExecutionService = comparisonExecutionService;
         this.authenticatedContextHolder = authenticatedContextHolder;
         this.authenticationService = authenticationService;
+        this.tableCatalogService = tableCatalogService;
+        this.statusHolder = statusHolder;
+        this.properties = properties;
 
-        final List<TableCatalogEntry> tableCatalog = authenticatedContextHolder.isAuthenticated()
-                ? tableCatalogService.discoverTableCatalog()
-                : List.of();
-        this.selectionState = new ManualTableSelectionState(tableCatalog);
+        if (authenticatedContextHolder.isAuthenticated()) {
+            tableCatalogEntries.addAll(tableCatalogService.discoverTableCatalog());
+        }
+        this.selectionState = new ManualTableSelectionState(tableCatalogEntries);
+        this.selectionDataProvider = new ListDataProvider<>(tableCatalogEntries);
 
         setPrimarySection(Section.DRAWER);
         getElement().setAttribute("data-testid", "main-app-layout");
-        addToNavbar(buildDrawerToggle(), buildLogoutButton());
-        addToDrawer(buildSelectionPanel(tableCatalog));
-        setContent(buildMainContent(properties, statusHolder.current()));
+        addToNavbar(buildDrawerToggle(), buildNavbarSpacer(), buildAccountMenu());
+        addToDrawer(buildSelectionPanel());
+        setContent(buildMainContent());
+
+        configureLoginDialog();
+        refreshConnectionFooter();
+        refreshAuthUiState();
         renderEmptyComparisonState();
     }
 
@@ -108,14 +134,24 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         return toggle;
     }
 
-    @Override
-    public void beforeEnter(final BeforeEnterEvent event) {
-        if (!authenticatedContextHolder.isAuthenticated()) {
-            event.rerouteTo(LoginView.class);
-        }
+    private Component buildNavbarSpacer() {
+        final Div spacer = new Div();
+        spacer.getStyle().set("flex-grow", "1");
+        return spacer;
     }
 
-    private VerticalLayout buildMainContent(final WebappComparisonProperties properties, final ConnectionValidationStatus status) {
+    @Override
+    protected void onAttach(final AttachEvent attachEvent) {
+        super.onAttach(attachEvent);
+        refreshAuthUiState();
+    }
+
+    @Override
+    public void beforeEnter(final BeforeEnterEvent event) {
+        refreshAuthUiState();
+    }
+
+    private VerticalLayout buildMainContent() {
         final VerticalLayout content = new VerticalLayout();
         content.setSizeFull();
         content.setPadding(true);
@@ -124,7 +160,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("gap", "var(--lumo-space-l)")
                 .set("padding-bottom", "5rem");
         content.getElement().setAttribute("data-testid", "main-content");
-        content.add(buildComparisonStage(), buildFooter(properties, status));
+        content.add(buildComparisonStage(), buildFooter());
         return content;
     }
 
@@ -168,17 +204,17 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         return panel;
     }
 
-    private Button buildLogoutButton() {
-        final Button logoutButton = new Button("Logout");
-        logoutButton.getElement().setAttribute("data-testid", "logout-button");
-        logoutButton.addClickListener(event -> {
-            authenticationService.logout();
-            getUI().ifPresent(ui -> ui.navigate(LoginView.class));
-        });
-        return logoutButton;
+    private MenuBar buildAccountMenu() {
+        accountMenu.getElement().setAttribute("data-testid", "account-menu");
+
+        final MenuItem accountItem = accountMenu.addItem("Account");
+        final MenuItem logoutItem = accountItem.getSubMenu().addItem("Logout", event -> handleLogout());
+        logoutItem.getElement().setAttribute("data-testid", "logout-menu-item");
+
+        return accountMenu;
     }
 
-    private Footer buildFooter(final WebappComparisonProperties properties, final ConnectionValidationStatus status) {
+    private Footer buildFooter() {
         final Footer footer = new Footer();
         footer.getElement().setAttribute("data-testid", "connection-details-footer");
         footer.getStyle()
@@ -196,15 +232,6 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("border-top", "1px solid var(--lumo-contrast-10pct)")
                 .set("font-size", "var(--lumo-font-size-s)");
 
-        final AuthenticatedConnectionContext context = authenticatedContextHolder.current().orElseGet(() -> {
-            final WebappComparisonProperties.Connection configured = properties.getConnection();
-            return new AuthenticatedConnectionContext(
-                    configured.getServer(),
-                    configured.getUsername(),
-                    configured.getPassword(),
-                    configured.getLeftDatabase(),
-                    configured.getRightDatabase());
-        });
         final Div connectionDetails = new Div();
         connectionDetails.getElement().setAttribute("data-testid", "connection-details-inline");
         connectionDetails.getStyle()
@@ -212,24 +239,30 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("align-items", "center")
                 .set("gap", "var(--lumo-space-m)");
 
-        final Span server = new Span(safe(context.server()));
-        server.getElement().setAttribute("data-testid", "connection-server");
-        final Span databases = new Span(safe(context.leftDatabase()) + " ↔ " + safe(context.rightDatabase()));
-        databases.getElement().setAttribute("data-testid", "connection-database-pair");
-        connectionDetails.add(server, databases);
+        connectionServer.getElement().setAttribute("data-testid", "connection-server");
+        connectionDatabases.getElement().setAttribute("data-testid", "connection-database-pair");
+        connectionDetails.add(connectionServer, connectionDatabases);
 
-        final Div statusPanel = renderConnectionStatus(status);
-        statusPanel.getStyle().set("margin-left", "auto");
+        final Div statusPanel = new Div();
+        statusPanel.getElement().setAttribute("data-testid", "connection-status-panel");
+        statusPanel.getStyle()
+                .set("display", "inline-flex")
+                .set("justify-content", "flex-end")
+                .set("align-items", "center")
+                .set("gap", "var(--lumo-space-m)")
+                .set("padding-left", "var(--lumo-space-m)")
+                .set("margin-left", "auto");
+
+        connectionStatusState.getElement().setAttribute("data-testid", "connection-status-state");
+        connectionStatusState.getStyle().set("font-weight", "600");
+        connectionStatusSummary.getElement().setAttribute("data-testid", "connection-status-summary");
+        statusPanel.add(connectionStatusState, connectionStatusSummary);
 
         footer.add(connectionDetails, statusPanel);
         return footer;
     }
 
-    private String safe(final String value) {
-        return value == null || value.isBlank() ? "not configured" : value;
-    }
-
-    private Div buildSelectionPanel(final List<TableCatalogEntry> tableCatalog) {
+    private Div buildSelectionPanel() {
         final Div panel = new Div();
         panel.getElement().setAttribute("data-testid", "table-selection-panel");
         panel.getStyle()
@@ -242,10 +275,9 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         layout.setSpacing(true);
         layout.getStyle().set("gap", "var(--lumo-space-m)");
 
-        final ListDataProvider<TableCatalogEntry> dataProvider = new ListDataProvider<>(tableCatalog);
-        final TextField tableFilter = filterField("Filter table", "table-filter-table", dataProvider);
+        final TextField tableFilter = filterField("Filter table", "table-filter-table", selectionDataProvider);
         tableFilter.setWidthFull();
-        final Grid<TableCatalogEntry> tableGrid = buildSelectionGrid(dataProvider);
+        final Grid<TableCatalogEntry> tableGrid = buildSelectionGrid();
 
         final Div actionBar = new Div(compareButton);
         actionBar.getElement().setAttribute("data-testid", "navigation-compare-action-bar");
@@ -256,7 +288,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("margin-top", "var(--lumo-space-s)")
                 .set("margin-bottom", "var(--lumo-space-xs)");
 
-        compareButton.setEnabled(selectionState.isCompareEnabled());
+        compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
         compareButton.getElement().setAttribute("data-testid", "compare-button");
         compareButton.getElement().setAttribute("title", "Execute comparison for selected eligible tables.");
         compareButton.addClickListener(event -> executeComparison());
@@ -266,17 +298,17 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         return panel;
     }
 
-    private Grid<TableCatalogEntry> buildSelectionGrid(final ListDataProvider<TableCatalogEntry> dataProvider) {
+    private Grid<TableCatalogEntry> buildSelectionGrid() {
         final Grid<TableCatalogEntry> grid = new Grid<>();
         grid.getElement().setAttribute("data-testid", "table-selection-grid");
         grid.setAllRowsVisible(true);
         grid.setWidthFull();
         grid.setPartNameGenerator(entry -> entry.eligible() ? "eligible-table-row" : "ineligible-table-row");
-        grid.setDataProvider(dataProvider);
+        grid.setDataProvider(selectionDataProvider);
 
         grid.addColumn(new ComponentRenderer<>(entry -> {
             final Checkbox checkbox = new Checkbox();
-            checkbox.setEnabled(entry.eligible());
+            checkbox.setEnabled(entry.eligible() && authenticatedContextHolder.isAuthenticated());
             checkbox.setValue(selectionState.isSelected(entry.table()));
             checkbox.getElement().setAttribute("data-testid", "table-checkbox-" + selectorToken(entry.table()));
             if (!entry.eligible()) {
@@ -287,7 +319,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             }
             checkbox.addValueChangeListener(event -> {
                 selectionState.updateSelection(entry.table(), event.getValue());
-                compareButton.setEnabled(selectionState.isCompareEnabled());
+                compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
             });
             return checkbox;
         })).setHeader("").setAutoWidth(true).setFlexGrow(0).setTextAlign(ColumnTextAlign.CENTER);
@@ -336,6 +368,11 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     }
 
     private void executeComparison() {
+        if (!authenticatedContextHolder.isAuthenticated()) {
+            refreshAuthUiState();
+            return;
+        }
+
         final List<TableRef> selectedTables = selectionState.selectedTables();
         if (selectedTables.isEmpty()) {
             return;
@@ -356,7 +393,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             comparisonError.setText(safeError(ex));
             renderEmptyComparisonState();
         } finally {
-            compareButton.setEnabled(selectionState.isCompareEnabled());
+            compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
         }
     }
 
@@ -496,27 +533,94 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         return (tableRef.schemaName() + "-" + tableRef.tableName()).toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-");
     }
 
-    private Div renderConnectionStatus(final ConnectionValidationStatus status) {
-        final Div panel = new Div();
-        panel.getElement().setAttribute("data-testid", "connection-status-panel");
-        panel.getStyle()
-                .set("display", "inline-flex")
-                .set("justify-content", "flex-end")
-                .set("align-items", "center")
-                .set("gap", "var(--lumo-space-m)")
-                .set("padding-left", "var(--lumo-space-m)");
+    private String safe(final String value) {
+        return value == null || value.isBlank() ? "not configured" : value;
+    }
 
-        final Span state = new Span("Status: " + status.state());
-        state.getElement().setAttribute("data-testid", "connection-status-state");
-        state.getStyle().set("font-weight", "600");
-        panel.add(state);
+    private void configureLoginDialog() {
+        loginDialog.setHeaderTitle("Login");
+        loginDialog.setModal(true);
+        loginDialog.setCloseOnEsc(false);
+        loginDialog.setCloseOnOutsideClick(false);
+        loginDialog.setDraggable(false);
+        loginDialog.setResizable(false);
+        loginDialog.setWidth("36rem");
+        loginDialog.getElement().setAttribute("data-testid", "login-modal");
+    }
 
-        if (status.state() == ConnectionValidationState.FAILED && status.summary() != null && !status.summary().isBlank()) {
-            final Span summary = new Span(status.summary());
-            summary.getElement().setAttribute("data-testid", "connection-status-summary");
-            panel.add(summary);
+    private void rebuildLoginDialogForm() {
+        loginDialog.removeAll();
+        loginDialog.add(new LoginForm(authenticationService, this::onAuthenticationSuccess));
+    }
+
+    private void onAuthenticationSuccess() {
+        reloadTableCatalog();
+        refreshConnectionFooter();
+        refreshAuthUiState();
+        loginDialog.close();
+    }
+
+    private void handleLogout() {
+        authenticationService.logout();
+        latestOutcome = null;
+        comparisonError.setText("");
+        resultActions.setVisible(false);
+        renderEmptyComparisonState();
+        clearTableCatalog();
+        refreshConnectionFooter();
+        refreshAuthUiState();
+    }
+
+    private void reloadTableCatalog() {
+        final List<TableCatalogEntry> tableCatalog = tableCatalogService.discoverTableCatalog();
+        selectionState = new ManualTableSelectionState(tableCatalog);
+        tableCatalogEntries.clear();
+        tableCatalogEntries.addAll(tableCatalog);
+        selectionDataProvider.refreshAll();
+        compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
+    }
+
+    private void clearTableCatalog() {
+        selectionState = new ManualTableSelectionState(List.of());
+        tableCatalogEntries.clear();
+        selectionDataProvider.refreshAll();
+        compareButton.setEnabled(false);
+    }
+
+    private void refreshConnectionFooter() {
+        final AuthenticatedConnectionContext context = authenticatedContextHolder.current().orElseGet(() -> {
+            final WebappComparisonProperties.Connection configured = properties.getConnection();
+            return new AuthenticatedConnectionContext(
+                    configured.getServer(),
+                    configured.getUsername(),
+                    configured.getPassword(),
+                    configured.getLeftDatabase(),
+                    configured.getRightDatabase());
+        });
+
+        connectionServer.setText(safe(context.server()));
+        connectionDatabases.setText(safe(context.leftDatabase()) + " ↔ " + safe(context.rightDatabase()));
+
+        final ConnectionValidationStatus status = statusHolder.current();
+        connectionStatusState.setText("Status: " + status.state());
+        final boolean showSummary = status.state() == ConnectionValidationState.FAILED
+                && status.summary() != null
+                && !status.summary().isBlank();
+        connectionStatusSummary.setVisible(showSummary);
+        connectionStatusSummary.setText(showSummary ? status.summary() : "");
+    }
+
+    private void refreshAuthUiState() {
+        final boolean authenticated = authenticatedContextHolder.isAuthenticated();
+        accountMenu.setVisible(authenticated);
+        compareButton.setEnabled(selectionState.isCompareEnabled() && authenticated);
+        if (!authenticated) {
+            rebuildLoginDialogForm();
+            if (getUI().isPresent()) {
+                loginDialog.open();
+            }
+        } else if (getUI().isPresent()) {
+            loginDialog.close();
         }
-
-        return panel;
     }
 }

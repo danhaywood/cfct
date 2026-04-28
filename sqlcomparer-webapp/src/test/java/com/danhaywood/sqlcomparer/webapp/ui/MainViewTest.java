@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,7 +44,7 @@ import static org.mockito.Mockito.when;
 class MainViewTest {
 
     @Test
-    void reroutesToLoginWhenUnauthenticated() {
+    void opensLoginModalWhenUnauthenticated() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithDefaults(),
@@ -55,7 +56,10 @@ class MainViewTest {
         final BeforeEnterEvent event = mock(BeforeEnterEvent.class);
         view.beforeEnter(event);
 
-        verify(event).rerouteTo(LoginView.class);
+        final Component accountMenu = findByTestId(view, "account-menu").orElseThrow();
+        assertThat(accountMenu.isVisible()).isFalse();
+        final Button compareButton = (Button) findByTestId(view, "compare-button").orElseThrow();
+        assertThat(compareButton.isEnabled()).isFalse();
     }
 
     @Test
@@ -73,10 +77,13 @@ class MainViewTest {
 
         assertThat(view.getElement().getAttribute("data-testid")).isEqualTo("main-app-layout");
         assertThat(findByTestId(view, "hamburger-menu")).isPresent();
+        assertThat(findByTestId(view, "account-menu")).isPresent();
+        assertThat(findByTestId(view, "logout-button")).isEmpty();
 
         final Span status = (Span) findByTestId(view, "connection-status-state").orElseThrow();
         assertThat(status.getText()).contains(ConnectionValidationState.OK.name());
-        assertThat(findByTestId(view, "connection-status-summary")).isEmpty();
+        final Span summary = (Span) findByTestId(view, "connection-status-summary").orElseThrow();
+        assertThat(summary.isVisible()).isFalse();
     }
 
     @Test
@@ -121,6 +128,22 @@ class MainViewTest {
         assertThat(findByTestId(view, "download-excel")).isPresent();
         assertThat(findByTestId(view, "comparison-stage-error")).isPresent();
         assertThat(findByTestId(view, "comparison-stage-state")).isEmpty();
+    }
+
+    @Test
+    void reloadTableCatalogAfterLoginFromUnauthenticatedStateDoesNotThrow() {
+        final AuthenticatedConnectionContextHolder holder = unauthenticatedHolder();
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                holder,
+                mock(WebappAuthenticationService.class));
+
+        holder.set(new AuthenticatedConnectionContext("localhost:1433", "sa", "super-secret-password", "left_db", "right_db"));
+
+        assertThatCode(() -> invokeOnAuthenticationSuccess(view)).doesNotThrowAnyException();
     }
 
     @Test
@@ -173,6 +196,16 @@ class MainViewTest {
         return Stream.concat(Stream.of(ownText), component.getChildren().map(this::textOf))
                 .filter(text -> text != null && !text.isBlank())
                 .reduce("", (left, right) -> left + " " + right);
+    }
+
+    private void invokeOnAuthenticationSuccess(final MainView view) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("onAuthenticationSuccess");
+            method.setAccessible(true);
+            method.invoke(view);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private void invokeExecuteComparison(final MainView view) {

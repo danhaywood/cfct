@@ -46,7 +46,7 @@ class HomePageConnectionStatusPlaywrightFailureTest {
              Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
              Page page = browser.newPage()) {
             page.navigate("http://localhost:" + serverPort + "/");
-            page.waitForSelector("[data-testid='login-view']");
+            page.waitForSelector("[data-testid='login-modal']");
             page.click("[data-testid='login-submit']");
             page.waitForSelector("[data-testid='login-error']");
 

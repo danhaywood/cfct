@@ -122,25 +122,44 @@ These keys map to CLI concepts as follows:
 
 ## Webapp Usage
 
-Webapp usage is now a three-stage workflow:
-- Stage 1: login with server, source database, target database, username, and password (defaults loaded from config props).
+Webapp usage is now a three-stage workflow.
+- Stage 1: login in a startup modal dialog with server, source database, target database, username, and password, with defaults loaded from config props.
 - Stage 2: select eligible tables in the AppLayout navigation drawer and trigger comparison using the right-aligned `Compare` action above the table grid.
-- Stage 3: view comparison output in the main comparison area as dynamic tabs (one tab per selected table).
+- Stage 3: view comparison output in the main comparison area as dynamic tabs, one tab per selected table.
 
 The navigation drawer lists discovered tables in a sortable and filterable Vaadin Grid.
 Tables that do not meet the `_PK` requirement are still shown, but their checkboxes are disabled and expose the eligibility reason as tooltip text.
 The schema column auto-sizes, the select column is centered, and the select header text is intentionally blank.
 The footer/status bar shows compact connection context and right-aligns current SQL connectivity status.
+Logout is now in the top-right account menu.
 
-The initial table-selection view looks like this:
+The login and logout flow now looks like this.
+
+Unauthenticated startup opens the login modal dialog on the main route.
+
+![Webapp startup login modal](docs/images/webapp-login-modal.png)
+
+After successful login, the main shell shows the top-right account menu.
+
+![Webapp after login with account menu](docs/images/webapp-after-login-account-menu.png)
+
+Opening the account menu shows the logout action.
+
+![Webapp account menu with logout](docs/images/webapp-account-menu-open.png)
+
+After logout, the app returns to the login modal dialog.
+
+![Webapp after logout returns to login modal](docs/images/webapp-after-logout-login-modal.png)
+
+The initial table-selection view looks like this.
 
 ![Webapp table selection with footer status bar](docs/images/webapp-main.png)
 
-After selecting eligible tables and clicking `Compare`, the right-side stage renders per-table result tabs with paired left/right comparison columns, Excel-like status coloring, and JSON/Excel download controls:
+After selecting eligible tables and clicking `Compare`, the right-side stage renders per-table result tabs with paired left/right comparison columns, Excel-like status coloring, and JSON/Excel download controls.
 
 ![Webapp table comparison results in tabs](docs/images/webapp-selected.png)
 
-When the navigation drawer is collapsed, the collapsed state is captured for visual regression coverage:
+When the navigation drawer is collapsed, the collapsed state is captured for visual regression coverage.
 
 ![Webapp with collapsed navigation](docs/images/webapp-collapsed.png)
 

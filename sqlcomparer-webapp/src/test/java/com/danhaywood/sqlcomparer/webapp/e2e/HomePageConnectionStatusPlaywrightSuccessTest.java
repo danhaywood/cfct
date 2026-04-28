@@ -52,7 +52,8 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
              Page page = browser.newPage()) {
             page.setViewportSize(1440, 900);
             page.navigate("http://localhost:" + serverPort + "/");
-            page.waitForSelector("[data-testid='login-view']");
+            page.waitForSelector("[data-testid='login-modal']");
+            assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isDisabled()).isTrue();
             page.click("[data-testid='login-submit']");
             page.waitForSelector("[data-testid='connection-status-state']");
             page.waitForSelector("[data-testid='table-selection-grid']");
@@ -69,6 +70,8 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             assertThat(page.locator("[data-testid='selected-table-feedback']").count()).isZero();
             assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isDisabled()).isTrue();
             assertThat(page.locator("[data-testid='apply-table-filter']").count()).isZero();
+            assertThat(page.locator("[data-testid='account-menu']").count()).isEqualTo(1);
+            assertThat(page.locator("[data-testid='logout-button']").count()).isZero();
 
             final double compareTop = positionOf(page, "[data-testid='navigation-compare-action-bar']")[1];
             final double gridTop = positionOf(page, "[data-testid='table-selection-grid']")[1];
