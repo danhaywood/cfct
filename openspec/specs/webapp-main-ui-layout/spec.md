@@ -44,7 +44,8 @@ The `Compare` button SHALL be rendered above the table-selection grid.
 The `Compare` button SHALL be aligned to the right within its action row.
 The `Compare` button SHALL be disabled when no eligible table is selected.
 The `Compare` button SHALL be enabled when one or more eligible tables are selected.
-Activating the `Compare` button SHALL NOT start comparison execution in this change.
+Activating the `Compare` button SHALL execute comparison orchestration for all currently selected eligible tables.
+The comparison stage SHALL render the execution outcome in the right-side content area.
 
 #### Scenario: Compare button is disabled before selection
 - **WHEN** the home page is rendered and no eligible tables are selected
@@ -58,7 +59,7 @@ Activating the `Compare` button SHALL NOT start comparison execution in this cha
 - **WHEN** the selection stage is visible in the navigation panel
 - **THEN** the `Compare` button appears above the table grid and aligned to the right
 
-#### Scenario: Compare button does not execute comparison
+#### Scenario: Compare button executes selected-table comparison
 - **WHEN** a user activates the enabled `Compare` button
-- **THEN** no comparison execution is started
+- **THEN** comparison is executed for the current selected eligible tables and the right-side comparison stage updates with resulting content
 

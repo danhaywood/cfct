@@ -11,6 +11,9 @@ Playwright tests SHALL verify the happy path for the AppLayout shell, connection
 Playwright tests SHALL validate collapsed-navigation state behavior without requiring persistent collapsed-state labels.
 Playwright tests SHALL refresh screenshot baselines for the updated expanded navigation layout.
 Playwright tests SHALL include a screenshot baseline for the collapsed navigation state.
+Playwright tests SHALL verify compare execution creates dynamic per-table result tabs in the right-side comparison stage.
+Playwright tests SHALL verify each result tab renders a comparison grid with paired left/right value presentation and status color cues.
+Playwright tests SHALL verify compared-table filtering and JSON/Excel download controls are present after compare execution.
 Playwright tests SHALL run against Testcontainers-provisioned SQL Server scenarios to preserve reproducibility.
 
 #### Scenario: Playwright verifies OK status
@@ -27,7 +30,11 @@ Playwright tests SHALL run against Testcontainers-provisioned SQL Server scenari
 
 #### Scenario: Playwright verifies main UI happy path
 - **WHEN** a headless Playwright test opens the home page for a valid webapp instance and interacts with the updated UI
-- **THEN** the test asserts that the hamburger menu is visible, the footer/status bar displays non-sensitive connection details and SQL connectivity status, Grid sorting and filtering work without an apply-filter button, ineligible rows are non-selectable, and the navigation-area `Compare` button enables after selecting an eligible table
+- **THEN** the test asserts that the hamburger menu is visible, the footer/status bar displays non-sensitive connection details and SQL connectivity status, Grid sorting and filtering work without an apply-filter button, and the navigation-area `Compare` button enables after selecting an eligible table
+
+#### Scenario: Playwright verifies compare result tabs and grids
+- **WHEN** a headless Playwright test triggers compare with multiple selected eligible tables
+- **THEN** the test asserts that one result tab per selected table is rendered and each tab exposes a comparison grid with paired-side values
 
 #### Scenario: Playwright captures expanded navigation screenshot
 - **WHEN** a headless Playwright test opens the home page in expanded navigation mode
