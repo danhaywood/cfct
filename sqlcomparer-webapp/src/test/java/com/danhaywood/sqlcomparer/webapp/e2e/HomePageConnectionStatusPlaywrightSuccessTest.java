@@ -112,7 +112,9 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             assertThat(page.locator("[data-testid^='comparison-grid-dbo-']").count()).isEqualTo(1);
             final String gridText = page.locator("[data-testid^='comparison-grid-dbo-']").first().innerText();
             assertThat(gridText).contains("Business Key", "Status", "L: name", "R: name");
-            assertThat(page.locator("[data-testid='comparison-stage-state']").innerText()).contains("SUCCESS");
+            assertThat(page.locator("[data-testid='comparison-table-filter']").count()).isEqualTo(1);
+            assertThat(page.locator("[data-testid='download-json']").count()).isEqualTo(1);
+            assertThat(page.locator("[data-testid='download-excel']").count()).isEqualTo(1);
 
             page.screenshot(new Page.ScreenshotOptions().setPath(screenshotPath("webapp-selected.png")).setFullPage(true));
         }

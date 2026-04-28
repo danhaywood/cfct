@@ -3,7 +3,6 @@ package com.danhaywood.sqlcomparer.webapp.ui;
 import com.danhaywood.sqlcomparer.model.ColumnRef;
 import com.danhaywood.sqlcomparer.model.ComparisonRowStatus;
 import com.danhaywood.sqlcomparer.model.ComparisonRowView;
-import com.danhaywood.sqlcomparer.model.MultiTableComparisonViewResult;
 import com.danhaywood.sqlcomparer.model.TableComparisonViewResult;
 import com.danhaywood.sqlcomparer.model.TableRef;
 import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
@@ -23,11 +22,11 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Footer;
-import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
@@ -36,8 +35,12 @@ import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.StreamResource;
 
-import java.util.ArrayList;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,13 +50,20 @@ import java.util.Map;
 @Route("")
 public class MainView extends AppLayout {
 
+    private static final DateTimeFormatter FILE_TS = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
+
     private final ManualTableSelectionState selectionState;
     private final WebappComparisonExecutionService comparisonExecutionService;
 
     private final Button compareButton = new Button("Compare");
-    private final Span comparisonState = new Span("State: IDLE");
     private final Span comparisonError = new Span();
     private final Div comparisonResultsContainer = new Div();
+    private final TextField comparedTableFilter = new TextField();
+    private final Anchor downloadJson = new Anchor();
+    private final Anchor downloadExcel = new Anchor();
+    private final HorizontalLayout resultActions = new HorizontalLayout();
+
+    private WebappComparisonExecutionService.ComparisonExecutionOutcome latestOutcome;
 
     public MainView(
             final ConnectionValidationStatusHolder statusHolder,
@@ -108,19 +118,32 @@ public class MainView extends AppLayout {
                 .set("flex-direction", "column")
                 .set("gap", "var(--lumo-space-m)");
 
-        comparisonState.getElement().setAttribute("data-testid", "comparison-stage-state");
-        comparisonState.getStyle().set("font-weight", "600");
+        comparedTableFilter.setPlaceholder("Filter compared tables");
+        comparedTableFilter.setClearButtonVisible(true);
+        comparedTableFilter.setValueChangeMode(ValueChangeMode.EAGER);
+        comparedTableFilter.getElement().setAttribute("data-testid", "comparison-table-filter");
+        comparedTableFilter.setWidth("24rem");
+        comparedTableFilter.addValueChangeListener(event -> renderComparisonTabs());
+
+        downloadJson.getElement().setAttribute("data-testid", "download-json");
+        downloadExcel.getElement().setAttribute("data-testid", "download-excel");
+        downloadJson.add(new Button("Download JSON"));
+        downloadExcel.add(new Button("Download Excel"));
+        downloadJson.getElement().setAttribute("download", true);
+        downloadExcel.getElement().setAttribute("download", true);
+
+        resultActions.setWidthFull();
+        resultActions.setSpacing(true);
+        resultActions.getElement().setAttribute("data-testid", "comparison-result-actions");
+        resultActions.add(comparedTableFilter, downloadJson, downloadExcel);
+        resultActions.setVisible(false);
 
         comparisonError.getElement().setAttribute("data-testid", "comparison-stage-error");
         comparisonError.getStyle().set("color", "var(--lumo-error-text-color)");
 
         comparisonResultsContainer.getElement().setAttribute("data-testid", "comparison-results-container");
 
-        panel.add(new H3("Comparison stage"),
-                new Paragraph("Results are shown per selected table in tabs."),
-                comparisonState,
-                comparisonError,
-                comparisonResultsContainer);
+        panel.add(resultActions, comparisonError, comparisonResultsContainer);
         return panel;
     }
 
@@ -204,8 +227,7 @@ public class MainView extends AppLayout {
         return panel;
     }
 
-    private Grid<TableCatalogEntry> buildSelectionGrid(
-            final ListDataProvider<TableCatalogEntry> dataProvider) {
+    private Grid<TableCatalogEntry> buildSelectionGrid(final ListDataProvider<TableCatalogEntry> dataProvider) {
         final Grid<TableCatalogEntry> grid = new Grid<>();
         grid.getElement().setAttribute("data-testid", "table-selection-grid");
         grid.setAllRowsVisible(true);
@@ -281,37 +303,45 @@ public class MainView extends AppLayout {
         }
 
         compareButton.setEnabled(false);
-        setComparisonState("RUNNING", "Comparing selected tables...");
         comparisonError.setText("");
 
         try {
-            final MultiTableComparisonViewResult result = comparisonExecutionService.compare(MultiTableComparisonRequest.forTables(selectedTables));
-            renderComparisonTabs(result);
-            setComparisonState("SUCCESS", "Compared " + result.tableResults().size() + " table(s)");
+            latestOutcome = comparisonExecutionService.compare(MultiTableComparisonRequest.forTables(selectedTables));
+            resultActions.setVisible(true);
+            refreshDownloadLinks();
+            renderComparisonTabs();
         } catch (RuntimeException ex) {
+            latestOutcome = null;
+            resultActions.setVisible(false);
             comparisonResultsContainer.removeAll();
             comparisonError.setText(safeError(ex));
-            setComparisonState("FAILED", "Comparison failed");
+            renderEmptyComparisonState();
         } finally {
             compareButton.setEnabled(selectionState.isCompareEnabled());
         }
     }
 
-    private void setComparisonState(final String state, final String summary) {
-        comparisonState.setText("State: " + state + " - " + summary);
+    private void refreshDownloadLinks() {
+        final String ts = LocalDateTime.now().format(FILE_TS);
+        downloadJson.setHref(new StreamResource("comparison-" + ts + ".json",
+                () -> new ByteArrayInputStream(latestOutcome.json().getBytes(StandardCharsets.UTF_8))));
+        downloadExcel.setHref(new StreamResource("comparison-" + ts + ".xlsx",
+                () -> new ByteArrayInputStream(latestOutcome.excel())));
     }
 
-    private String safeError(final RuntimeException ex) {
-        if (ex.getMessage() == null || ex.getMessage().isBlank()) {
-            return "Comparison execution failed.";
-        }
-        return ex.getMessage();
-    }
-
-    private void renderComparisonTabs(final MultiTableComparisonViewResult result) {
+    private void renderComparisonTabs() {
         comparisonResultsContainer.removeAll();
-        if (result.tableResults().isEmpty()) {
+        if (latestOutcome == null || latestOutcome.viewResult().tableResults().isEmpty()) {
             renderEmptyComparisonState();
+            return;
+        }
+
+        final List<TableComparisonViewResult> filtered = latestOutcome.viewResult().tableResults().stream()
+                .filter(this::matchesComparedTableFilter)
+                .toList();
+
+        if (filtered.isEmpty()) {
+            comparisonResultsContainer.add(new Span("No compared tables match the filter."));
             return;
         }
 
@@ -323,7 +353,7 @@ public class MainView extends AppLayout {
         tabContent.getElement().setAttribute("data-testid", "comparison-results-tab-content");
 
         final Map<Tab, TableComparisonViewResult> mapping = new LinkedHashMap<>();
-        for (TableComparisonViewResult tableResult : result.tableResults()) {
+        for (TableComparisonViewResult tableResult : filtered) {
             final Tab tab = new Tab(tableResult.tableDisplayName());
             tab.getElement().setAttribute("data-testid", "comparison-result-tab-" + selectorToken(tableResult.table()));
             mapping.put(tab, tableResult);
@@ -346,6 +376,14 @@ public class MainView extends AppLayout {
         comparisonResultsContainer.add(tabs, tabContent);
     }
 
+    private boolean matchesComparedTableFilter(final TableComparisonViewResult result) {
+        final String filter = comparedTableFilter.getValue();
+        if (filter == null || filter.isBlank()) {
+            return true;
+        }
+        return result.tableDisplayName().toLowerCase(Locale.ROOT).contains(filter.toLowerCase(Locale.ROOT));
+    }
+
     private void renderEmptyComparisonState() {
         comparisonResultsContainer.removeAll();
         final Span empty = new Span("No comparison results yet.");
@@ -356,21 +394,20 @@ public class MainView extends AppLayout {
     private Component buildResultGrid(final TableComparisonViewResult tableResult) {
         final Grid<ComparisonRowView> grid = new Grid<>();
         grid.getElement().setAttribute("data-testid", "comparison-grid-" + selectorToken(tableResult.table()));
-        grid.setItems(new ArrayList<>(tableResult.rows()));
+        grid.setItems(tableResult.rows());
         grid.setWidthFull();
         grid.setAllRowsVisible(true);
-        grid.addThemeNames("row-stripes", "column-borders", "compact");
+        grid.addThemeNames("column-borders", "compact");
 
         grid.addColumn(row -> row.key().display())
                 .setHeader("Business Key")
                 .setAutoWidth(true)
                 .setFlexGrow(0);
 
-        grid.addColumn(row -> row.status().name())
+        grid.addColumn(new ComponentRenderer<>(this::statusBadge))
                 .setHeader("Status")
                 .setAutoWidth(true)
-                .setFlexGrow(0)
-                .setComparator(row -> row.status().name());
+                .setFlexGrow(0);
 
         for (ColumnRef column : tableResult.comparedColumns()) {
             final String columnName = column.name();
@@ -385,6 +422,35 @@ public class MainView extends AppLayout {
         }
 
         return grid;
+    }
+
+    private Component statusBadge(final ComparisonRowView row) {
+        final Span badge = new Span(row.status().name());
+        badge.getStyle()
+                .set("padding", "0.15rem 0.45rem")
+                .set("border-radius", "999px")
+                .set("font-size", "var(--lumo-font-size-xs)")
+                .set("font-weight", "600")
+                .set("display", "inline-block")
+                .set("border", "1px solid transparent");
+
+        if (row.status() == ComparisonRowStatus.DIFFERENT) {
+            badge.getStyle().set("background", "#fde68a").set("border-color", "#f59e0b").set("color", "#78350f");
+        } else if (row.status() == ComparisonRowStatus.ONLY_IN_LEFT) {
+            badge.getStyle().set("background", "#dbeafe").set("border-color", "#3b82f6").set("color", "#1e3a8a");
+        } else if (row.status() == ComparisonRowStatus.ONLY_IN_RIGHT) {
+            badge.getStyle().set("background", "#dcfce7").set("border-color", "#22c55e").set("color", "#14532d");
+        } else {
+            badge.getStyle().set("background", "#f3f4f6").set("border-color", "#d1d5db").set("color", "#374151");
+        }
+        return badge;
+    }
+
+    private String safeError(final RuntimeException ex) {
+        if (ex.getMessage() == null || ex.getMessage().isBlank()) {
+            return "Comparison execution failed.";
+        }
+        return ex.getMessage();
     }
 
     private String selectorToken(final TableRef tableRef) {

@@ -16,6 +16,8 @@
 - [x] 3.2 Add right-side dynamic tab container that creates one tab per compared `schema.table`.
 - [x] 3.3 Implement per-tab Vaadin Grid rendering for paired left/right values and row classification indicators.
 - [x] 3.4 Add loading/error state handling for compare execution and prevent repeated compare clicks while a run is active.
+- [x] 3.5 Remove obsolete comparison-stage placeholder labels and expose compared-table filter plus JSON/Excel download actions.
+- [x] 3.6 Add Excel-like status color coding for comparison grid row classification.
 
 ## 4. Playwright and unit test updates
 

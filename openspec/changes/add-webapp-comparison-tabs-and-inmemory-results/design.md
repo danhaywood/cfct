@@ -38,6 +38,10 @@ The change crosses API contracts, implementation wiring, and webapp UI rendering
   - Rationale: consistent mental model with existing spreadsheet output while staying idiomatic for web UI.
   - Alternative considered: plain unstyled JSON-like table view.
   - Rejected because it lowers readability for row-level differences.
+- Remove non-informative right-side placeholder labels and replace them with action-oriented controls.
+  - Rationale: users need comparison tools (filter/download) more than static explanatory text after compare execution is functional.
+- Provide compared-table filtering and JSON/Excel download controls in the result stage.
+  - Rationale: improves usability for many selected tables and keeps export workflows available from the webapp.
 - Maintain asynchronous-safe UI updates by running comparison action in server-side click handling and replacing result container content atomically.
   - Rationale: avoids partial stale tabs after selection changes or repeated compare runs.
 

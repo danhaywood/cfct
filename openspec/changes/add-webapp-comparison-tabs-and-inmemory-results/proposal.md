@@ -7,9 +7,10 @@ Users need immediate in-app comparison feedback per selected table without relyi
 
 - Execute comparison when the user clicks `Compare` for the currently selected eligible tables.
 - Render comparison output on the right side as dynamic tabs, with one tab per selected table.
-- Show a result grid in each table tab using an Excel-like visual style for readable side-by-side differences.
+- Show a result grid in each table tab using an Excel-like visual style for readable side-by-side differences and status color coding.
 - Refactor the comparison orchestration contract so webapp consumers receive comparison results in memory instead of requiring marshalled externalized formats.
 - Keep existing datasource-managed connection lifecycle and comparison semantics while changing result delivery and UI rendering.
+- Simplify right-side comparison chrome by removing placeholder labels and exposing practical controls: compared-table filter plus JSON/Excel download actions.
 
 ## Capabilities
 

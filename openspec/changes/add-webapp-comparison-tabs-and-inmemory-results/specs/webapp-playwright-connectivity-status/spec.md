@@ -9,7 +9,8 @@ Playwright tests SHALL validate collapsed-navigation state behavior without requ
 Playwright tests SHALL refresh screenshot baselines for the updated expanded navigation layout.
 Playwright tests SHALL include a screenshot baseline for the collapsed navigation state.
 Playwright tests SHALL verify compare execution creates dynamic per-table result tabs in the right-side comparison stage.
-Playwright tests SHALL verify each result tab renders a comparison grid with paired left/right value presentation.
+Playwright tests SHALL verify each result tab renders a comparison grid with paired left/right value presentation and status color cues.
+Playwright tests SHALL verify compared-table filtering and JSON/Excel download controls are present after compare execution.
 Playwright tests SHALL run against Testcontainers-provisioned SQL Server scenarios to preserve reproducibility.
 
 #### Scenario: Playwright verifies OK status

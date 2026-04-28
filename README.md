@@ -147,9 +147,9 @@ The initial table-selection view looks like this:
 
 ![Webapp table selection with footer status bar](docs/images/webapp-main.png)
 
-After selecting eligible tables and clicking `Compare`, the right-side stage renders per-table result tabs with paired left/right comparison columns:
+After selecting eligible tables and clicking `Compare`, the right-side stage renders per-table result tabs with paired left/right comparison columns, Excel-like status coloring, and JSON/Excel download controls:
 
-![Webapp table selection with Compare enabled](docs/images/webapp-selected.png)
+![Webapp table comparison results in tabs](docs/images/webapp-selected.png)
 
 When the navigation drawer is collapsed, the collapsed state is captured for visual regression coverage:
 

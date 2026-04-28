@@ -1,10 +1,12 @@
 package com.danhaywood.sqlcomparer.webapp.comparison;
 
-import com.danhaywood.sqlcomparer.model.MultiTableComparisonViewResult;
+import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
 import com.danhaywood.sqlcomparer.model.TableRef;
 import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
-import com.danhaywood.sqlcomparer.service.MultiTableComparisonViewService;
+import com.danhaywood.sqlcomparer.service.MultiTableComparisonReportFormatter;
+import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
 import com.danhaywood.sqlcomparer.webapp.config.WebappDataSources;
+
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -21,19 +23,27 @@ class WebappComparisonExecutionServiceTest {
     @Test
     void delegatesToApiComparisonServiceUsingDataSourceManagedConnections() throws Exception {
         final MultiTableComparisonRequest request = MultiTableComparisonRequest.forTables(List.of(new TableRef("dbo", "Supplier")));
-        final MultiTableComparisonViewResult expected = new MultiTableComparisonViewResult(List.of());
+        final MultiTableComparisonResult expectedRaw = new MultiTableComparisonResult(List.of());
         final Connection leftConnection = mock(Connection.class);
         final Connection rightConnection = mock(Connection.class);
         final DataSource leftDataSource = mock(DataSource.class);
         final DataSource rightDataSource = mock(DataSource.class);
         when(leftDataSource.getConnection()).thenReturn(leftConnection);
         when(rightDataSource.getConnection()).thenReturn(rightConnection);
-        final RecordingComparisonService delegate = new RecordingComparisonService(expected);
+        final RecordingComparisonService delegate = new RecordingComparisonService(expectedRaw);
+        final MultiTableComparisonReportFormatter formatter = mock(MultiTableComparisonReportFormatter.class);
+        when(formatter.renderJson(expectedRaw)).thenReturn("{}");
+        when(formatter.renderExcel(expectedRaw)).thenReturn(new byte[]{1, 2, 3});
         final WebappDataSources dataSources = new WebappDataSources(mock(DataSource.class), leftDataSource, rightDataSource);
 
-        final WebappComparisonExecutionService service = new WebappComparisonExecutionService(delegate, dataSources);
+        final WebappComparisonExecutionService service = new WebappComparisonExecutionService(delegate, formatter, dataSources);
 
-        assertThat(service.compare(request)).isSameAs(expected);
+        final WebappComparisonExecutionService.ComparisonExecutionOutcome outcome = service.compare(request);
+
+        assertThat(outcome.rawResult()).isSameAs(expectedRaw);
+        assertThat(outcome.viewResult().tableResults()).isEmpty();
+        assertThat(outcome.json()).isEqualTo("{}");
+        assertThat(outcome.excel()).containsExactly(1, 2, 3);
         assertThat(delegate.leftConnection).isSameAs(leftConnection);
         assertThat(delegate.rightConnection).isSameAs(rightConnection);
         assertThat(delegate.request).isSameAs(request);
@@ -41,19 +51,19 @@ class WebappComparisonExecutionServiceTest {
         verify(rightConnection).close();
     }
 
-    private static final class RecordingComparisonService implements MultiTableComparisonViewService {
+    private static final class RecordingComparisonService implements MultiTableComparisonService {
 
-        private final MultiTableComparisonViewResult result;
+        private final MultiTableComparisonResult result;
         private Connection leftConnection;
         private Connection rightConnection;
         private MultiTableComparisonRequest request;
 
-        private RecordingComparisonService(final MultiTableComparisonViewResult result) {
+        private RecordingComparisonService(final MultiTableComparisonResult result) {
             this.result = result;
         }
 
         @Override
-        public MultiTableComparisonViewResult compare(
+        public MultiTableComparisonResult compare(
                 final Connection leftConnection,
                 final Connection rightConnection,
                 final MultiTableComparisonRequest request) {

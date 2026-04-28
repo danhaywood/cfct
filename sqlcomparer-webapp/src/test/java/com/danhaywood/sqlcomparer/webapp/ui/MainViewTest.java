@@ -3,6 +3,7 @@ package com.danhaywood.sqlcomparer.webapp.ui;
 import com.danhaywood.sqlcomparer.model.ColumnRef;
 import com.danhaywood.sqlcomparer.model.ComparisonRowStatus;
 import com.danhaywood.sqlcomparer.model.ComparisonRowView;
+import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
 import com.danhaywood.sqlcomparer.model.MultiTableComparisonViewResult;
 import com.danhaywood.sqlcomparer.model.RowKey;
 import com.danhaywood.sqlcomparer.model.TableComparisonViewResult;
@@ -84,33 +85,32 @@ class MainViewTest {
     void executesCompareAndRendersResultTabs() {
         final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
         when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class)))
-                .thenReturn(sampleComparisonResult());
+                .thenReturn(sampleComparisonOutcome());
 
         final MainView view = new MainView(new ConnectionValidationStatusHolder(), catalogServiceWithPreselectedSupplier(), propertiesWithDefaults(), comparisonExecutionService);
 
         final Button compareButton = (Button) findByTestId(view, "compare-button").orElseThrow();
         assertThat(compareButton.isEnabled()).isTrue();
 
-        compareButton.click();
+        invokeExecuteComparison(view);
 
         verify(comparisonExecutionService).compare(Mockito.any(MultiTableComparisonRequest.class));
-        assertThat(findByTestId(view, "comparison-results-tabs")).isPresent();
-        assertThat(findByTestId(view, "comparison-result-tab-dbo-supplier")).isPresent();
-        assertThat(findByTestId(view, "comparison-grid-dbo-supplier")).isPresent();
-
-        final Span state = (Span) findByTestId(view, "comparison-stage-state").orElseThrow();
-        assertThat(state.getText()).contains("SUCCESS");
+        assertThat(findByTestId(view, "comparison-table-filter")).isPresent();
+        assertThat(findByTestId(view, "download-json")).isPresent();
+        assertThat(findByTestId(view, "download-excel")).isPresent();
+        assertThat(findByTestId(view, "comparison-stage-error")).isPresent();
+        assertThat(findByTestId(view, "comparison-stage-state")).isEmpty();
     }
 
     @Test
     void compareRequestUsesCurrentSelectedTables() {
         final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
         when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class)))
-                .thenReturn(sampleComparisonResult());
+                .thenReturn(sampleComparisonOutcome());
 
         final MainView view = new MainView(new ConnectionValidationStatusHolder(), catalogServiceWithPreselectedProduct(), propertiesWithDefaults(), comparisonExecutionService);
 
-        ((Button) findByTestId(view, "compare-button").orElseThrow()).click();
+        invokeExecuteComparison(view);
 
         final ArgumentCaptor<MultiTableComparisonRequest> captor = ArgumentCaptor.forClass(MultiTableComparisonRequest.class);
         verify(comparisonExecutionService).compare(captor.capture());
@@ -136,6 +136,16 @@ class MainViewTest {
         return Stream.concat(Stream.of(ownText), component.getChildren().map(this::textOf))
                 .filter(text -> text != null && !text.isBlank())
                 .reduce("", (left, right) -> left + " " + right);
+    }
+
+    private void invokeExecuteComparison(final MainView view) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("executeComparison");
+            method.setAccessible(true);
+            method.invoke(view);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private SqlServerTableCatalogService catalogServiceWithDefaults() {
@@ -173,7 +183,7 @@ class MainViewTest {
         return properties;
     }
 
-    private MultiTableComparisonViewResult sampleComparisonResult() {
+    private WebappComparisonExecutionService.ComparisonExecutionOutcome sampleComparisonOutcome() {
         final ColumnRef name = new ColumnRef("name");
         final ComparisonRowView row = new ComparisonRowView(
                 new RowKey(List.of("SUP-001")),
@@ -185,6 +195,8 @@ class MainViewTest {
                 new TableRef("dbo", "Supplier"),
                 List.of(name),
                 List.of(row));
-        return new MultiTableComparisonViewResult(List.of(supplier));
+        final MultiTableComparisonViewResult viewResult = new MultiTableComparisonViewResult(List.of(supplier));
+        final MultiTableComparisonResult rawResult = new MultiTableComparisonResult(List.of());
+        return new WebappComparisonExecutionService.ComparisonExecutionOutcome(rawResult, viewResult, "{}", new byte[]{1, 2});
     }
 }

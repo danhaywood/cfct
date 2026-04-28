@@ -26,12 +26,13 @@ The grid SHALL keep table identity and row-order presentation deterministic for 
 
 #### Scenario: Grid highlights row difference classification
 - **WHEN** compared rows include differences or side-only rows
-- **THEN** the grid visually indicates row classification for those rows
+- **THEN** the grid visually indicates row classification for those rows using Excel-like status color coding
 
-### Requirement: Compare execution state is visible in the results stage
-The comparison stage SHALL expose deterministic execution-state feedback for idle, running, success, and failure states.
+### Requirement: Compare execution controls are action-oriented in the results stage
+The comparison stage SHALL omit non-informative placeholder labels once compare execution is implemented.
 The stage SHALL disable repeated compare activation while a compare run is in progress.
 The stage SHALL show a concise error summary when compare execution fails.
+The stage SHALL provide controls to filter compared tables and to download the latest comparison as JSON or Excel.
 
 #### Scenario: Compare disables repeated activation while running
 - **WHEN** a compare run is started
@@ -40,3 +41,7 @@ The stage SHALL show a concise error summary when compare execution fails.
 #### Scenario: Compare failure shows concise summary
 - **WHEN** comparison execution fails for the selected tables
 - **THEN** the comparison stage shows a concise failure message without stale prior result tabs
+
+#### Scenario: Results stage provides filter and download actions
+- **WHEN** comparison succeeds for selected tables
+- **THEN** users can filter compared table tabs and download JSON or Excel output for the latest run
