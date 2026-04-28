@@ -41,6 +41,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -58,6 +59,7 @@ import java.util.Locale;
 import java.util.Map;
 
 @Route("")
+@CssImport("./styles/comparison-grid.css")
 public class MainView extends AppLayout implements BeforeEnterObserver {
 
     private static final DateTimeFormatter FILE_TS = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
@@ -505,11 +507,13 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 && !left.isBlank()
                 && !right.isBlank()) {
             final Div top = new Div(new Span(left));
-            top.getStyle().set("padding", "0.1rem 0");
+            top.addClassNames("cmp-cell-diff", "cmp-cell-left-diff");
+            top.getStyle().set("padding", "0.1rem 0.35rem");
 
             final Div bottom = new Div(new Span(right));
+            bottom.addClassNames("cmp-cell-diff", "cmp-cell-right-diff");
             bottom.getStyle()
-                    .set("padding", "0.1rem 0")
+                    .set("padding", "0.1rem 0.35rem")
                     .set("border-top", "1px solid var(--lumo-contrast-20pct)");
 
             final Div stacked = new Div(top, bottom);
@@ -521,7 +525,13 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             return stacked;
         }
 
-        return new Span(compactValue(row.status(), left, right));
+        final Span value = new Span(compactValue(row.status(), left, right));
+        if (row.status() == ComparisonRowStatus.ONLY_IN_LEFT) {
+            value.addClassName("cmp-cell-left-only");
+        } else if (row.status() == ComparisonRowStatus.ONLY_IN_RIGHT) {
+            value.addClassName("cmp-cell-right-only");
+        }
+        return value;
     }
 
     private String compactValue(final ComparisonRowStatus status, final String left, final String right) {

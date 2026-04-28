@@ -214,6 +214,60 @@ class MainViewTest {
                 .isEqualTo("Right-only supplier");
     }
 
+    @Test
+    void appliesDiffCellClassForDifferingValues() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        final ColumnRef status = new ColumnRef("status");
+        final ComparisonRowView row = new ComparisonRowView(
+                new RowKey(List.of("SUP-002")),
+                ComparisonRowStatus.DIFFERENT,
+                Map.of(status, "ACTIVE"),
+                Map.of(status, "SUSPENDED"),
+                List.of(status));
+
+        final Component cell = invokeValueCell(view, row, status);
+        final String cssClasses = cell.getElement().getOuterHTML();
+        assertThat(cssClasses).contains("cmp-cell-diff");
+    }
+
+    @Test
+    void appliesMissingSideCellClassesForSideOnlyRows() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        final ColumnRef name = new ColumnRef("name");
+        final ComparisonRowView leftOnly = new ComparisonRowView(
+                new RowKey(List.of("SUP-003")),
+                ComparisonRowStatus.ONLY_IN_LEFT,
+                Map.of(name, "Supplier Left"),
+                Map.of(),
+                List.of());
+        final ComparisonRowView rightOnly = new ComparisonRowView(
+                new RowKey(List.of("SUP-004")),
+                ComparisonRowStatus.ONLY_IN_RIGHT,
+                Map.of(),
+                Map.of(name, "Supplier Right"),
+                List.of());
+
+        final Component leftCell = invokeValueCell(view, leftOnly, name);
+        final Component rightCell = invokeValueCell(view, rightOnly, name);
+
+        assertThat(leftCell.getElement().getAttribute("class")).contains("cmp-cell-left-only");
+        assertThat(rightCell.getElement().getAttribute("class")).contains("cmp-cell-right-only");
+    }
+
     private AuthenticatedConnectionContextHolder authenticatedHolder() {
         final AuthenticatedConnectionContextHolder holder = new AuthenticatedConnectionContextHolder();
         holder.set(new AuthenticatedConnectionContext("localhost:1433", "sa", "super-secret-password", "left_db", "right_db"));
@@ -270,6 +324,16 @@ class MainViewTest {
             final var method = MainView.class.getDeclaredMethod("compactValue", ComparisonRowStatus.class, String.class, String.class);
             method.setAccessible(true);
             return (String) method.invoke(view, status, left, right);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private Component invokeValueCell(final MainView view, final ComparisonRowView row, final ColumnRef column) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("valueCell", ComparisonRowView.class, ColumnRef.class);
+            method.setAccessible(true);
+            return (Component) method.invoke(view, row, column);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

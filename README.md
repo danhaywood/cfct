@@ -127,6 +127,9 @@ Webapp usage is now a three-stage workflow.
 - Stage 2: select eligible tables in the AppLayout navigation drawer and trigger comparison using the right-aligned `Compare` action above the table grid.
 - Stage 3: view comparison output in the main comparison area as dynamic tabs, one tab per selected table.
 
+Comparison grids use Excel-like visual cues.
+Cells with differing values are highlighted, and side-only rows highlight missing-side values for faster scanning.
+
 The navigation drawer lists discovered tables in a sortable and filterable Vaadin Grid.
 Tables that do not meet the `_PK` suffix requirement on a unique index or unique constraint are still shown, but their checkboxes are disabled and expose the eligibility reason as tooltip text.
 The schema column auto-sizes, the select column is centered, and the select header text is intentionally blank.
