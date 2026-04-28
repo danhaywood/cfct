@@ -1,0 +1,26 @@
+## MODIFIED Requirements
+
+### Requirement: Comparison area exposes a placeholder compare action
+The webapp SHALL provide a `Compare` button in the navigation-area selection stage.
+The `Compare` button SHALL be rendered above the table-selection grid.
+The `Compare` button SHALL be aligned to the right within its action row.
+The `Compare` button SHALL be disabled when no eligible table is selected.
+The `Compare` button SHALL be enabled when one or more eligible tables are selected.
+Activating the `Compare` button SHALL execute comparison orchestration for all currently selected eligible tables.
+The comparison stage SHALL render the execution outcome in the right-side content area.
+
+#### Scenario: Compare button is disabled before selection
+- **WHEN** the home page is rendered and no eligible tables are selected
+- **THEN** the `Compare` button is disabled
+
+#### Scenario: Compare button is enabled after selection
+- **WHEN** a user selects at least one eligible table
+- **THEN** the `Compare` button becomes enabled
+
+#### Scenario: Compare button is positioned above table catalog
+- **WHEN** the selection stage is visible in the navigation panel
+- **THEN** the `Compare` button appears above the table grid and aligned to the right
+
+#### Scenario: Compare button executes selected-table comparison
+- **WHEN** a user activates the enabled `Compare` button
+- **THEN** comparison is executed for the current selected eligible tables and the right-side comparison stage updates with resulting content
