@@ -1,14 +1,14 @@
 ## Why
 
-Wide comparison tables and large result sets can exceed the visible results area in the webapp, making some columns or rows hard to access.
-Adding explicit horizontal and vertical scrolling behavior improves usability without changing comparison semantics.
+Comparison pages should remain responsive as viewport size changes.
+When comparison content is wider or taller than the available area, widgets such as grids must stay within their container and remain navigable.
 
 ## What Changes
 
-- Ensure the comparison results region supports horizontal scrolling when the grid has more columns than available width.
-- Ensure the comparison results region supports vertical scrolling when row count exceeds available height.
+- Make the comparison results area responsive so grid widgets fit within container bounds at smaller viewport sizes.
+- Provide horizontal and vertical scrolling within the grid/results area only when content exceeds available space.
 - Keep existing tab, column, and highlighting behavior unchanged while improving overflow handling.
-- Add or update UI tests to validate scrollbar/overflow behavior for wide and tall grids.
+- Add or update UI tests to validate responsive overflow behavior for wide and tall grids.
 
 ## Capabilities
 

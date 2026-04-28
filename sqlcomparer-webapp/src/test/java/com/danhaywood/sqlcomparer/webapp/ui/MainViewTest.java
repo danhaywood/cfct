@@ -169,7 +169,8 @@ class MainViewTest {
                 List.of(name),
                 List.of(row));
 
-        final Grid<?> grid = (Grid<?>) invokeBuildResultGrid(view, supplier);
+        final Component gridContainer = invokeBuildResultGrid(view, supplier);
+        final Grid<?> grid = extractGrid(gridContainer);
         final List<String> headers = grid.getColumns().stream()
                 .map(Grid.Column::getHeaderText)
                 .toList();
@@ -196,6 +197,33 @@ class MainViewTest {
         final ArgumentCaptor<MultiTableComparisonRequest> captor = ArgumentCaptor.forClass(MultiTableComparisonRequest.class);
         verify(comparisonExecutionService).compare(captor.capture());
         assertThat(captor.getValue().tables()).containsExactly(new TableRef("dbo", "Product"));
+    }
+
+    @Test
+    void buildsScrollableGridContainer() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        final ColumnRef name = new ColumnRef("name");
+        final ComparisonRowView row = new ComparisonRowView(
+                new RowKey(List.of("SUP-001")),
+                ComparisonRowStatus.MATCH,
+                Map.of(name, "Supplier A"),
+                Map.of(name, "Supplier A"),
+                List.of());
+        final TableComparisonViewResult supplier = new TableComparisonViewResult(
+                new TableRef("dbo", "Supplier"),
+                List.of(name),
+                List.of(row));
+
+        final Component gridContainer = invokeBuildResultGrid(view, supplier);
+        assertThat(gridContainer.getElement().getAttribute("class")).contains("cmp-grid-scroll-container");
+        assertThat(extractGrid(gridContainer).getElement().getAttribute("data-testid")).isEqualTo("comparison-grid-dbo-supplier");
     }
 
     @Test
@@ -317,6 +345,10 @@ class MainViewTest {
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    private Grid<?> extractGrid(final Component gridContainer) {
+        return (Grid<?>) gridContainer.getChildren().findFirst().orElseThrow();
     }
 
     private String invokeCompactValue(final MainView view, final ComparisonRowStatus status, final String left, final String right) {

@@ -1,0 +1,44 @@
+.comparison-stage-panel {
+  box-sizing: border-box;
+}
+
+.comparison-results-container,
+.comparison-results-tab-content {
+  width: 100%;
+  min-width: 0;
+}
+
+.cmp-grid-scroll-container {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  max-height: min(55vh, 32rem);
+  overflow-x: auto;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.cmp-grid-scroll-container vaadin-grid {
+  min-width: 100%;
+}
+
+.cmp-cell-diff {
+  background-color: #fde68a;
+  color: #78350f;
+}
+
+.cmp-cell-left-only {
+  display: inline-block;
+  background-color: #dbeafe;
+  color: #1e3a8a;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.2rem;
+}
+
+.cmp-cell-right-only {
+  display: inline-block;
+  background-color: #dcfce7;
+  color: #14532d;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.2rem;
+}

@@ -129,6 +129,7 @@ Webapp usage is now a three-stage workflow.
 
 Comparison grids use Excel-like visual cues.
 Cells with differing values are highlighted, and side-only rows highlight missing-side values for faster scanning.
+When result grids are wider or taller than the visible comparison area, horizontal and vertical scrollbars keep all rows and columns navigable.
 
 The navigation drawer lists discovered tables in a sortable and filterable Vaadin Grid.
 Tables that do not meet the `_PK` suffix requirement on a unique index or unique constraint are still shown, but their checkboxes are disabled and expose the eligibility reason as tooltip text.

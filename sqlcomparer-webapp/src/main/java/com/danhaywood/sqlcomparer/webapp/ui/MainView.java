@@ -169,19 +169,23 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private Component buildComparisonStage() {
         final Div panel = new Div();
         panel.getElement().setAttribute("data-testid", "comparison-stage-placeholder");
+        panel.addClassName("comparison-stage-panel");
         panel.getStyle()
                 .set("padding", "var(--lumo-space-l)")
                 .set("border", "1px solid var(--lumo-contrast-10pct)")
                 .set("border-radius", "var(--lumo-border-radius-m)")
                 .set("display", "flex")
                 .set("flex-direction", "column")
-                .set("gap", "var(--lumo-space-m)");
+                .set("gap", "var(--lumo-space-m)")
+                .set("width", "100%")
+                .set("min-width", "0");
 
         comparedTableFilter.setPlaceholder("Filter compared tables");
         comparedTableFilter.setClearButtonVisible(true);
         comparedTableFilter.setValueChangeMode(ValueChangeMode.EAGER);
         comparedTableFilter.getElement().setAttribute("data-testid", "comparison-table-filter");
-        comparedTableFilter.setWidth("24rem");
+        comparedTableFilter.setWidthFull();
+        comparedTableFilter.setMaxWidth("24rem");
         comparedTableFilter.addValueChangeListener(event -> renderComparisonTabs());
 
         downloadJson.getElement().setAttribute("data-testid", "download-json");
@@ -201,6 +205,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         comparisonError.getStyle().set("color", "var(--lumo-error-text-color)");
 
         comparisonResultsContainer.getElement().setAttribute("data-testid", "comparison-results-container");
+        comparisonResultsContainer.addClassName("comparison-results-container");
+        comparisonResultsContainer.setWidthFull();
 
         panel.add(resultActions, comparisonError, comparisonResultsContainer);
         return panel;
@@ -429,6 +435,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         final Div tabContent = new Div();
         tabContent.getElement().setAttribute("data-testid", "comparison-results-tab-content");
+        tabContent.addClassName("comparison-results-tab-content");
+        tabContent.setWidthFull();
 
         final Map<Tab, TableComparisonViewResult> mapping = new LinkedHashMap<>();
         for (TableComparisonViewResult tableResult : filtered) {
@@ -473,8 +481,9 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         final Grid<ComparisonRowView> grid = new Grid<>();
         grid.getElement().setAttribute("data-testid", "comparison-grid-" + selectorToken(tableResult.table()));
         grid.setItems(tableResult.rows());
-        grid.setWidthFull();
         grid.setAllRowsVisible(true);
+        grid.setWidth("max-content");
+        grid.getStyle().set("min-width", "100%");
         grid.addThemeNames("column-borders", "compact");
 
         grid.addColumn(row -> row.key().display())
@@ -495,7 +504,10 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                     .setTextAlign(ColumnTextAlign.START);
         }
 
-        return grid;
+        final Div scrollContainer = new Div(grid);
+        scrollContainer.addClassName("cmp-grid-scroll-container");
+        scrollContainer.getElement().setAttribute("data-testid", "comparison-grid-scroll-container-" + selectorToken(tableResult.table()));
+        return scrollContainer;
     }
 
     private Component valueCell(final ComparisonRowView row, final ColumnRef column) {
