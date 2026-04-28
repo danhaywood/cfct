@@ -8,23 +8,27 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 ## Candidate ideas
 
+### New features
+
+- Render comparison results as YAML, in the cli and download
+- ignored columns
+  - Identify ignored columns from extended properties.
+  - Make it a strategy as to how to ignore columns, with a fallback as per the above rules.
+- generalize the way to find a _PK, care only about the suffix.  So, PurchaseOrder__reference__PK would also be ok.
+- have the cli/webapp support Azure EntraID credentials
+
+### Cosmetic
+
+- excel spreadsheet, for detail sheets, don't autosize the 2nd column (should be same width as the 3rd column)
+- status line still ugly
+- download buttons , show above filter, right align.
+- colour the cells in the webapp
+
+### Programming Style
+
 - don't hardcode package names, eg '@SpringBootApplication(scanBasePackages = "com.danhaywood.sqlcomparer.cli")'
 - clean up HomePageConnectionStatusPlaywrightSuccessTest
   - externalize DDL
   - PlaywrightSqlServerFixture should be a service, not static methods
-  - 
-- exclude uuid columns for comparison
+- playwright, use page objects
 - use lombok to remove getter/setter boilerplate
-- if there is no BK, then fall back to a _PK.
-- generalize the way to find a _BK, care only about the suffix.  So, PurchaseOrder__reference__BK would also be ok.
-- allow the cli to pick up credentials from a .env file
-- have the cli support Azure EntraID credentials
-- error handling if invalid table specified: for Excel format, for Json format
-- Specify multiple tables by way of a file
-- Configure ignored columns beyond the current default `id` and `version`.
-- Identify ignored columns from extended properties.
-- Make it a strategy as to how to ignore columns, with a fallback as per the above rules.
-- Render comparison results as JSON for tooling or future webapp use.
-- Render comparison results as Excel for tooling or future webapp use.
-- Add a CLI command on top of the core comparison library.
-- Explore a webapp for running comparisons and browsing reports.
