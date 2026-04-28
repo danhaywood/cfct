@@ -1,9 +1,9 @@
 package com.danhaywood.sqlcomparer.webapp.comparison;
 
-import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
+import com.danhaywood.sqlcomparer.model.MultiTableComparisonViewResult;
 import com.danhaywood.sqlcomparer.model.TableRef;
 import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
-import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
+import com.danhaywood.sqlcomparer.service.MultiTableComparisonViewService;
 import com.danhaywood.sqlcomparer.webapp.config.WebappDataSources;
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +21,7 @@ class WebappComparisonExecutionServiceTest {
     @Test
     void delegatesToApiComparisonServiceUsingDataSourceManagedConnections() throws Exception {
         final MultiTableComparisonRequest request = MultiTableComparisonRequest.forTables(List.of(new TableRef("dbo", "Supplier")));
-        final MultiTableComparisonResult expected = new MultiTableComparisonResult(List.of());
+        final MultiTableComparisonViewResult expected = new MultiTableComparisonViewResult(List.of());
         final Connection leftConnection = mock(Connection.class);
         final Connection rightConnection = mock(Connection.class);
         final DataSource leftDataSource = mock(DataSource.class);
@@ -41,19 +41,19 @@ class WebappComparisonExecutionServiceTest {
         verify(rightConnection).close();
     }
 
-    private static final class RecordingComparisonService implements MultiTableComparisonService {
+    private static final class RecordingComparisonService implements MultiTableComparisonViewService {
 
-        private final MultiTableComparisonResult result;
+        private final MultiTableComparisonViewResult result;
         private Connection leftConnection;
         private Connection rightConnection;
         private MultiTableComparisonRequest request;
 
-        private RecordingComparisonService(final MultiTableComparisonResult result) {
+        private RecordingComparisonService(final MultiTableComparisonViewResult result) {
             this.result = result;
         }
 
         @Override
-        public MultiTableComparisonResult compare(
+        public MultiTableComparisonViewResult compare(
                 final Connection leftConnection,
                 final Connection rightConnection,
                 final MultiTableComparisonRequest request) {

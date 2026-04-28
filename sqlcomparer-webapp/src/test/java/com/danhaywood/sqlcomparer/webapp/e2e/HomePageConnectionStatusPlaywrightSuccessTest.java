@@ -37,6 +37,7 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
         PlaywrightSqlServerFixture.createDatabaseIfMissing(LEFT_DB);
         PlaywrightSqlServerFixture.createDatabaseIfMissing(RIGHT_DB);
         PlaywrightSqlServerFixture.prepareManualSelectionTables(LEFT_DB);
+        PlaywrightSqlServerFixture.prepareManualSelectionTables(RIGHT_DB);
         registry.add("sqlcomparer.webapp.comparison.connection.server", PlaywrightSqlServerFixture::server);
         registry.add("sqlcomparer.webapp.comparison.connection.username", PlaywrightSqlServerFixture::username);
         registry.add("sqlcomparer.webapp.comparison.connection.password", PlaywrightSqlServerFixture::password);
@@ -101,12 +102,17 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             final String sortedGridText = page.locator("[data-testid='table-selection-grid']").innerText();
             assertThat(sortedGridText.indexOf("PurchaseOrderWithoutBusinessKey")).isLessThan(sortedGridText.indexOf("Supplier"));
 
-            toggleCheckbox(page, "[data-testid='table-checkbox-dbo-supplier']");
+            selectAllEligibleTables(page);
             page.waitForFunction("() => !document.querySelector('[data-testid=\"compare-button\"]').disabled");
             assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isEnabled()).isTrue();
 
-            toggleCheckbox(page, "[data-testid='table-checkbox-dbo-purchaseorderwithoutbusinesskey']");
-            assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isEnabled()).isTrue();
+            page.click("[data-testid='compare-button']");
+            page.waitForSelector("[data-testid='comparison-results-tabs']");
+            assertThat(page.locator("[data-testid^='comparison-result-tab-']").count()).isEqualTo(2);
+            assertThat(page.locator("[data-testid^='comparison-grid-dbo-']").count()).isEqualTo(1);
+            final String gridText = page.locator("[data-testid^='comparison-grid-dbo-']").first().innerText();
+            assertThat(gridText).contains("Business Key", "Status", "L: name", "R: name");
+            assertThat(page.locator("[data-testid='comparison-stage-state']").innerText()).contains("SUCCESS");
 
             page.screenshot(new Page.ScreenshotOptions().setPath(screenshotPath("webapp-selected.png")).setFullPage(true));
         }
@@ -116,6 +122,10 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
         page.evaluate(
                 "(selector) => { const host = document.querySelector(selector); if (!host) return; host.checked = !host.checked; host.dispatchEvent(new CustomEvent('checked-changed', { detail: { value: host.checked }, bubbles: true, composed: true })); host.dispatchEvent(new Event('change', { bubbles: true, composed: true })); }",
                 selector);
+    }
+
+    private void selectAllEligibleTables(final Page page) {
+        page.evaluate("() => { document.querySelectorAll('[data-testid^=\"table-checkbox-\"]').forEach((host) => { if (host.hasAttribute('disabled')) return; host.checked = true; host.dispatchEvent(new CustomEvent('checked-changed', { detail: { value: true }, bubbles: true, composed: true })); host.dispatchEvent(new Event('change', { bubbles: true, composed: true })); }); }");
     }
 
     private void setFilter(final Page page, final String value) {

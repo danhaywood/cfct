@@ -132,9 +132,11 @@ These shared keys map to CLI concepts as follows:
 - `output.format` ↔ `-f` / `--output-format`
 - `output.file` ↔ `-o` / `--output-file`
 
+## Webapp Usage
+
 Table selection in the webapp is now a two-stage workflow:
 - Stage 1: select eligible tables in the AppLayout navigation drawer and trigger comparison using the right-aligned `Compare` action above the table grid.
-- Stage 2: view comparison output in the main comparison area.
+- Stage 2: view comparison output in the main comparison area as dynamic tabs (one tab per selected table).
 
 The navigation drawer lists discovered tables in a sortable and filterable Vaadin Grid.
 Tables that do not meet the `_PK` requirement are still shown, but their checkboxes are disabled and expose the eligibility reason as tooltip text.
@@ -145,7 +147,7 @@ The initial table-selection view looks like this:
 
 ![Webapp table selection with footer status bar](docs/images/webapp-main.png)
 
-After selecting an eligible table, the navigation-area `Compare` button is enabled:
+After selecting eligible tables and clicking `Compare`, the right-side stage renders per-table result tabs with paired left/right comparison columns:
 
 ![Webapp table selection with Compare enabled](docs/images/webapp-selected.png)
 

@@ -42,6 +42,7 @@ public final class TableComparisonServiceDefault implements TableComparisonServi
         final var rowsOnlyInLeft = new ArrayList<RowKey>();
         final var rowsOnlyInRight = new ArrayList<RowKey>();
         final var differingRows = new ArrayList<RowDifference>();
+        final var matchingRows = new ArrayList<RowKey>();
 
         for (final RowKey key : allKeys) {
             final Map<ColumnRef, String> leftValues = leftRows.get(key);
@@ -64,6 +65,8 @@ public final class TableComparisonServiceDefault implements TableComparisonServi
             }
             if (!columnDifferences.isEmpty()) {
                 differingRows.add(new RowDifference(key, leftValues, rightValues, columnDifferences));
+            } else {
+                matchingRows.add(key);
             }
         }
 
@@ -76,7 +79,8 @@ public final class TableComparisonServiceDefault implements TableComparisonServi
                 rowsOnlyInRight,
                 differingRows,
                 valuesFor(rowsOnlyInLeft, leftRows),
-                valuesFor(rowsOnlyInRight, rightRows));
+                valuesFor(rowsOnlyInRight, rightRows),
+                valuesFor(matchingRows, leftRows));
     }
 
     private Map<RowKey, Map<ColumnRef, String>> valuesFor(

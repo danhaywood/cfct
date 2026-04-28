@@ -12,7 +12,8 @@ public record TableComparisonResult(
         List<RowKey> rowsOnlyInRight,
         List<RowDifference> differingRows,
         Map<RowKey, Map<ColumnRef, String>> rowsOnlyInLeftValues,
-        Map<RowKey, Map<ColumnRef, String>> rowsOnlyInRightValues
+        Map<RowKey, Map<ColumnRef, String>> rowsOnlyInRightValues,
+        Map<RowKey, Map<ColumnRef, String>> matchingRowsValues
 ) {
 
     public TableComparisonResult(
@@ -23,7 +24,29 @@ public record TableComparisonResult(
             final List<RowKey> rowsOnlyInLeft,
             final List<RowKey> rowsOnlyInRight,
             final List<RowDifference> differingRows) {
-        this(table, businessKey, comparedColumns, ignoredColumns, rowsOnlyInLeft, rowsOnlyInRight, differingRows, Map.of(), Map.of());
+        this(table, businessKey, comparedColumns, ignoredColumns, rowsOnlyInLeft, rowsOnlyInRight, differingRows, Map.of(), Map.of(), Map.of());
+    }
+
+    public TableComparisonResult(
+            final TableRef table,
+            final BusinessKey businessKey,
+            final List<ColumnRef> comparedColumns,
+            final List<ColumnRef> ignoredColumns,
+            final List<RowKey> rowsOnlyInLeft,
+            final List<RowKey> rowsOnlyInRight,
+            final List<RowDifference> differingRows,
+            final Map<RowKey, Map<ColumnRef, String>> rowsOnlyInLeftValues,
+            final Map<RowKey, Map<ColumnRef, String>> rowsOnlyInRightValues) {
+        this(table,
+                businessKey,
+                comparedColumns,
+                ignoredColumns,
+                rowsOnlyInLeft,
+                rowsOnlyInRight,
+                differingRows,
+                rowsOnlyInLeftValues,
+                rowsOnlyInRightValues,
+                Map.of());
     }
 
     public TableComparisonResult {
@@ -34,6 +57,7 @@ public record TableComparisonResult(
         differingRows = List.copyOf(differingRows);
         rowsOnlyInLeftValues = copyRowValues(rowsOnlyInLeftValues);
         rowsOnlyInRightValues = copyRowValues(rowsOnlyInRightValues);
+        matchingRowsValues = copyRowValues(matchingRowsValues);
     }
 
     public boolean hasDifferences() {

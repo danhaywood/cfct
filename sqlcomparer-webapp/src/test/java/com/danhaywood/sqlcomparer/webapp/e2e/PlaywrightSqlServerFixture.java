@@ -11,6 +11,7 @@ import java.sql.Statement;
 final class PlaywrightSqlServerFixture {
 
     static final String ELIGIBLE_TABLE = "Supplier";
+    static final String SECOND_ELIGIBLE_TABLE = "Product";
     static final String INELIGIBLE_TABLE = "PurchaseOrderWithoutBusinessKey";
 
     private static final MSSQLServerContainer<?> SQL_SERVER = new MSSQLServerContainer<>(
@@ -45,11 +46,23 @@ final class PlaywrightSqlServerFixture {
 
     static void prepareManualSelectionTables(final String databaseName) {
         executeSql(databaseName, "DROP TABLE IF EXISTS dbo." + ELIGIBLE_TABLE + ";");
-        executeSql(databaseName, "CREATE TABLE dbo." + ELIGIBLE_TABLE + " (id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, reference NVARCHAR(40) NOT NULL, [version] DATETIME2(3) NOT NULL);");
+        executeSql(databaseName, "CREATE TABLE dbo." + ELIGIBLE_TABLE + " (id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, reference NVARCHAR(40) NOT NULL, name NVARCHAR(80) NOT NULL, [version] DATETIME2(3) NOT NULL);");
         executeSql(databaseName, "CREATE UNIQUE INDEX " + ELIGIBLE_TABLE + "_PK ON dbo." + ELIGIBLE_TABLE + "(reference);");
+
+        executeSql(databaseName, "DROP TABLE IF EXISTS dbo." + SECOND_ELIGIBLE_TABLE + ";");
+        executeSql(databaseName, "CREATE TABLE dbo." + SECOND_ELIGIBLE_TABLE + " (id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, reference NVARCHAR(40) NOT NULL, name NVARCHAR(80) NOT NULL, [version] DATETIME2(3) NOT NULL);");
+        executeSql(databaseName, "CREATE UNIQUE INDEX " + SECOND_ELIGIBLE_TABLE + "_PK ON dbo." + SECOND_ELIGIBLE_TABLE + "(reference);");
 
         executeSql(databaseName, "DROP TABLE IF EXISTS dbo." + INELIGIBLE_TABLE + ";");
         executeSql(databaseName, "CREATE TABLE dbo." + INELIGIBLE_TABLE + " (id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, reference NVARCHAR(40) NOT NULL, [version] DATETIME2(3) NOT NULL);");
+
+        if (databaseName.contains("left")) {
+            executeSql(databaseName, "INSERT INTO dbo." + ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('SUP-001','Supplier One', SYSDATETIME()), ('SUP-002','Supplier Two L', SYSDATETIME());");
+            executeSql(databaseName, "INSERT INTO dbo." + SECOND_ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('PRD-001','Product One', SYSDATETIME()), ('PRD-LEFT','Product Left Only', SYSDATETIME());");
+        } else {
+            executeSql(databaseName, "INSERT INTO dbo." + ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('SUP-001','Supplier One', SYSDATETIME()), ('SUP-002','Supplier Two R', SYSDATETIME());");
+            executeSql(databaseName, "INSERT INTO dbo." + SECOND_ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('PRD-001','Product One Changed', SYSDATETIME()), ('PRD-RIGHT','Product Right Only', SYSDATETIME());");
+        }
     }
 
     private static void executeAdminSql(final String sql) {

@@ -1,6 +1,7 @@
 package com.danhaywood.sqlcomparer.implspring;
 
 import com.danhaywood.sqlcomparer.comparison.MultiTableComparisonServiceDefault;
+import com.danhaywood.sqlcomparer.comparison.MultiTableComparisonViewServiceDefault;
 import com.danhaywood.sqlcomparer.comparison.TableComparisonServiceDefault;
 import com.danhaywood.sqlcomparer.report.ExcelMultiTableComparisonReportRenderer;
 import com.danhaywood.sqlcomparer.report.JsonMultiTableComparisonReportRenderer;
@@ -9,6 +10,7 @@ import com.danhaywood.sqlcomparer.report.TextMultiTableComparisonReportRenderer;
 import com.danhaywood.sqlcomparer.report.TextTableComparisonReportRenderer;
 import com.danhaywood.sqlcomparer.service.MultiTableComparisonReportFormatter;
 import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
+import com.danhaywood.sqlcomparer.service.MultiTableComparisonViewService;
 import com.danhaywood.sqlcomparer.service.TableComparisonService;
 import com.danhaywood.sqlcomparer.spi.TableMetadataReader;
 import com.danhaywood.sqlcomparer.spi.TableRowReader;
@@ -47,6 +49,12 @@ public class ComparisonImplementationConfiguration {
     @Bean
     public MultiTableComparisonService multiTableComparisonService(final TableComparisonService tableComparisonService) {
         return new MultiTableComparisonServiceDefault(tableComparisonService);
+    }
+
+    @Bean
+    public MultiTableComparisonViewService multiTableComparisonViewService(
+            final MultiTableComparisonService multiTableComparisonService) {
+        return new MultiTableComparisonViewServiceDefault(multiTableComparisonService);
     }
 
     @Bean
