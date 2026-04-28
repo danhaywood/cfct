@@ -22,6 +22,7 @@ import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationStatusHo
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasText;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -147,6 +148,36 @@ class MainViewTest {
     }
 
     @Test
+    void rendersSingleComparedColumnWhenLeftAndRightValuesAreEqual() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        final ColumnRef name = new ColumnRef("name");
+        final ComparisonRowView row = new ComparisonRowView(
+                new RowKey(List.of("SUP-001")),
+                ComparisonRowStatus.MATCH,
+                Map.of(name, "Supplier A"),
+                Map.of(name, "Supplier A"),
+                List.of());
+        final TableComparisonViewResult supplier = new TableComparisonViewResult(
+                new TableRef("dbo", "Supplier"),
+                List.of(name),
+                List.of(row));
+
+        final Grid<?> grid = (Grid<?>) invokeBuildResultGrid(view, supplier);
+        final List<String> headers = grid.getColumns().stream()
+                .map(Grid.Column::getHeaderText)
+                .toList();
+        assertThat(headers).contains("name");
+        assertThat(headers).doesNotContain("L: name", "R: name");
+    }
+
+    @Test
     void compareRequestUsesCurrentSelectedTables() {
         final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
         when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class)))
@@ -165,6 +196,22 @@ class MainViewTest {
         final ArgumentCaptor<MultiTableComparisonRequest> captor = ArgumentCaptor.forClass(MultiTableComparisonRequest.class);
         verify(comparisonExecutionService).compare(captor.capture());
         assertThat(captor.getValue().tables()).containsExactly(new TableRef("dbo", "Product"));
+    }
+
+    @Test
+    void omitsDirectionalPrefixesForOnlyInSideRows() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        assertThat(invokeCompactValue(view, ComparisonRowStatus.ONLY_IN_LEFT, "Left-only supplier", ""))
+                .isEqualTo("Left-only supplier");
+        assertThat(invokeCompactValue(view, ComparisonRowStatus.ONLY_IN_RIGHT, "", "Right-only supplier"))
+                .isEqualTo("Right-only supplier");
     }
 
     private AuthenticatedConnectionContextHolder authenticatedHolder() {
@@ -203,6 +250,26 @@ class MainViewTest {
             final var method = MainView.class.getDeclaredMethod("onAuthenticationSuccess");
             method.setAccessible(true);
             method.invoke(view);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private Component invokeBuildResultGrid(final MainView view, final TableComparisonViewResult tableResult) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("buildResultGrid", TableComparisonViewResult.class);
+            method.setAccessible(true);
+            return (Component) method.invoke(view, tableResult);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private String invokeCompactValue(final MainView view, final ComparisonRowStatus status, final String left, final String right) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("compactValue", ComparisonRowStatus.class, String.class, String.class);
+            method.setAccessible(true);
+            return (String) method.invoke(view, status, left, right);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

@@ -16,7 +16,6 @@ Until then, ideas here are notes only and do not represent current system behavi
   - download buttons , show above filter, right align.
   - wide grid, add scroll
   - in grid, if the values are the same, then show only one.
-  - login as a dialog; logout button in the top-level menu
   - theming
 - excel spreadsheet
   - for detail sheets, don't autosize the 2nd column (should be same width as the 3rd column)

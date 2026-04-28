@@ -487,17 +487,60 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         for (ColumnRef column : tableResult.comparedColumns()) {
             final String columnName = column.name();
-            grid.addColumn(row -> row.leftValues().getOrDefault(column, ""))
-                    .setHeader("L: " + columnName)
-                    .setAutoWidth(true)
-                    .setTextAlign(ColumnTextAlign.START);
-            grid.addColumn(row -> row.rightValues().getOrDefault(column, ""))
-                    .setHeader("R: " + columnName)
+            grid.addColumn(new ComponentRenderer<>(row -> valueCell(row, column)))
+                    .setHeader(columnName)
                     .setAutoWidth(true)
                     .setTextAlign(ColumnTextAlign.START);
         }
 
         return grid;
+    }
+
+    private Component valueCell(final ComparisonRowView row, final ColumnRef column) {
+        final String left = row.leftValues().getOrDefault(column, "");
+        final String right = row.rightValues().getOrDefault(column, "");
+
+        if (row.status() == ComparisonRowStatus.DIFFERENT
+                && !left.equals(right)
+                && !left.isBlank()
+                && !right.isBlank()) {
+            final Div top = new Div(new Span(left));
+            top.getStyle().set("padding", "0.1rem 0");
+
+            final Div bottom = new Div(new Span(right));
+            bottom.getStyle()
+                    .set("padding", "0.1rem 0")
+                    .set("border-top", "1px solid var(--lumo-contrast-20pct)");
+
+            final Div stacked = new Div(top, bottom);
+            stacked.getStyle()
+                    .set("display", "flex")
+                    .set("flex-direction", "column")
+                    .set("min-height", "2.2rem")
+                    .set("line-height", "1.2");
+            return stacked;
+        }
+
+        return new Span(compactValue(row.status(), left, right));
+    }
+
+    private String compactValue(final ComparisonRowStatus status, final String left, final String right) {
+        if (left.equals(right)) {
+            return left;
+        }
+        if (status == ComparisonRowStatus.ONLY_IN_LEFT) {
+            return left;
+        }
+        if (status == ComparisonRowStatus.ONLY_IN_RIGHT) {
+            return right;
+        }
+        if (left.isBlank()) {
+            return right.isBlank() ? "" : "R: " + right;
+        }
+        if (right.isBlank()) {
+            return "L: " + left;
+        }
+        return "L: " + left + " | R: " + right;
     }
 
     private Component statusBadge(final ComparisonRowView row) {

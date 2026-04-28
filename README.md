@@ -155,7 +155,9 @@ The initial table-selection view looks like this.
 
 ![Webapp table selection with footer status bar](docs/images/webapp-main.png)
 
-After selecting eligible tables and clicking `Compare`, the right-side stage renders per-table result tabs with paired left/right comparison columns, Excel-like status coloring, and JSON/Excel download controls.
+After selecting eligible tables and clicking `Compare`, the right-side stage renders per-table result tabs with compact value columns.
+Equal values are shown once, while differing values are shown inline as `L: ... | R: ...`.
+Excel-like status coloring and JSON/Excel download controls are preserved.
 
 ![Webapp table comparison results in tabs](docs/images/webapp-selected.png)
 

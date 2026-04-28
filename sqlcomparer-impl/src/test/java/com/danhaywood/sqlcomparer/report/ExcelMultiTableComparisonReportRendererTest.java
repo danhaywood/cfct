@@ -72,17 +72,15 @@ class ExcelMultiTableComparisonReportRendererTest {
             assertThat(sheet.getRow(6).getCell(0).getStringCellValue()).isEqualTo("Result");
             assertThat(sheet.getRow(6).getCell(1).getStringCellValue()).isEqualTo("reference");
             assertThat(sheet.getRow(6).getCell(3).getStringCellValue()).isEqualTo("name");
-            assertThat(sheet.getRow(6).getCell(5).getStringCellValue()).isEqualTo("status");
+            assertThat(sheet.getRow(6).getCell(4).getStringCellValue()).isEqualTo("status");
             assertThat(sheet.getRow(7).getCell(1).getStringCellValue()).isEqualTo("<<<");
             assertThat(sheet.getRow(7).getCell(2).getStringCellValue()).isEqualTo(">>>");
-            assertThat(sheet.getRow(7).getCell(3).getStringCellValue()).isEqualTo("<<<");
-            assertThat(sheet.getRow(7).getCell(4).getStringCellValue()).isEqualTo(">>>");
-            assertThat(sheet.getRow(7).getCell(5).getStringCellValue()).isEqualTo("<<<");
-            assertThat(sheet.getRow(7).getCell(6).getStringCellValue()).isEqualTo(">>>");
+            assertThat(sheet.getRow(7).getCell(3).getStringCellValue()).isEmpty();
+            assertThat(sheet.getRow(7).getCell(4).getStringCellValue()).isEmpty();
             assertThat(sheet.getMergedRegions()).anyMatch(region -> region.formatAsString().equals("A7:A8"));
             assertThat(sheet.getMergedRegions()).anyMatch(region -> region.formatAsString().equals("B7:C7"));
-            assertThat(sheet.getMergedRegions()).anyMatch(region -> region.formatAsString().equals("D7:E7"));
-            assertThat(sheet.getMergedRegions()).anyMatch(region -> region.formatAsString().equals("F7:G7"));
+            assertThat(sheet.getMergedRegions()).anyMatch(region -> region.formatAsString().equals("D7:D8"));
+            assertThat(sheet.getMergedRegions()).anyMatch(region -> region.formatAsString().equals("E7:E8"));
             assertThat(sheet.getRow(8).getCell(0).getStringCellValue()).isEqualTo("Only in left");
             assertThat(sheet.getRow(8).getCell(1).getStringCellValue()).isEqualTo("SUP-LEFT");
             assertThat(sheet.getRow(8).getCell(2).getStringCellValue()).isEmpty();
@@ -93,18 +91,36 @@ class ExcelMultiTableComparisonReportRendererTest {
             assertThat(sheet.getRow(9).getCell(1).getStringCellValue()).isEmpty();
             assertThat(sheet.getRow(9).getCell(1).getCellStyle().getFillPattern()).isEqualTo(FillPatternType.NO_FILL);
             assertThat(sheet.getRow(9).getCell(2).getStringCellValue()).isEqualTo("SUP-RIGHT");
-            assertThat(sheet.getRow(9).getCell(4).getStringCellValue()).isEqualTo("Right-only supplier");
-            assertThat(sheet.getRow(9).getCell(4).getCellStyle().getFillForegroundColor()).isEqualTo(IndexedColors.YELLOW.getIndex());
+            assertThat(sheet.getRow(9).getCell(3).getStringCellValue()).isEqualTo("Right-only supplier");
+            assertThat(sheet.getRow(9).getCell(3).getCellStyle().getFillForegroundColor()).isEqualTo(IndexedColors.YELLOW.getIndex());
             assertThat(sheet.getRow(10).getCell(0).getStringCellValue()).isEqualTo("Differ");
             assertThat(sheet.getRow(10).getCell(1).getStringCellValue()).isEqualTo("SUP-DIFF");
             assertThat(sheet.getRow(10).getCell(2).getStringCellValue()).isEqualTo("SUP-DIFF");
             assertThat(sheet.getRow(10).getCell(3).getCellStyle().getFillForegroundColor()).isEqualTo(IndexedColors.LIGHT_GREEN.getIndex());
-            assertThat(sheet.getRow(10).getCell(5).getStringCellValue()).isEqualTo("ACTIVE");
-            assertThat(sheet.getRow(10).getCell(6).getStringCellValue()).isEqualTo("INACTIVE");
-            assertThat(sheet.getRow(10).getCell(5).getCellStyle().getFillForegroundColor()).isEqualTo(IndexedColors.ROSE.getIndex());
-            assertThat(sheet.getRow(10).getCell(6).getCellStyle().getFillForegroundColor()).isEqualTo(IndexedColors.ROSE.getIndex());
+            assertThat(sheet.getRow(10).getCell(3).getStringCellValue()).isEqualTo("Shared supplier");
+            assertThat(sheet.getRow(10).getCell(3).getCellStyle().getFillForegroundColor()).isEqualTo(IndexedColors.LIGHT_GREEN.getIndex());
+            assertThat(sheet.getRow(10).getCell(4).getStringCellValue()).isEqualTo("L: ACTIVE | R: INACTIVE");
+            assertThat(sheet.getRow(10).getCell(4).getCellStyle().getFillForegroundColor()).isEqualTo(IndexedColors.ROSE.getIndex());
             assertThat(sheet.getPaneInformation().getVerticalSplitPosition()).isEqualTo((short) 3);
             assertThat(sheet.getPaneInformation().getHorizontalSplitPosition()).isEqualTo((short) 8);
+        }
+    }
+
+    @Test
+    void compactsEqualComparedColumnsIntoSingleExcelColumn() throws Exception {
+        final byte[] bytes = renderer.render(result(tableResultWithSingleDifferingRow("dbo", "Supplier")));
+
+        try (Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
+            final var sheet = workbook.getSheet("dbo.Supplier");
+            assertThat(sheet.getRow(6).getCell(1).getStringCellValue()).isEqualTo("reference");
+            assertThat(sheet.getRow(6).getCell(3).getStringCellValue()).isEqualTo("name");
+            assertThat(sheet.getRow(6).getCell(4).getStringCellValue()).isEqualTo("status");
+            assertThat(sheet.getRow(7).getCell(3).getStringCellValue()).isEmpty();
+            assertThat(sheet.getRow(7).getCell(4).getStringCellValue()).isEmpty();
+            assertThat(sheet.getMergedRegions()).anyMatch(region -> region.formatAsString().equals("D7:D8"));
+            assertThat(sheet.getMergedRegions()).anyMatch(region -> region.formatAsString().equals("E7:E8"));
+            assertThat(sheet.getRow(8).getCell(3).getStringCellValue()).isEqualTo("Shared supplier");
+            assertThat(sheet.getRow(8).getCell(4).getStringCellValue()).isEqualTo("L: ACTIVE | R: INACTIVE");
         }
     }
 
@@ -135,6 +151,29 @@ class ExcelMultiTableComparisonReportRendererTest {
 
     private MultiTableComparisonResult result(final TableComparisonResult... tableResults) {
         return new MultiTableComparisonResult(List.of(tableResults));
+    }
+
+    private TableComparisonResult tableResultWithSingleDifferingRow(final String schemaName, final String tableName) {
+        final ColumnRef name = new ColumnRef("name");
+        final ColumnRef status = new ColumnRef("status");
+        final RowKey differing = new RowKey(List.of("SUP-DIFF"));
+        final Map<ColumnRef, String> differingLeftValues = Map.of(name, "Shared supplier", status, "ACTIVE");
+        final Map<ColumnRef, String> differingRightValues = Map.of(name, "Shared supplier", status, "INACTIVE");
+
+        return new TableComparisonResult(
+                new TableRef(schemaName, tableName),
+                new BusinessKey(tableName + "_PK", List.of(new ColumnRef("reference"))),
+                List.of(name, status),
+                List.of(new ColumnRef("id")),
+                List.of(),
+                List.of(),
+                List.of(new RowDifference(
+                        differing,
+                        differingLeftValues,
+                        differingRightValues,
+                        List.of(new ColumnDifference(status, "ACTIVE", "INACTIVE")))),
+                Map.of(),
+                Map.of());
     }
 
     private TableComparisonResult tableResult(final String schemaName, final String tableName, final boolean withDifferences) {
