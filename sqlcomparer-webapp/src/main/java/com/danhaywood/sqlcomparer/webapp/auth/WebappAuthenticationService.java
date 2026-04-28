@@ -1,0 +1,61 @@
+package com.danhaywood.sqlcomparer.webapp.auth;
+
+import com.danhaywood.sqlcomparer.webapp.config.WebappComparisonProperties;
+import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationStatusHolder;
+import com.danhaywood.sqlcomparer.webapp.validation.SqlServerConnectivityValidationService;
+
+import org.springframework.stereotype.Service;
+
+@Service
+public class WebappAuthenticationService {
+
+    private static final String LOGGED_OUT_SUMMARY = "Login required.";
+
+    private final WebappComparisonProperties properties;
+    private final SqlServerConnectivityValidationService validationService;
+    private final AuthenticatedConnectionContextHolder authenticatedContextHolder;
+    private final ConnectionValidationStatusHolder statusHolder;
+
+    public WebappAuthenticationService(
+            final WebappComparisonProperties properties,
+            final SqlServerConnectivityValidationService validationService,
+            final AuthenticatedConnectionContextHolder authenticatedContextHolder,
+            final ConnectionValidationStatusHolder statusHolder) {
+        this.properties = properties;
+        this.validationService = validationService;
+        this.authenticatedContextHolder = authenticatedContextHolder;
+        this.statusHolder = statusHolder;
+    }
+
+    public ConnectionLoginRequest loginDefaults() {
+        final WebappComparisonProperties.Connection configured = properties.getConnection();
+        return new ConnectionLoginRequest(
+                configured.getServer(),
+                configured.getUsername(),
+                configured.getPassword(),
+                configured.getLeftDatabase(),
+                configured.getRightDatabase());
+    }
+
+    public void authenticate(final ConnectionLoginRequest request) {
+        try {
+            final AuthenticatedConnectionContext context = request.toAuthenticatedContext();
+            validationService.validate(context);
+            authenticatedContextHolder.set(context);
+            statusHolder.markOk("Connected to SQL Server and selected databases.");
+        } catch (RuntimeException ex) {
+            authenticatedContextHolder.clear();
+            statusHolder.markFailed(ex.getMessage() == null ? "Login failed." : ex.getMessage());
+            throw ex;
+        }
+    }
+
+    public void logout() {
+        authenticatedContextHolder.clear();
+        statusHolder.markOk(LOGGED_OUT_SUMMARY);
+    }
+
+    public boolean isAuthenticated() {
+        return authenticatedContextHolder.isAuthenticated();
+    }
+}

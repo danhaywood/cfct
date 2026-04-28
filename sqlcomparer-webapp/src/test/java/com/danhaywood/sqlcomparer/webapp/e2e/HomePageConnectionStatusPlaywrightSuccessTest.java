@@ -52,6 +52,8 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
              Page page = browser.newPage()) {
             page.setViewportSize(1440, 900);
             page.navigate("http://localhost:" + serverPort + "/");
+            page.waitForSelector("[data-testid='login-view']");
+            page.click("[data-testid='login-submit']");
             page.waitForSelector("[data-testid='connection-status-state']");
             page.waitForSelector("[data-testid='table-selection-grid']");
 

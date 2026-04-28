@@ -5,7 +5,9 @@ import com.danhaywood.sqlcomparer.model.TableRef;
 import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
 import com.danhaywood.sqlcomparer.service.MultiTableComparisonReportFormatter;
 import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
-import com.danhaywood.sqlcomparer.webapp.config.WebappDataSources;
+import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContext;
+import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContextHolder;
+import com.danhaywood.sqlcomparer.webapp.config.WebappDataSourceConfiguration;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,13 +32,23 @@ class WebappComparisonExecutionServiceTest {
         final DataSource rightDataSource = mock(DataSource.class);
         when(leftDataSource.getConnection()).thenReturn(leftConnection);
         when(rightDataSource.getConnection()).thenReturn(rightConnection);
+
+        final WebappDataSourceConfiguration dataSourceConfiguration = mock(WebappDataSourceConfiguration.class);
+        when(dataSourceConfiguration.dataSourcesFor(mockContext())).thenReturn(new com.danhaywood.sqlcomparer.webapp.config.WebappDataSources(mock(DataSource.class), leftDataSource, rightDataSource));
+
+        final AuthenticatedConnectionContextHolder contextHolder = mock(AuthenticatedConnectionContextHolder.class);
+        when(contextHolder.required()).thenReturn(mockContext());
+
         final RecordingComparisonService delegate = new RecordingComparisonService(expectedRaw);
         final MultiTableComparisonReportFormatter formatter = mock(MultiTableComparisonReportFormatter.class);
         when(formatter.renderJson(expectedRaw)).thenReturn("{}");
         when(formatter.renderExcel(expectedRaw)).thenReturn(new byte[]{1, 2, 3});
-        final WebappDataSources dataSources = new WebappDataSources(mock(DataSource.class), leftDataSource, rightDataSource);
 
-        final WebappComparisonExecutionService service = new WebappComparisonExecutionService(delegate, formatter, dataSources);
+        final WebappComparisonExecutionService service = new WebappComparisonExecutionService(
+                delegate,
+                formatter,
+                dataSourceConfiguration,
+                contextHolder);
 
         final WebappComparisonExecutionService.ComparisonExecutionOutcome outcome = service.compare(request);
 
@@ -49,6 +61,10 @@ class WebappComparisonExecutionServiceTest {
         assertThat(delegate.request).isSameAs(request);
         verify(leftConnection).close();
         verify(rightConnection).close();
+    }
+
+    private static AuthenticatedConnectionContext mockContext() {
+        return new AuthenticatedConnectionContext("server", "sa", "secret", "left_db", "right_db");
     }
 
     private static final class RecordingComparisonService implements MultiTableComparisonService {

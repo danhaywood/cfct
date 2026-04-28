@@ -67,21 +67,9 @@ Run the webapp scaffold locally from the repository root:
 mvn -pl sqlcomparer-webapp -am spring-boot:run
 ```
 
-By default, the webapp validates SQL Server connectivity and configured left/right database existence at startup.
-The home page shows a deterministic SQL connectivity status block with either `OK` or `FAILED`.
-If validation fails and fail-fast is enabled (default), startup aborts.
-
-If SQL Server is not available yet and you want UI-only startup, disable startup validation:
-
-```bash
-mvn -pl sqlcomparer-webapp -am spring-boot:run -Dspring-boot.run.arguments=--sqlcomparer.webapp.comparison.validation.enabled=false
-```
-
-If you want the app to keep running and show `FAILED` status details on the home page (for troubleshooting or browser assertions), disable fail-fast:
-
-```bash
-mvn -pl sqlcomparer-webapp -am spring-boot:run -Dspring-boot.run.arguments="--sqlcomparer.webapp.comparison.validation.enabled=true --sqlcomparer.webapp.comparison.validation.fail-fast=false"
-```
+The webapp now uses a login-first flow.
+SQL connectivity and database existence are validated when the user submits the login form.
+The login form is pre-populated from `sqlcomparer.webapp.comparison.connection.*` configuration values, and every field remains editable.
 
 Happy-path connectivity check with the demo fixture SQL Server:
 
@@ -104,7 +92,9 @@ Or use the one-liner helper script that starts the fixture and runs the webapp w
 scripts/check-webapp-happy-path.sh
 ```
 
-3. Confirm happy-path startup by checking that the app reports successful startup and does not log `SqlServerConnectivityValidationException`.
+3. Open `http://localhost:8080` and click `Login` (or edit defaults first, then login).
+
+4. Confirm successful startup by checking that the app reports successful startup.
 
 Expected startup line includes:
 
@@ -112,16 +102,14 @@ Expected startup line includes:
 Started SqlComparerWebApplication
 ```
 
-4. Open `http://localhost:8080` to confirm the UI is reachable.
-
 5. Stop the fixture when done.
 
 ```bash
 scripts/fixture-sqlserver.sh stop
 ```
 
-The webapp reads shared execution defaults from `sqlcomparer-webapp/src/main/resources/application.yml` using `sqlcomparer.webapp.comparison.*` keys.
-These shared keys map to CLI concepts as follows:
+The webapp reads login defaults and shared execution defaults from `sqlcomparer-webapp/src/main/resources/application.yml` using `sqlcomparer.webapp.comparison.*` keys.
+These keys map to CLI concepts as follows:
 
 - `connection.server` ↔ `-S` / `--server`
 - `connection.username` ↔ `-U` / `--username`
@@ -134,9 +122,10 @@ These shared keys map to CLI concepts as follows:
 
 ## Webapp Usage
 
-Table selection in the webapp is now a two-stage workflow:
-- Stage 1: select eligible tables in the AppLayout navigation drawer and trigger comparison using the right-aligned `Compare` action above the table grid.
-- Stage 2: view comparison output in the main comparison area as dynamic tabs (one tab per selected table).
+Webapp usage is now a three-stage workflow:
+- Stage 1: login with server, source database, target database, username, and password (defaults loaded from config props).
+- Stage 2: select eligible tables in the AppLayout navigation drawer and trigger comparison using the right-aligned `Compare` action above the table grid.
+- Stage 3: view comparison output in the main comparison area as dynamic tabs (one tab per selected table).
 
 The navigation drawer lists discovered tables in a sortable and filterable Vaadin Grid.
 Tables that do not meet the `_PK` requirement are still shown, but their checkboxes are disabled and expose the eligibility reason as tooltip text.
@@ -169,7 +158,7 @@ Run webapp connectivity-validation tests (Docker required):
 scripts/test-webapp-connectivity-validation.sh
 ```
 
-Run headless Playwright browser tests for home-page connectivity status (Docker required):
+Run headless Playwright browser tests for login + connectivity status flows (Docker required):
 
 ```bash
 scripts/test-webapp-playwright-connectivity.sh

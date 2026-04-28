@@ -1,52 +1,44 @@
 package com.danhaywood.sqlcomparer.webapp.config;
 
+import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContext;
 import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+
+import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
 
-@Configuration
+@Component
 public class WebappDataSourceConfiguration {
 
-    public static final String MASTER_DATA_SOURCE = "webappMasterDataSource";
-    public static final String LEFT_DATA_SOURCE = "webappLeftDataSource";
-    public static final String RIGHT_DATA_SOURCE = "webappRightDataSource";
-
-    @Bean(MASTER_DATA_SOURCE)
-    public DataSource webappMasterDataSource(final WebappComparisonProperties properties) {
-        return sqlServerDataSource(properties, "master");
+    public WebappDataSources dataSourcesFor(final AuthenticatedConnectionContext context) {
+        return new WebappDataSources(
+                sqlServerDataSource(context.server(), context.username(), context.password(), "master"),
+                sqlServerDataSource(context.server(), context.username(), context.password(), context.leftDatabase()),
+                sqlServerDataSource(context.server(), context.username(), context.password(), context.rightDatabase()));
     }
 
-    @Bean(LEFT_DATA_SOURCE)
-    public DataSource webappLeftDataSource(final WebappComparisonProperties properties) {
-        return sqlServerDataSource(properties, properties.getConnection().getLeftDatabase());
-    }
-
-    @Bean(RIGHT_DATA_SOURCE)
-    public DataSource webappRightDataSource(final WebappComparisonProperties properties) {
-        return sqlServerDataSource(properties, properties.getConnection().getRightDatabase());
-    }
-
-    @Bean
-    public WebappDataSources webappDataSources(
-            @Qualifier(MASTER_DATA_SOURCE) final DataSource master,
-            @Qualifier(LEFT_DATA_SOURCE) final DataSource left,
-            @Qualifier(RIGHT_DATA_SOURCE) final DataSource right) {
-        return new WebappDataSources(master, left, right);
+    public static DataSource sqlServerDataSource(
+            final String server,
+            final String username,
+            final String password,
+            final String databaseName) {
+        final SQLServerDataSource dataSource = new SQLServerDataSource();
+        applyServer(dataSource, server);
+        dataSource.setDatabaseName(databaseName);
+        dataSource.setUser(username);
+        dataSource.setPassword(password);
+        dataSource.setEncrypt("false");
+        dataSource.setTrustServerCertificate(true);
+        return dataSource;
     }
 
     public static DataSource sqlServerDataSource(final WebappComparisonProperties properties, final String databaseName) {
         final WebappComparisonProperties.Connection connection = properties.getConnection();
-        final SQLServerDataSource dataSource = new SQLServerDataSource();
-        applyServer(dataSource, connection.getServer());
-        dataSource.setDatabaseName(databaseName);
-        dataSource.setUser(connection.getUsername());
-        dataSource.setPassword(connection.getPassword());
-        dataSource.setEncrypt("false");
-        dataSource.setTrustServerCertificate(true);
-        return dataSource;
+        return sqlServerDataSource(
+                connection.getServer(),
+                connection.getUsername(),
+                connection.getPassword(),
+                databaseName);
     }
 
     private static void applyServer(final SQLServerDataSource dataSource, final String server) {

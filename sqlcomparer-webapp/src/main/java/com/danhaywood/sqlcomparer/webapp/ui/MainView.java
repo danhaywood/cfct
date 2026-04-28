@@ -6,6 +6,9 @@ import com.danhaywood.sqlcomparer.model.ComparisonRowView;
 import com.danhaywood.sqlcomparer.model.TableComparisonViewResult;
 import com.danhaywood.sqlcomparer.model.TableRef;
 import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
+import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContext;
+import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContextHolder;
+import com.danhaywood.sqlcomparer.webapp.auth.WebappAuthenticationService;
 import com.danhaywood.sqlcomparer.webapp.comparison.WebappComparisonExecutionService;
 import com.danhaywood.sqlcomparer.webapp.config.WebappComparisonProperties;
 import com.danhaywood.sqlcomparer.webapp.selection.ManualTableSelectionState;
@@ -34,6 +37,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 
@@ -48,12 +53,14 @@ import java.util.Locale;
 import java.util.Map;
 
 @Route("")
-public class MainView extends AppLayout {
+public class MainView extends AppLayout implements BeforeEnterObserver {
 
     private static final DateTimeFormatter FILE_TS = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
 
     private final ManualTableSelectionState selectionState;
     private final WebappComparisonExecutionService comparisonExecutionService;
+    private final AuthenticatedConnectionContextHolder authenticatedContextHolder;
+    private final WebappAuthenticationService authenticationService;
 
     private final Button compareButton = new Button("Compare");
     private final Span comparisonError = new Span();
@@ -69,14 +76,21 @@ public class MainView extends AppLayout {
             final ConnectionValidationStatusHolder statusHolder,
             final SqlServerTableCatalogService tableCatalogService,
             final WebappComparisonProperties properties,
-            final WebappComparisonExecutionService comparisonExecutionService) {
-        final List<TableCatalogEntry> tableCatalog = tableCatalogService.discoverTableCatalog();
-        this.selectionState = new ManualTableSelectionState(tableCatalog);
+            final WebappComparisonExecutionService comparisonExecutionService,
+            final AuthenticatedConnectionContextHolder authenticatedContextHolder,
+            final WebappAuthenticationService authenticationService) {
         this.comparisonExecutionService = comparisonExecutionService;
+        this.authenticatedContextHolder = authenticatedContextHolder;
+        this.authenticationService = authenticationService;
+
+        final List<TableCatalogEntry> tableCatalog = authenticatedContextHolder.isAuthenticated()
+                ? tableCatalogService.discoverTableCatalog()
+                : List.of();
+        this.selectionState = new ManualTableSelectionState(tableCatalog);
 
         setPrimarySection(Section.DRAWER);
         getElement().setAttribute("data-testid", "main-app-layout");
-        addToNavbar(buildDrawerToggle());
+        addToNavbar(buildDrawerToggle(), buildLogoutButton());
         addToDrawer(buildSelectionPanel(tableCatalog));
         setContent(buildMainContent(properties, statusHolder.current()));
         renderEmptyComparisonState();
@@ -92,6 +106,13 @@ public class MainView extends AppLayout {
         toggle.getElement().setAttribute("data-testid", "hamburger-menu");
         toggle.getElement().setAttribute("title", "Open navigation menu");
         return toggle;
+    }
+
+    @Override
+    public void beforeEnter(final BeforeEnterEvent event) {
+        if (!authenticatedContextHolder.isAuthenticated()) {
+            event.rerouteTo(LoginView.class);
+        }
     }
 
     private VerticalLayout buildMainContent(final WebappComparisonProperties properties, final ConnectionValidationStatus status) {
@@ -147,6 +168,16 @@ public class MainView extends AppLayout {
         return panel;
     }
 
+    private Button buildLogoutButton() {
+        final Button logoutButton = new Button("Logout");
+        logoutButton.getElement().setAttribute("data-testid", "logout-button");
+        logoutButton.addClickListener(event -> {
+            authenticationService.logout();
+            getUI().ifPresent(ui -> ui.navigate(LoginView.class));
+        });
+        return logoutButton;
+    }
+
     private Footer buildFooter(final WebappComparisonProperties properties, final ConnectionValidationStatus status) {
         final Footer footer = new Footer();
         footer.getElement().setAttribute("data-testid", "connection-details-footer");
@@ -165,7 +196,15 @@ public class MainView extends AppLayout {
                 .set("border-top", "1px solid var(--lumo-contrast-10pct)")
                 .set("font-size", "var(--lumo-font-size-s)");
 
-        final WebappComparisonProperties.Connection connection = properties.getConnection();
+        final AuthenticatedConnectionContext context = authenticatedContextHolder.current().orElseGet(() -> {
+            final WebappComparisonProperties.Connection configured = properties.getConnection();
+            return new AuthenticatedConnectionContext(
+                    configured.getServer(),
+                    configured.getUsername(),
+                    configured.getPassword(),
+                    configured.getLeftDatabase(),
+                    configured.getRightDatabase());
+        });
         final Div connectionDetails = new Div();
         connectionDetails.getElement().setAttribute("data-testid", "connection-details-inline");
         connectionDetails.getStyle()
@@ -173,9 +212,9 @@ public class MainView extends AppLayout {
                 .set("align-items", "center")
                 .set("gap", "var(--lumo-space-m)");
 
-        final Span server = new Span(safe(connection.getServer()));
+        final Span server = new Span(safe(context.server()));
         server.getElement().setAttribute("data-testid", "connection-server");
-        final Span databases = new Span(safe(connection.getLeftDatabase()) + " ↔ " + safe(connection.getRightDatabase()));
+        final Span databases = new Span(safe(context.leftDatabase()) + " ↔ " + safe(context.rightDatabase()));
         databases.getElement().setAttribute("data-testid", "connection-database-pair");
         connectionDetails.add(server, databases);
 

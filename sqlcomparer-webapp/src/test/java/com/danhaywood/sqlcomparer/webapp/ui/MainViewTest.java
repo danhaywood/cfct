@@ -9,6 +9,9 @@ import com.danhaywood.sqlcomparer.model.RowKey;
 import com.danhaywood.sqlcomparer.model.TableComparisonViewResult;
 import com.danhaywood.sqlcomparer.model.TableRef;
 import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
+import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContext;
+import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContextHolder;
+import com.danhaywood.sqlcomparer.webapp.auth.WebappAuthenticationService;
 import com.danhaywood.sqlcomparer.webapp.comparison.WebappComparisonExecutionService;
 import com.danhaywood.sqlcomparer.webapp.config.WebappComparisonProperties;
 import com.danhaywood.sqlcomparer.webapp.selection.SqlServerTableCatalogService;
@@ -21,6 +24,7 @@ import com.vaadin.flow.component.HasText;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.router.BeforeEnterEvent;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -39,11 +43,33 @@ import static org.mockito.Mockito.when;
 class MainViewTest {
 
     @Test
+    void reroutesToLoginWhenUnauthenticated() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                unauthenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        final BeforeEnterEvent event = mock(BeforeEnterEvent.class);
+        view.beforeEnter(event);
+
+        verify(event).rerouteTo(LoginView.class);
+    }
+
+    @Test
     void rendersAppLayoutShellAndOkStatusInFooter() {
         final ConnectionValidationStatusHolder holder = new ConnectionValidationStatusHolder();
         holder.markOk("Connected to configured SQL Server and databases.");
 
-        final MainView view = new MainView(holder, catalogServiceWithDefaults(), propertiesWithDefaults(), mock(WebappComparisonExecutionService.class));
+        final MainView view = new MainView(
+                holder,
+                catalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
 
         assertThat(view.getElement().getAttribute("data-testid")).isEqualTo("main-app-layout");
         assertThat(findByTestId(view, "hamburger-menu")).isPresent();
@@ -54,25 +80,14 @@ class MainViewTest {
     }
 
     @Test
-    void rendersFailedStatusWithFailureSummaryInFooter() {
-        final ConnectionValidationStatusHolder holder = new ConnectionValidationStatusHolder();
-        holder.markFailed("Configured database does not exist: missing_db");
-
-        final MainView view = new MainView(holder, catalogServiceWithDefaults(), propertiesWithDefaults(), mock(WebappComparisonExecutionService.class));
-
-        final Span status = (Span) findByTestId(view, "connection-status-state").orElseThrow();
-        final Span summary = (Span) findByTestId(view, "connection-status-summary").orElseThrow();
-
-        assertThat(status.getText()).contains(ConnectionValidationState.FAILED.name());
-        assertThat(summary.getText()).contains("missing_db");
-    }
-
-    @Test
     void rendersFooterConnectionDetailsWithoutPassword() {
-        final WebappComparisonProperties properties = propertiesWithDefaults();
-        properties.getConnection().setPassword("super-secret-password");
-
-        final MainView view = new MainView(new ConnectionValidationStatusHolder(), catalogServiceWithDefaults(), properties, mock(WebappComparisonExecutionService.class));
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
         final Footer footer = (Footer) findByTestId(view, "connection-details-footer").orElseThrow();
 
         final String footerText = textOf(footer);
@@ -87,7 +102,13 @@ class MainViewTest {
         when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class)))
                 .thenReturn(sampleComparisonOutcome());
 
-        final MainView view = new MainView(new ConnectionValidationStatusHolder(), catalogServiceWithPreselectedSupplier(), propertiesWithDefaults(), comparisonExecutionService);
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                propertiesWithDefaults(),
+                comparisonExecutionService,
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
 
         final Button compareButton = (Button) findByTestId(view, "compare-button").orElseThrow();
         assertThat(compareButton.isEnabled()).isTrue();
@@ -108,13 +129,29 @@ class MainViewTest {
         when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class)))
                 .thenReturn(sampleComparisonOutcome());
 
-        final MainView view = new MainView(new ConnectionValidationStatusHolder(), catalogServiceWithPreselectedProduct(), propertiesWithDefaults(), comparisonExecutionService);
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedProduct(),
+                propertiesWithDefaults(),
+                comparisonExecutionService,
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
 
         invokeExecuteComparison(view);
 
         final ArgumentCaptor<MultiTableComparisonRequest> captor = ArgumentCaptor.forClass(MultiTableComparisonRequest.class);
         verify(comparisonExecutionService).compare(captor.capture());
         assertThat(captor.getValue().tables()).containsExactly(new TableRef("dbo", "Product"));
+    }
+
+    private AuthenticatedConnectionContextHolder authenticatedHolder() {
+        final AuthenticatedConnectionContextHolder holder = new AuthenticatedConnectionContextHolder();
+        holder.set(new AuthenticatedConnectionContext("localhost:1433", "sa", "super-secret-password", "left_db", "right_db"));
+        return holder;
+    }
+
+    private AuthenticatedConnectionContextHolder unauthenticatedHolder() {
+        return new AuthenticatedConnectionContextHolder();
     }
 
     private Optional<Component> findByTestId(final Component root, final String testId) {
@@ -178,6 +215,8 @@ class MainViewTest {
     private WebappComparisonProperties propertiesWithDefaults() {
         final WebappComparisonProperties properties = new WebappComparisonProperties();
         properties.getConnection().setServer("localhost:1433");
+        properties.getConnection().setUsername("sa");
+        properties.getConnection().setPassword("super-secret-password");
         properties.getConnection().setLeftDatabase("left_db");
         properties.getConnection().setRightDatabase("right_db");
         return properties;

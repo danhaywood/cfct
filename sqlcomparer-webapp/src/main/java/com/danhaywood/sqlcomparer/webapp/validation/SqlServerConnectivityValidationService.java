@@ -1,6 +1,7 @@
 package com.danhaywood.sqlcomparer.webapp.validation;
 
-import com.danhaywood.sqlcomparer.webapp.config.WebappComparisonProperties;
+import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContext;
+import com.danhaywood.sqlcomparer.webapp.config.WebappDataSourceConfiguration;
 import com.danhaywood.sqlcomparer.webapp.config.WebappDataSources;
 
 import org.springframework.stereotype.Service;
@@ -14,33 +15,24 @@ import java.util.Locale;
 @Service
 public class SqlServerConnectivityValidationService {
 
-    private final WebappComparisonProperties properties;
-    private final WebappDataSources dataSources;
+    private final WebappDataSourceConfiguration dataSourceConfiguration;
 
-    public SqlServerConnectivityValidationService(
-            final WebappComparisonProperties properties,
-            final WebappDataSources dataSources) {
-        this.properties = properties;
-        this.dataSources = dataSources;
+    public SqlServerConnectivityValidationService(final WebappDataSourceConfiguration dataSourceConfiguration) {
+        this.dataSourceConfiguration = dataSourceConfiguration;
     }
 
-    public void validateConfiguredTargets() {
-        final WebappComparisonProperties.Connection connection = properties.getConnection();
-        final String server = required(connection.getServer(), "connection.server");
-        final String username = required(connection.getUsername(), "connection.username");
-        final String password = required(connection.getPassword(), "connection.password");
-        final String leftDatabase = required(connection.getLeftDatabase(), "connection.left-database");
-        final String rightDatabase = required(connection.getRightDatabase(), "connection.right-database");
+    public void validate(final AuthenticatedConnectionContext context) {
+        final WebappDataSources dataSources = dataSourceConfiguration.dataSourcesFor(context);
 
         try (Connection master = dataSources.master().getConnection()) {
-            ensureDatabaseExists(master, leftDatabase);
-            ensureDatabaseExists(master, rightDatabase);
+            ensureDatabaseExists(master, context.leftDatabase());
+            ensureDatabaseExists(master, context.rightDatabase());
         } catch (SQLException ex) {
-            throw mapConnectionError(server, ex);
+            throw mapConnectionError(context.server(), ex);
         }
 
-        validateDatabaseReachable(server, dataSources.left());
-        validateDatabaseReachable(server, dataSources.right());
+        validateDatabaseReachable(context.server(), dataSources.left());
+        validateDatabaseReachable(context.server(), dataSources.right());
     }
 
     private void ensureDatabaseExists(final Connection masterConnection, final String databaseName) throws SQLException {
@@ -77,12 +69,5 @@ public class SqlServerConnectivityValidationService {
         }
         return new SqlServerConnectivityValidationException(
                 "SQL Server connectivity validation failed: " + ex.getMessage(), ex);
-    }
-
-    private String required(final String value, final String propertyName) {
-        if (value == null || value.isBlank()) {
-            throw new SqlServerConnectivityValidationException("Missing required property: sqlcomparer.webapp.comparison." + propertyName);
-        }
-        return value.trim();
     }
 }

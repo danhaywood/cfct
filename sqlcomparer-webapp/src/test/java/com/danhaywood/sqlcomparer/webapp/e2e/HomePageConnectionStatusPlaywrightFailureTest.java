@@ -41,17 +41,16 @@ class HomePageConnectionStatusPlaywrightFailureTest {
     }
 
     @Test
-    void showsFailedStatusAndSummaryOnHomePage() {
+    void showsFailedStatusAndSummaryOnLogin() {
         try (Playwright playwright = Playwright.create();
              Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
              Page page = browser.newPage()) {
             page.navigate("http://localhost:" + serverPort + "/");
-            page.waitForSelector("[data-testid='connection-status-state']");
-            page.waitForSelector("[data-testid='connection-status-summary']");
+            page.waitForSelector("[data-testid='login-view']");
+            page.click("[data-testid='login-submit']");
+            page.waitForSelector("[data-testid='login-error']");
 
-            final String statusText = page.locator("[data-testid='connection-status-state']").innerText();
-            final String summary = page.locator("[data-testid='connection-status-summary']").innerText();
-            assertThat(statusText).contains("FAILED");
+            final String summary = page.locator("[data-testid='login-error']").innerText();
             assertThat(summary).contains("Configured database does not exist");
         }
     }

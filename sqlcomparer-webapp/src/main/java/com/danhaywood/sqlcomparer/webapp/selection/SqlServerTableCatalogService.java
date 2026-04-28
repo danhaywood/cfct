@@ -1,6 +1,8 @@
 package com.danhaywood.sqlcomparer.webapp.selection;
 
 import com.danhaywood.sqlcomparer.model.TableRef;
+import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContextHolder;
+import com.danhaywood.sqlcomparer.webapp.config.WebappDataSourceConfiguration;
 import com.danhaywood.sqlcomparer.webapp.config.WebappDataSources;
 
 import org.springframework.stereotype.Service;
@@ -17,13 +19,18 @@ public class SqlServerTableCatalogService {
 
     private static final String PK_SUFFIX = "_PK";
 
-    private final WebappDataSources dataSources;
+    private final WebappDataSourceConfiguration dataSourceConfiguration;
+    private final AuthenticatedConnectionContextHolder authenticatedContextHolder;
 
-    public SqlServerTableCatalogService(final WebappDataSources dataSources) {
-        this.dataSources = dataSources;
+    public SqlServerTableCatalogService(
+            final WebappDataSourceConfiguration dataSourceConfiguration,
+            final AuthenticatedConnectionContextHolder authenticatedContextHolder) {
+        this.dataSourceConfiguration = dataSourceConfiguration;
+        this.authenticatedContextHolder = authenticatedContextHolder;
     }
 
     public List<TableCatalogEntry> discoverTableCatalog() {
+        final WebappDataSources dataSources = dataSourceConfiguration.dataSourcesFor(authenticatedContextHolder.required());
         final String sql = """
                 SELECT s.name AS schema_name,
                        t.name AS table_name,

@@ -1,0 +1,110 @@
+package com.danhaywood.sqlcomparer.webapp.auth;
+
+import com.danhaywood.sqlcomparer.webapp.config.WebappComparisonProperties;
+import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationState;
+import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationStatusHolder;
+import com.danhaywood.sqlcomparer.webapp.validation.SqlServerConnectivityValidationException;
+import com.danhaywood.sqlcomparer.webapp.validation.SqlServerConnectivityValidationService;
+
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+
+class WebappAuthenticationServiceTest {
+
+    @Test
+    void authenticatesAndStoresSessionContextOnSuccess() {
+        final SqlServerConnectivityValidationService validationService = mock(SqlServerConnectivityValidationService.class);
+        final AuthenticatedConnectionContextHolder authHolder = new AuthenticatedConnectionContextHolder();
+        final ConnectionValidationStatusHolder statusHolder = new ConnectionValidationStatusHolder();
+        final WebappAuthenticationService service = new WebappAuthenticationService(
+                propertiesWithDefaults(),
+                validationService,
+                authHolder,
+                statusHolder);
+
+        service.authenticate(new ConnectionLoginRequest("server", "sa", "secret", "left_db", "right_db"));
+
+        assertThat(authHolder.isAuthenticated()).isTrue();
+        assertThat(authHolder.required().server()).isEqualTo("server");
+        assertThat(statusHolder.current().state()).isEqualTo(ConnectionValidationState.OK);
+    }
+
+    @Test
+    void failsAuthenticationWhenRequiredFieldMissing() {
+        final WebappAuthenticationService service = new WebappAuthenticationService(
+                propertiesWithDefaults(),
+                mock(SqlServerConnectivityValidationService.class),
+                new AuthenticatedConnectionContextHolder(),
+                new ConnectionValidationStatusHolder());
+
+        assertThatThrownBy(() -> service.authenticate(new ConnectionLoginRequest("", "sa", "secret", "left_db", "right_db")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Server is required");
+    }
+
+    @Test
+    void failsAuthenticationForInvalidConnectionInputs() {
+        final SqlServerConnectivityValidationService validationService = mock(SqlServerConnectivityValidationService.class);
+        doThrow(new SqlServerConnectivityValidationException("Authentication failed"))
+                .when(validationService)
+                .validate(new AuthenticatedConnectionContext("server", "sa", "wrong", "left_db", "right_db"));
+
+        final WebappAuthenticationService service = new WebappAuthenticationService(
+                propertiesWithDefaults(),
+                validationService,
+                new AuthenticatedConnectionContextHolder(),
+                new ConnectionValidationStatusHolder());
+
+        assertThatThrownBy(() -> service.authenticate(new ConnectionLoginRequest("server", "sa", "wrong", "left_db", "right_db")))
+                .isInstanceOf(SqlServerConnectivityValidationException.class)
+                .hasMessageContaining("Authentication failed");
+    }
+
+    @Test
+    void logoutClearsAuthenticatedSessionState() {
+        final SqlServerConnectivityValidationService validationService = mock(SqlServerConnectivityValidationService.class);
+        final AuthenticatedConnectionContextHolder authHolder = new AuthenticatedConnectionContextHolder();
+        final ConnectionValidationStatusHolder statusHolder = new ConnectionValidationStatusHolder();
+        final WebappAuthenticationService service = new WebappAuthenticationService(
+                propertiesWithDefaults(),
+                validationService,
+                authHolder,
+                statusHolder);
+
+        service.authenticate(new ConnectionLoginRequest("server", "sa", "secret", "left_db", "right_db"));
+        service.logout();
+
+        assertThat(authHolder.isAuthenticated()).isFalse();
+        assertThat(statusHolder.current().summary()).contains("Login required");
+    }
+
+    @Test
+    void exposesConfigPropertiesAsLoginDefaults() {
+        final WebappAuthenticationService service = new WebappAuthenticationService(
+                propertiesWithDefaults(),
+                mock(SqlServerConnectivityValidationService.class),
+                new AuthenticatedConnectionContextHolder(),
+                new ConnectionValidationStatusHolder());
+
+        final ConnectionLoginRequest defaults = service.loginDefaults();
+        assertThat(defaults.server()).isEqualTo("localhost:1433");
+        assertThat(defaults.username()).isEqualTo("sa");
+        assertThat(defaults.password()).isEqualTo("change-me");
+        assertThat(defaults.leftDatabase()).isEqualTo("left_db");
+        assertThat(defaults.rightDatabase()).isEqualTo("right_db");
+    }
+
+    private WebappComparisonProperties propertiesWithDefaults() {
+        final WebappComparisonProperties properties = new WebappComparisonProperties();
+        properties.getConnection().setServer("localhost:1433");
+        properties.getConnection().setUsername("sa");
+        properties.getConnection().setPassword("change-me");
+        properties.getConnection().setLeftDatabase("left_db");
+        properties.getConnection().setRightDatabase("right_db");
+        return properties;
+    }
+}
