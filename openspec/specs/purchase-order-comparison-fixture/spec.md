@@ -30,6 +30,7 @@ The indexed business key column SHALL be named `reference`.
 #### Scenario: Business key keeps domain column name
 - **WHEN** fixture consumers inspect the business key column
 - **THEN** the column is named `reference` rather than being named with the `_PK` suffix
+
 ### Requirement: Fixture uses DATETIME2 for version values
 The fixture SHALL include a `version` column that uses SQL Server `DATETIME2` for timestamp-like application version values.
 The fixture MUST NOT use SQL Server `timestamp` or `rowversion` for this column.
@@ -45,6 +46,7 @@ The fixture MUST NOT use SQL Server `timestamp` or `rowversion` for this column.
 ### Requirement: Fixture data anticipates future row comparison scenarios
 The fixture SHALL seed left and right purchase order data that can support future row comparison tests without implementing comparison behavior in this change.
 The data SHALL include cases for equal rows, differing domain values, rows present only on one side, rows where only version values differ, and rows where identity values differ.
+The fixture SHALL include at least one technical-identifier difference case that demonstrates ignored comparison behavior for identity and GUID-style columns.
 
 #### Scenario: Fixture includes matching business references
 - **WHEN** the purchase order fixture data is loaded into both logical databases
@@ -65,6 +67,11 @@ The data SHALL include cases for equal rows, differing domain values, rows prese
 #### Scenario: Fixture includes identity-difference example
 - **WHEN** the purchase order fixture data is loaded into both logical databases
 - **THEN** at least one purchase order reference appears in both databases where domain values match but identity values differ
+
+#### Scenario: Identity-only and guid-only differences are available for ignore characterization
+- **WHEN** fixture consumers compare rows that differ only in identity or GUID-style technical columns
+- **THEN** those rows can be used to verify that technical-identifier-only differences are ignored by default comparison behavior
+
 ### Requirement: Fixtures are organized by table scenario
 The SQL test fixtures SHALL organize each table-oriented fixture in its own subdirectory under `src/test/resources/sql/fixtures/`.
 Tests SHALL use these fixture resources rather than creating comparison-table DDL inline.
@@ -100,6 +107,7 @@ The table SHALL be available in both left and right logical databases so missing
 #### Scenario: Missing business-key error can use fixture table
 - **WHEN** the core comparison library is asked to compare `dbo.PurchaseOrderWithoutBusinessKey`
 - **THEN** it can exercise the missing-business-key error path using the shared fixture rather than ad hoc test SQL
+
 ### Requirement: Obsolete sample-items fixture is removed
 The test resources SHALL remove the original `sample_items` smoke fixture once realistic table-specific fixtures cover initialization and comparison test scenarios.
 
@@ -122,6 +130,7 @@ The fixtures SHALL be usable together in the left and right logical databases.
 #### Scenario: Product is a good comparable table
 - **WHEN** the `product` fixture is initialized
 - **THEN** `dbo.Product` has a unique `_PK` index and deterministic left and right data
+
 ### Requirement: Multi-table tests compare selected good fixtures
 The integration tests SHALL use the good table fixtures to verify selected-table comparison.
 The tests SHALL initialize three good comparable tables and compare two of them.

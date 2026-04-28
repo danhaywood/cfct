@@ -44,23 +44,33 @@ The default suffix SHALL be `_PK`.
 #### Scenario: Ambiguous business-key indexes fail clearly
 - **WHEN** the target table has more than one unique index whose name ends with the configured business-key suffix
 - **THEN** the comparison fails with an error that identifies the table and the ambiguous indexes
+
 ### Requirement: Core library partitions columns for comparison
 The system SHALL partition target-table columns into business-key columns, ignored columns, and compared columns.
 Business-key columns SHALL be used for row matching.
 Ignored columns SHALL be excluded from row matching and value comparison.
 Compared columns SHALL include all remaining target-table columns.
+The system SHALL always exclude identity-backed columns from compared columns.
+The system SHALL always exclude columns named `uuid` or `guid` from compared columns using case-insensitive name matching.
+The system SHALL always exclude columns with SQL Server datatype `UNIQUEIDENTIFIER` from compared columns.
+Built-in technical-column exclusions SHALL apply in addition to caller-provided ignored-column options.
 
-#### Scenario: Default ignored columns exclude technical version only
-- **WHEN** the target table contains columns named `id` and `version`
-- **THEN** default comparison options exclude `version` from value comparison and include `id` in compared values unless explicitly ignored by caller options
+#### Scenario: Default ignored columns exclude technical identifiers
+- **WHEN** the target table contains columns named `id`, `version`, `guid`, and `uuid`
+- **THEN** default comparison options exclude `version` and built-in rules exclude identity-backed and guid/uuid technical columns from compared values
 
-#### Scenario: Business-key columns identify rows
-- **WHEN** rows are read from the left and right tables
-- **THEN** business-key column values are used to determine whether rows represent the same business row
+#### Scenario: Identity business-key column still matches rows
+- **WHEN** a business-key index includes an identity-backed column
+- **THEN** that column can still participate in row matching while remaining excluded from compared-value columns
 
-#### Scenario: Non-key non-ignored columns are compared
-- **WHEN** the target table contains columns that are neither business-key columns nor ignored columns
+#### Scenario: Uniqueidentifier datatype is excluded from compared values
+- **WHEN** the target table contains a column with SQL Server datatype `UNIQUEIDENTIFIER`
+- **THEN** that column is excluded from compared-value columns regardless of caller ignore options
+
+#### Scenario: Non-key non-ignored business columns are compared
+- **WHEN** the target table contains columns that are neither business-key columns nor ignored technical columns
 - **THEN** those columns are compared for matched rows
+
 ### Requirement: Core library reports structured row differences
 The system SHALL return a structured table comparison result.
 The result SHALL distinguish rows only in the left table, rows only in the right table, and matched rows with differing compared column values.
@@ -105,10 +115,11 @@ The verification SHALL remain focused on the library and SHALL NOT introduce CLI
 - **WHEN** the core library compares `dbo.PurchaseOrder` in the left and right fixture databases
 - **THEN** it uses `PurchaseOrder_PK(reference)` to match rows
 
-#### Scenario: PurchaseOrder comparison includes identity by default
+#### Scenario: PurchaseOrder comparison excludes identity by default
 - **WHEN** the core library compares `dbo.PurchaseOrder` rows with matching references
-- **THEN** differences in `id` values can produce row differences unless caller options explicitly ignore `id`
+- **THEN** differences limited to identity values do not produce row differences unless additional compared business columns differ
 
 #### Scenario: PurchaseOrder comparison reports expected fixture differences
 - **WHEN** the core library compares the left and right `dbo.PurchaseOrder` fixture data
-- **THEN** the result reports the expected left-only row, right-only row, and differing domain values from the fixture
+- **THEN** the result reports expected side-only and differing business-domain values while excluding technical identity/GUID-only noise
+
