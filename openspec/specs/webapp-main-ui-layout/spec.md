@@ -48,6 +48,7 @@ The footer content SHALL be stable enough for deterministic unit or browser-leve
 The webapp SHALL provide a `Compare` button in the navigation-area selection stage.
 The `Compare` button SHALL be rendered above the table-selection grid.
 The `Compare` button SHALL be aligned to the right within its action row.
+The `Compare` action row SHALL include top margin that visually aligns the compare control block with the height rhythm of the navbar hamburger/menu row.
 The `Compare` button SHALL be disabled when no eligible table is selected.
 The `Compare` button SHALL be enabled when one or more eligible tables are selected.
 Activating the `Compare` button SHALL execute comparison orchestration for all currently selected eligible tables.
@@ -64,6 +65,10 @@ The comparison stage SHALL render the execution outcome in the right-side conten
 #### Scenario: Compare button is positioned above table catalog
 - **WHEN** the selection stage is visible in the navigation panel
 - **THEN** the `Compare` button appears above the table grid and aligned to the right
+
+#### Scenario: Compare action row aligns with navbar rhythm
+- **WHEN** the selection stage is visible next to the main content area
+- **THEN** the compare action row includes top spacing that visually aligns with the navbar hamburger/menu row height
 
 #### Scenario: Compare button executes selected-table comparison
 - **WHEN** a user activates the enabled `Compare` button

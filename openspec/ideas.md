@@ -27,13 +27,12 @@ Until then, ideas here are notes only and do not represent current system behavi
 - /opsx-propose: Add a new output format of yaml.  Support this in the CLI, and in the webapp provide a new download button to download as YAML also.
 - /opsx-propose: provide an "IgnoreColumnAdvisor" SPI for the responsibility fo determining if a column should be ignored in the comparison.  This SPI should be in the -api module.  Have the core library take a @Inject'd List<IgnoreColumnAdvisor>, so that more than one implementation can be consulted.  Rework the current implementations as separate services/beans, called something like IgnoreColumnAdvisorForIdentityColumns, and IgnoreColumnAdvisorForUuidColumns, and IgnoreColumnAdvisorForTimestamps.  For each of these implementations, add a config property (using @ConfigurationProperties so is typesafe) that can enable/disable the advisor, defaulting to eanabled.  
 - /opsx-propose: add a new IgnoreColumnAdvisorUsingExtendedProperties, have it check for the presence of an "sqlcomparer.ignored" metadata attribute set to a truthy value (as per sp_extendedproperty); if so then ignore the property. 
+- /opsx-propose: 
 - auto select from command/audit
   - drop down from/to of commands
   - query the audits
   - from audit targets infer entities
   - map entities to tables
-  - 
-- have the cli/webapp support Azure EntraID credentials
 - /opsx-propose: use spring native to compile the cli into an exe.  Put this behind a profile, only built on demand (I believe it can take some time to run).  Update README to explain how to build, using this profile.  Update README to explain how to run (instead of using that shell script).
 - create a docker image out of the webapp.
 
