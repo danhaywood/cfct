@@ -103,6 +103,7 @@ class ExcelMultiTableComparisonReportRendererTest {
             assertThat(sheet.getRow(10).getCell(4).getCellStyle().getFillForegroundColor()).isEqualTo(IndexedColors.ROSE.getIndex());
             assertThat(sheet.getPaneInformation().getVerticalSplitPosition()).isEqualTo((short) 3);
             assertThat(sheet.getPaneInformation().getHorizontalSplitPosition()).isEqualTo((short) 8);
+            assertThat(sheet.getColumnWidth(1)).isEqualTo(sheet.getColumnWidth(2));
         }
     }
 

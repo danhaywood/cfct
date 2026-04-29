@@ -35,6 +35,8 @@ public final class ExcelMultiTableComparisonReportRenderer {
 
     private static final String TABLE_OF_CONTENTS = "Table of Contents";
     private static final int MAX_SHEET_NAME_LENGTH = 31;
+    private static final int DETAIL_COLUMN_TWO_INDEX = 1;
+    private static final int DETAIL_COLUMN_THREE_INDEX = 2;
 
     public byte[] render(final MultiTableComparisonResult result) {
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
@@ -140,7 +142,8 @@ public final class ExcelMultiTableComparisonReportRenderer {
         }
 
         sheet.createFreezePane(1 + (keyColumns.size() * 2), bottomHeaderRowIndex + 1);
-        autosizeColumns(sheet, columnIndex);
+        autosizeColumnsExcept(sheet, columnIndex, DETAIL_COLUMN_TWO_INDEX);
+        sheet.setColumnWidth(DETAIL_COLUMN_TWO_INDEX, sheet.getColumnWidth(DETAIL_COLUMN_THREE_INDEX));
     }
 
     private int writeActualRow(
@@ -257,6 +260,15 @@ public final class ExcelMultiTableComparisonReportRenderer {
 
     private void autosizeColumns(final Sheet sheet, final int columnCount) {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+            sheet.autoSizeColumn(columnIndex);
+        }
+    }
+
+    private void autosizeColumnsExcept(final Sheet sheet, final int columnCount, final int excludedColumnIndex) {
+        for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+            if (columnIndex == excludedColumnIndex) {
+                continue;
+            }
             sheet.autoSizeColumn(columnIndex);
         }
     }
