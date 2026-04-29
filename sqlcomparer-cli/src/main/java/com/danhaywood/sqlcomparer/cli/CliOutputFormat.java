@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 public enum CliOutputFormat {
     TEXT("text"),
     JSON("json"),
+    YAML("yaml"),
     EXCEL("excel");
 
     private final String argumentValue;

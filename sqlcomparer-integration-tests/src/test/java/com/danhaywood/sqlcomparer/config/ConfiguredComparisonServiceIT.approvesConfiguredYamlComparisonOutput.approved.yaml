@@ -1,0 +1,120 @@
+hasDifferences: true
+tables:
+- table:
+    schema: "dbo"
+    name: "Supplier"
+  summary:
+    comparedColumnCount: 3
+    ignoredColumnCount: 2
+    rowsOnlyInLeftCount: 1
+    rowsOnlyInRightCount: 1
+    differingRowCount: 1
+    hasDifferences: true
+  businessKey:
+    index: "Supplier_PK"
+    columns:
+    - "reference"
+  comparedColumns:
+  - "name"
+  - "status"
+  - "country_code"
+  ignoredColumns:
+  - "id"
+  - "version"
+  rowsOnlyInLeft:
+  - key:
+    - "SUP-003"
+    leftValues:
+      reference: "SUP-003"
+      name: "Gamma Logistics"
+      status: "ACTIVE"
+      country_code: "DE"
+    rightValues: {}
+  rowsOnlyInRight:
+  - key:
+    - "SUP-004"
+    leftValues: {}
+    rightValues:
+      reference: "SUP-004"
+      name: "Delta Industrial"
+      status: "ACTIVE"
+      country_code: "FR"
+  differingRows:
+  - key:
+    - "SUP-002"
+    leftValues:
+      reference: "SUP-002"
+      name: "Beta Components"
+      status: "ACTIVE"
+      country_code: "GB"
+    rightValues:
+      reference: "SUP-002"
+      name: "Beta Components"
+      status: "SUSPENDED"
+      country_code: "GB"
+    differences:
+    - column: "status"
+      left: "ACTIVE"
+      right: "SUSPENDED"
+- table:
+    schema: "dbo"
+    name: "Product"
+  summary:
+    comparedColumnCount: 4
+    ignoredColumnCount: 2
+    rowsOnlyInLeftCount: 1
+    rowsOnlyInRightCount: 1
+    differingRowCount: 1
+    hasDifferences: true
+  businessKey:
+    index: "Product_PK"
+    columns:
+    - "sku"
+  comparedColumns:
+  - "name"
+  - "category"
+  - "unit_price"
+  - "status"
+  ignoredColumns:
+  - "id"
+  - "version"
+  rowsOnlyInLeft:
+  - key:
+    - "SKU-003"
+    leftValues:
+      sku: "SKU-003"
+      name: "Left Only Part"
+      category: "Spares"
+      unit_price: "25.00"
+      status: "ACTIVE"
+    rightValues: {}
+  rowsOnlyInRight:
+  - key:
+    - "SKU-004"
+    leftValues: {}
+    rightValues:
+      sku: "SKU-004"
+      name: "Right Only Part"
+      category: "Spares"
+      unit_price: "30.00"
+      status: "ACTIVE"
+  differingRows:
+  - key:
+    - "SKU-002"
+    leftValues:
+      sku: "SKU-002"
+      name: "Gadget"
+      category: "Hardware"
+      unit_price: "10.00"
+      status: "ACTIVE"
+    rightValues:
+      sku: "SKU-002"
+      name: "Gadget"
+      category: "Hardware"
+      unit_price: "10.50"
+      status: "ACTIVE"
+    differences:
+    - column: "unit_price"
+      left: "10.00"
+      right: "10.50"
+

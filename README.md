@@ -277,6 +277,12 @@ This writes JSON output to a file:
 ./comparedb.sh --env-file demo/.env --tables-file demo/tables.txt --output-format json -o comparison.json
 ```
 
+This writes YAML output instead of the default text output:
+
+```bash
+./comparedb.sh --env-file demo/.env --tables-file demo/tables.txt --output-format yaml
+```
+
 This writes Excel output to a workbook file:
 
 ```bash
@@ -354,11 +360,11 @@ The default ignored set still includes `version`.
 
 The CLI supports these output options:
 
-- `-f` / `--output-format`: one of `text`, `json`, or `excel`.
+- `-f` / `--output-format`: one of `text`, `json`, `yaml`, or `excel`.
 - `-o` / `--output-file`: optional output file path for successful output.
 
 `text` is the default when `--output-format` is omitted.
-Text and JSON are written to stdout as UTF-8 when `-o` is omitted.
+Text, JSON, and YAML are written to stdout as UTF-8 when `-o` is omitted.
 When `-o` is supplied, successful output is written to that file instead.
 Excel output requires `-o`, for example `--output-format excel -o comparison.xlsx`.
 

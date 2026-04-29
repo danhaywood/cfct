@@ -14,6 +14,12 @@ class ComparisonOutputTypeTest {
     }
 
     @Test
+    void parsesYamlOutputType() {
+        assertThat(ComparisonOutputType.parse("yaml")).isEqualTo(ComparisonOutputType.YAML);
+        assertThat(ComparisonOutputType.parse(" YAML ")).isEqualTo(ComparisonOutputType.YAML);
+    }
+
+    @Test
     void parsesExcelOutputType() {
         assertThat(ComparisonOutputType.parse("excel")).isEqualTo(ComparisonOutputType.EXCEL);
         assertThat(ComparisonOutputType.parse(" EXCEL ")).isEqualTo(ComparisonOutputType.EXCEL);

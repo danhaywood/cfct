@@ -39,6 +39,14 @@ public record CliExecutionOutput(
                 json.getBytes(StandardCharsets.UTF_8));
     }
 
+    public static CliExecutionOutput yaml(final String yaml) {
+        return new CliExecutionOutput(
+                CliOutputFormat.YAML,
+                "application/yaml",
+                "yaml",
+                yaml.getBytes(StandardCharsets.UTF_8));
+    }
+
     public static CliExecutionOutput excel(final byte[] workbookBytes) {
         return new CliExecutionOutput(
                 CliOutputFormat.EXCEL,

@@ -31,6 +31,14 @@ public record ConfiguredComparisonOutput(
                 json.getBytes(StandardCharsets.UTF_8));
     }
 
+    public static ConfiguredComparisonOutput yaml(final String yaml) {
+        return new ConfiguredComparisonOutput(
+                ComparisonOutputType.YAML,
+                "application/yaml",
+                "yaml",
+                yaml.getBytes(StandardCharsets.UTF_8));
+    }
+
     public static ConfiguredComparisonOutput excel(final byte[] workbookBytes) {
         return new ConfiguredComparisonOutput(
                 ComparisonOutputType.EXCEL,

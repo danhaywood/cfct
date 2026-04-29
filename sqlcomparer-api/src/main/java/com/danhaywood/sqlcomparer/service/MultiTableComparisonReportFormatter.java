@@ -8,5 +8,7 @@ public interface MultiTableComparisonReportFormatter {
 
     String renderJson(MultiTableComparisonResult result);
 
+    String renderYaml(MultiTableComparisonResult result);
+
     byte[] renderExcel(MultiTableComparisonResult result);
 }

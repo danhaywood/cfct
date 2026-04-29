@@ -42,6 +42,30 @@ class CliCommandRunnerTest {
     }
 
     @Test
+    void writesYamlOutputToStdoutWhenOutputFileIsOmitted() {
+        final CliComparisonExecutor executor = arguments -> CliExecutionOutput.yaml("hasDifferences: false\n");
+        final CliCommandRunner runner = new CliCommandRunner(new CliArgumentsParser(), executor);
+        final ByteArrayOutputStream stdoutBytes = new ByteArrayOutputStream();
+        final ByteArrayOutputStream stderrBytes = new ByteArrayOutputStream();
+
+        final int exitCode = runner.run(new String[]{
+                        "-S", "server-host",
+                        "-U", "sa",
+                        "-P", "secret",
+                        "-l", "left_db",
+                        "-r", "right_db",
+                        "-t", "dbo.Supplier",
+                        "--output-format", "yaml"
+                },
+                new PrintStream(stdoutBytes, true, StandardCharsets.UTF_8),
+                new PrintStream(stderrBytes, true, StandardCharsets.UTF_8));
+
+        assertThat(exitCode).isEqualTo(0);
+        assertThat(stdoutBytes.toString(StandardCharsets.UTF_8)).contains("hasDifferences:");
+        assertThat(stderrBytes.toString(StandardCharsets.UTF_8)).isEmpty();
+    }
+
+    @Test
     void writesSuccessfulOutputToFileWhenOutputFileIsProvided(@TempDir final Path tempDir) {
         final RecordingExecutor executor = new RecordingExecutor();
         final CliCommandRunner runner = new CliCommandRunner(new CliArgumentsParser(), executor);
@@ -90,6 +114,33 @@ class CliCommandRunnerTest {
         assertThat(stdoutBytes.toString(StandardCharsets.UTF_8)).isEmpty();
         assertThat(stderrBytes.toString(StandardCharsets.UTF_8)).contains("Error:").contains("-o").contains("excel");
         assertThat(executor.receivedArguments).isNull();
+    }
+
+    @Test
+    void writesYamlOutputToFileWhenOutputFileIsProvided(@TempDir final Path tempDir) {
+        final CliComparisonExecutor executor = arguments -> CliExecutionOutput.yaml("hasDifferences: false\n");
+        final CliCommandRunner runner = new CliCommandRunner(new CliArgumentsParser(), executor);
+        final ByteArrayOutputStream stdoutBytes = new ByteArrayOutputStream();
+        final ByteArrayOutputStream stderrBytes = new ByteArrayOutputStream();
+        final Path outputFile = tempDir.resolve("comparison.yaml");
+
+        final int exitCode = runner.run(new String[]{
+                        "-S", "server-host",
+                        "-U", "sa",
+                        "-P", "secret",
+                        "-l", "left_db",
+                        "-r", "right_db",
+                        "-t", "dbo.Supplier",
+                        "--output-format", "yaml",
+                        "-o", outputFile.toString()
+                },
+                new PrintStream(stdoutBytes, true, StandardCharsets.UTF_8),
+                new PrintStream(stderrBytes, true, StandardCharsets.UTF_8));
+
+        assertThat(exitCode).isEqualTo(0);
+        assertThat(stdoutBytes.toString(StandardCharsets.UTF_8)).isEmpty();
+        assertThat(stderrBytes.toString(StandardCharsets.UTF_8)).isEmpty();
+        assertThat(outputFile).hasContent("hasDifferences: false\n");
     }
 
     @Test

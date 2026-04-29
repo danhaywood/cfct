@@ -112,7 +112,7 @@ class CliArgumentsParserTest {
 
     @Test
     void parsesSupportedNonExcelOutputFormatsWithoutOutputFile() {
-        for (CliOutputFormat outputFormat : List.of(CliOutputFormat.TEXT, CliOutputFormat.JSON)) {
+        for (CliOutputFormat outputFormat : List.of(CliOutputFormat.TEXT, CliOutputFormat.JSON, CliOutputFormat.YAML)) {
             final CliArguments arguments = parser.parse(new String[]{
                     "-S", "server-host",
                     "-U", "sa",
@@ -141,7 +141,7 @@ class CliArgumentsParserTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Unsupported output format")
                 .hasMessageContaining("pdf")
-                .hasMessageContaining("text, json, excel");
+                .hasMessageContaining("text, json, yaml, excel");
     }
 
     @Test

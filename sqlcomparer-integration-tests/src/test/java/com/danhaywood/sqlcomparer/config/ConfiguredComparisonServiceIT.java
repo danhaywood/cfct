@@ -6,6 +6,7 @@ import com.danhaywood.sqlcomparer.harness.DatabaseSide;
 import com.danhaywood.sqlcomparer.harness.SqlServerTestHarness;
 import com.danhaywood.sqlcomparer.report.ExcelMultiTableComparisonReportRenderer;
 import com.danhaywood.sqlcomparer.report.JsonMultiTableComparisonReportRenderer;
+import com.danhaywood.sqlcomparer.report.YamlMultiTableComparisonReportRenderer;
 import com.danhaywood.sqlcomparer.sqlserver.TableMetadataReaderSqlServer;
 import com.danhaywood.sqlcomparer.sqlserver.TableRowReaderSqlServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,6 +37,7 @@ class ConfiguredComparisonServiceIT {
             new JsonComparisonRequestLoader(objectMapper),
             new MultiTableComparisonServiceDefault(new TableComparisonServiceDefault(new TableMetadataReaderSqlServer(), new TableRowReaderSqlServer())),
             new JsonMultiTableComparisonReportRenderer(objectMapper),
+            new YamlMultiTableComparisonReportRenderer(objectMapper),
             new ExcelMultiTableComparisonReportRenderer());
 
     @BeforeAll
@@ -73,6 +75,31 @@ class ConfiguredComparisonServiceIT {
         assertThat(json).contains("\"sku\" : \"SKU-004\"");
         assertThat(json).doesNotContain("PurchaseOrder_PK");
         Approvals.verify(json, new Options().forFile().withExtension(".json"));
+    }
+
+    @Test
+    void approvesConfiguredYamlComparisonOutput() throws Exception {
+        initializeFixture("purchase-order");
+        initializeFixture("supplier");
+        initializeFixture("product");
+
+        final String yaml;
+        try (Connection left = harness.openConnection(DatabaseSide.LEFT);
+             Connection right = harness.openConnection(DatabaseSide.RIGHT);
+             var inputStream = ConfiguredComparisonServiceIT.class.getResourceAsStream("/sql/comparisons/supplier-product-yaml.json")) {
+            yaml = service.compare(left, right, inputStream);
+        }
+
+        assertThat(yaml).contains("hasDifferences: true");
+        assertThat(yaml).contains("name: \"Supplier\"");
+        assertThat(yaml).contains("name: \"Product\"");
+        assertThat(yaml).contains("rowsOnlyInLeftCount: 1");
+        assertThat(yaml).contains("leftValues:");
+        assertThat(yaml).contains("rightValues:");
+        assertThat(yaml).contains("reference: \"SUP-003\"");
+        assertThat(yaml).contains("sku: \"SKU-004\"");
+        assertThat(yaml).doesNotContain("PurchaseOrder_PK");
+        Approvals.verify(yaml, new Options().forFile().withExtension(".yaml"));
     }
 
     @Test
@@ -122,27 +149,34 @@ class ConfiguredComparisonServiceIT {
         initializeFixture("product");
 
         final String json;
+        final ConfiguredComparisonOutput yaml;
         final ConfiguredComparisonOutput excel;
         try (Connection left = harness.openConnection(DatabaseSide.LEFT);
              Connection right = harness.openConnection(DatabaseSide.RIGHT);
              var jsonInputStream = ConfiguredComparisonServiceIT.class.getResourceAsStream("/sql/comparisons/supplier-product.json");
+             var yamlInputStream = ConfiguredComparisonServiceIT.class.getResourceAsStream("/sql/comparisons/supplier-product-yaml.json");
              var excelInputStream = ConfiguredComparisonServiceIT.class.getResourceAsStream("/sql/comparisons/supplier-product-excel.json")) {
             json = service.compare(left, right, jsonInputStream);
+            yaml = service.compareOutput(left, right, yamlInputStream);
             excel = service.compareOutput(left, right, excelInputStream);
         }
 
         final Path outputDirectory = Path.of("target", "comparison-output-approval-files");
         final Path jsonOutputPath = outputDirectory.resolve("supplier-product-comparison.json");
+        final Path yamlOutputPath = outputDirectory.resolve("supplier-product-comparison.yaml");
         final Path excelOutputPath = outputDirectory.resolve("supplier-product-comparison.xlsx");
         Files.createDirectories(outputDirectory);
         Files.writeString(jsonOutputPath, json);
+        Files.writeString(yamlOutputPath, yaml.contentAsString());
         Files.write(excelOutputPath, excel.bytes());
 
         assertThat(jsonOutputPath).exists();
+        assertThat(yamlOutputPath).exists();
         assertThat(excelOutputPath).exists();
         assertThat(json).contains("\"summary\" : {");
         assertThat(json).contains("\"leftValues\" : {");
         assertThat(json).contains("\"rightValues\" : {");
+        assertThat(yaml.outputType()).isEqualTo(ComparisonOutputType.YAML);
         assertThat(excel.outputType()).isEqualTo(ComparisonOutputType.EXCEL);
     }
 

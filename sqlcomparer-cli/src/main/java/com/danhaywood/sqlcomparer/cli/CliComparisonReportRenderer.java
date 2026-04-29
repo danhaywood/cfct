@@ -17,6 +17,7 @@ public final class CliComparisonReportRenderer {
         return switch (outputFormat) {
             case TEXT -> CliExecutionOutput.text(formatter.renderText(result));
             case JSON -> CliExecutionOutput.json(formatter.renderJson(result));
+            case YAML -> CliExecutionOutput.yaml(formatter.renderYaml(result));
             case EXCEL -> CliExecutionOutput.excel(formatter.renderExcel(result));
         };
     }

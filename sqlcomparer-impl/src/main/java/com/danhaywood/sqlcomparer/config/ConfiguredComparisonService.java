@@ -3,6 +3,7 @@ package com.danhaywood.sqlcomparer.config;
 import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
 import com.danhaywood.sqlcomparer.report.ExcelMultiTableComparisonReportRenderer;
 import com.danhaywood.sqlcomparer.report.JsonMultiTableComparisonReportRenderer;
+import com.danhaywood.sqlcomparer.report.YamlMultiTableComparisonReportRenderer;
 import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
 import org.springframework.stereotype.Service;
 
@@ -16,16 +17,19 @@ public final class ConfiguredComparisonService {
     private final JsonComparisonRequestLoader requestLoader;
     private final MultiTableComparisonService comparer;
     private final JsonMultiTableComparisonReportRenderer jsonRenderer;
+    private final YamlMultiTableComparisonReportRenderer yamlRenderer;
     private final ExcelMultiTableComparisonReportRenderer excelRenderer;
 
     public ConfiguredComparisonService(
             final JsonComparisonRequestLoader requestLoader,
             final MultiTableComparisonService comparer,
             final JsonMultiTableComparisonReportRenderer jsonRenderer,
+            final YamlMultiTableComparisonReportRenderer yamlRenderer,
             final ExcelMultiTableComparisonReportRenderer excelRenderer) {
         this.requestLoader = requestLoader;
         this.comparer = comparer;
         this.jsonRenderer = jsonRenderer;
+        this.yamlRenderer = yamlRenderer;
         this.excelRenderer = excelRenderer;
     }
 
@@ -52,6 +56,7 @@ public final class ConfiguredComparisonService {
         final MultiTableComparisonResult result = comparer.compare(leftConnection, rightConnection, request.toMultiTableComparisonRequest());
         return switch (request.outputType()) {
             case JSON -> ConfiguredComparisonOutput.json(jsonRenderer.render(result));
+            case YAML -> ConfiguredComparisonOutput.yaml(yamlRenderer.render(result));
             case EXCEL -> ConfiguredComparisonOutput.excel(excelRenderer.render(result));
         };
     }

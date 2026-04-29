@@ -41,6 +41,17 @@ class CliComparisonReportRendererTest {
     }
 
     @Test
+    void rendersYamlOutput() {
+        final CliExecutionOutput output = renderer.render(result(), CliOutputFormat.YAML);
+
+        assertThat(output.outputFormat()).isEqualTo(CliOutputFormat.YAML);
+        assertThat(output.mediaType()).isEqualTo("application/yaml");
+        assertThat(new String(output.bytes(), StandardCharsets.UTF_8))
+                .contains("tables:")
+                .contains("Supplier");
+    }
+
+    @Test
     void rendersExcelOutput() {
         final CliExecutionOutput output = renderer.render(result(), CliOutputFormat.EXCEL);
 
@@ -59,6 +70,11 @@ class CliComparisonReportRendererTest {
         @Override
         public String renderJson(final MultiTableComparisonResult result) {
             return "{\"tables\":[{\"table\":{\"name\":\"Supplier\"}}]}";
+        }
+
+        @Override
+        public String renderYaml(final MultiTableComparisonResult result) {
+            return "tables:\n  - table:\n      name: Supplier\n";
         }
 
         @Override

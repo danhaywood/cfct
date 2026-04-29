@@ -2,6 +2,7 @@ package com.danhaywood.sqlcomparer.config;
 
 public enum ComparisonOutputType {
     JSON("json"),
+    YAML("yaml"),
     EXCEL("excel");
 
     private final String jsonValue;

@@ -29,6 +29,21 @@ class JsonComparisonRequestLoaderTest {
     }
 
     @Test
+    void loadsValidYamlRequest() {
+        final JsonComparisonRequest request = load("""
+                {
+                  "output": { "type": "yaml" },
+                  "tables": [ { "schema": "dbo", "name": "Supplier" } ]
+                }
+                """);
+
+        assertThat(request.outputType()).isEqualTo(ComparisonOutputType.YAML);
+        assertThat(request.toMultiTableComparisonRequest().tables())
+                .extracting(table -> table.schemaName() + "." + table.tableName())
+                .containsExactly("dbo.Supplier");
+    }
+
+    @Test
     void loadsValidExcelRequest() {
         final JsonComparisonRequest request = load("""
                 {

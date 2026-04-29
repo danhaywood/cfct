@@ -7,6 +7,7 @@ import com.danhaywood.sqlcomparer.report.ExcelMultiTableComparisonReportRenderer
 import com.danhaywood.sqlcomparer.report.JsonMultiTableComparisonReportRenderer;
 import com.danhaywood.sqlcomparer.report.MultiTableComparisonReportFormatterDefault;
 import com.danhaywood.sqlcomparer.report.TextMultiTableComparisonReportRenderer;
+import com.danhaywood.sqlcomparer.report.YamlMultiTableComparisonReportRenderer;
 import com.danhaywood.sqlcomparer.report.TextTableComparisonReportRenderer;
 import com.danhaywood.sqlcomparer.service.MultiTableComparisonReportFormatter;
 import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
@@ -74,6 +75,11 @@ public class ComparisonImplementationConfiguration {
     }
 
     @Bean
+    public YamlMultiTableComparisonReportRenderer yamlMultiTableComparisonReportRenderer(final ObjectMapper objectMapper) {
+        return new YamlMultiTableComparisonReportRenderer(objectMapper);
+    }
+
+    @Bean
     public ExcelMultiTableComparisonReportRenderer excelMultiTableComparisonReportRenderer() {
         return new ExcelMultiTableComparisonReportRenderer();
     }
@@ -82,7 +88,8 @@ public class ComparisonImplementationConfiguration {
     public MultiTableComparisonReportFormatter multiTableComparisonReportFormatter(
             final TextMultiTableComparisonReportRenderer textRenderer,
             final JsonMultiTableComparisonReportRenderer jsonRenderer,
+            final YamlMultiTableComparisonReportRenderer yamlRenderer,
             final ExcelMultiTableComparisonReportRenderer excelRenderer) {
-        return new MultiTableComparisonReportFormatterDefault(textRenderer, jsonRenderer, excelRenderer);
+        return new MultiTableComparisonReportFormatterDefault(textRenderer, jsonRenderer, yamlRenderer, excelRenderer);
     }
 }

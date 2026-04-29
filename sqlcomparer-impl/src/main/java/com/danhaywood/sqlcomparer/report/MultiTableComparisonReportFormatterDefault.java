@@ -7,14 +7,17 @@ public final class MultiTableComparisonReportFormatterDefault implements MultiTa
 
     private final TextMultiTableComparisonReportRenderer textRenderer;
     private final JsonMultiTableComparisonReportRenderer jsonRenderer;
+    private final YamlMultiTableComparisonReportRenderer yamlRenderer;
     private final ExcelMultiTableComparisonReportRenderer excelRenderer;
 
     public MultiTableComparisonReportFormatterDefault(
             final TextMultiTableComparisonReportRenderer textRenderer,
             final JsonMultiTableComparisonReportRenderer jsonRenderer,
+            final YamlMultiTableComparisonReportRenderer yamlRenderer,
             final ExcelMultiTableComparisonReportRenderer excelRenderer) {
         this.textRenderer = textRenderer;
         this.jsonRenderer = jsonRenderer;
+        this.yamlRenderer = yamlRenderer;
         this.excelRenderer = excelRenderer;
     }
 
@@ -26,6 +29,11 @@ public final class MultiTableComparisonReportFormatterDefault implements MultiTa
     @Override
     public String renderJson(final MultiTableComparisonResult result) {
         return jsonRenderer.render(result);
+    }
+
+    @Override
+    public String renderYaml(final MultiTableComparisonResult result) {
+        return yamlRenderer.render(result);
     }
 
     @Override
