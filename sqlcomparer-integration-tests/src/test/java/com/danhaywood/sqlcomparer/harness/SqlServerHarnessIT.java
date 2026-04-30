@@ -97,6 +97,34 @@ class SqlServerHarnessIT {
                 .isEqualTo(0);
     }
 
+    @ParameterizedTest
+    @EnumSource(DatabaseSide.class)
+    void purchaseOrderFixtureIncludesCausewayCommandAndAuditTables(final DatabaseSide side) {
+        initializeFixture("purchase-order");
+
+        assertThat(harness.queryForInt(side, tableExistsInSchemaSql("causewayExtCommandLog", "CommandLogEntry")))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(side, tableExistsInSchemaSql("causewayExtAuditTrail", "AuditTrailEntry")))
+                .isEqualTo(1);
+
+        assertThat(harness.queryForInt(side,
+                primaryKeyColumnExistsSql("causewayExtCommandLog", "CommandLogEntry", "interactionId", 1)))
+                .isEqualTo(1);
+
+        assertThat(harness.queryForInt(side,
+                primaryKeyColumnExistsSql("causewayExtAuditTrail", "AuditTrailEntry", "interactionId", 1)))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(side,
+                primaryKeyColumnExistsSql("causewayExtAuditTrail", "AuditTrailEntry", "sequence", 2)))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(side,
+                primaryKeyColumnExistsSql("causewayExtAuditTrail", "AuditTrailEntry", "target", 3)))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(side,
+                primaryKeyColumnExistsSql("causewayExtAuditTrail", "AuditTrailEntry", "propertyId", 4)))
+                .isEqualTo(1);
+    }
+
     private static void initializeFixture(final String fixtureName) {
         initializeFixture(DatabaseSide.LEFT, fixtureName, "/sql/fixtures/%s/left-data.sql".formatted(fixtureName));
         initializeFixture(DatabaseSide.RIGHT, fixtureName, "/sql/fixtures/%s/right-data.sql".formatted(fixtureName));
@@ -133,13 +161,17 @@ class SqlServerHarnessIT {
     }
 
     private static String tableExistsSql(final String tableName) {
+        return tableExistsInSchemaSql("dbo", tableName);
+    }
+
+    private static String tableExistsInSchemaSql(final String schemaName, final String tableName) {
         return """
                 SELECT COUNT(*)
                 FROM sys.tables t
                 JOIN sys.schemas s ON t.schema_id = s.schema_id
-                WHERE s.name = 'dbo'
+                WHERE s.name = '%s'
                   AND t.name = '%s'
-                """.formatted(tableName);
+                """.formatted(schemaName, tableName);
     }
 
     private static String columnExistsSql(final String tableName, final String columnName) {
@@ -170,6 +202,26 @@ class SqlServerHarnessIT {
                   AND TABLE_NAME = 'PurchaseOrder'
                   AND COLUMN_NAME = 'version'
                 """;
+    }
+
+    private static String primaryKeyColumnExistsSql(
+            final String schemaName,
+            final String tableName,
+            final String columnName,
+            final int keyOrdinal) {
+        return """
+                SELECT COUNT(*)
+                FROM sys.key_constraints kc
+                JOIN sys.tables t ON kc.parent_object_id = t.object_id
+                JOIN sys.schemas s ON t.schema_id = s.schema_id
+                JOIN sys.index_columns ic ON kc.parent_object_id = ic.object_id AND kc.unique_index_id = ic.index_id
+                JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+                WHERE kc.type = 'PK'
+                  AND s.name = '%s'
+                  AND t.name = '%s'
+                  AND c.name = '%s'
+                  AND ic.key_ordinal = %d
+                """.formatted(schemaName, tableName, columnName, keyOrdinal);
     }
 
     private static String purchaseOrderRowversionColumnCountSql() {

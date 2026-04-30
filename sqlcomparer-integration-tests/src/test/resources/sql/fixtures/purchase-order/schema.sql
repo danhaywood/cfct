@@ -1,5 +1,13 @@
 DROP TABLE IF EXISTS dbo.PurchaseOrder;
 GO
+IF SCHEMA_ID('causewayExtCommandLog') IS NULL EXEC('CREATE SCHEMA causewayExtCommandLog');
+GO
+IF SCHEMA_ID('causewayExtAuditTrail') IS NULL EXEC('CREATE SCHEMA causewayExtAuditTrail');
+GO
+DROP TABLE IF EXISTS causewayExtCommandLog.CommandLogEntry;
+GO
+DROP TABLE IF EXISTS causewayExtAuditTrail.AuditTrailEntry;
+GO
 CREATE TABLE dbo.PurchaseOrder (
     id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PurchaseOrder PRIMARY KEY,
     reference NVARCHAR(40) NOT NULL,
@@ -11,6 +19,24 @@ CREATE TABLE dbo.PurchaseOrder (
     tax_amount DECIMAL(18,2) NOT NULL,
     gross_amount DECIMAL(18,2) NOT NULL,
     [version] DATETIME2(3) NOT NULL
+);
+GO
+CREATE TABLE causewayExtCommandLog.CommandLogEntry (
+    interactionId UNIQUEIDENTIFIER NOT NULL,
+    executeIn VARCHAR(10) NOT NULL,
+    logicalMemberIdentifier VARCHAR(255) NOT NULL,
+    [timestamp] DATETIME2 NOT NULL,
+    target VARCHAR(1500) NOT NULL,
+    replayState VARCHAR(20) NOT NULL,
+    CONSTRAINT PK_CommandLogEntry PRIMARY KEY (interactionId)
+);
+GO
+CREATE TABLE causewayExtAuditTrail.AuditTrailEntry (
+    interactionId UNIQUEIDENTIFIER NOT NULL,
+    sequence INT NOT NULL,
+    target VARCHAR(1500) NOT NULL,
+    propertyId VARCHAR(100) NOT NULL,
+    CONSTRAINT PK_AuditTrailEntry PRIMARY KEY (interactionId, sequence, target, propertyId)
 );
 GO
 CREATE UNIQUE INDEX PurchaseOrder_PK
