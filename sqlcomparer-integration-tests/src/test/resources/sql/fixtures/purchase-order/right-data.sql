@@ -20,3 +20,14 @@ INSERT INTO dbo.PurchaseOrder (
 GO
 SET IDENTITY_INSERT dbo.PurchaseOrder OFF;
 GO
+
+INSERT INTO causewayExtCommandLog.CommandLogEntry (
+    interactionId,
+    executeIn,
+    logicalMemberIdentifier,
+    [timestamp],
+    target,
+    replayState
+) VALUES
+    ('11111111-1111-1111-1111-111111111111', 'FOREGROUND', 'supplier.Supplier#registerProduct', '2026-04-05T10:00:00.000', 'supplier.Supplier:301', 'PENDING');
+GO

@@ -123,6 +123,29 @@ class SqlServerHarnessIT {
         assertThat(harness.queryForInt(side,
                 primaryKeyColumnExistsSql("causewayExtAuditTrail", "AuditTrailEntry", "propertyId", 4)))
                 .isEqualTo(1);
+
+        assertThat(harness.queryForInt(side,
+                foreignKeyExistsSql("causewayExtAuditTrail", "AuditTrailEntry", "FK_AuditTrailEntry_CommandLogEntry_InteractionId")))
+                .isEqualTo(1);
+    }
+
+    @ParameterizedTest
+    @EnumSource(DatabaseSide.class)
+    void purchaseOrderFixtureSeedsRegisterProductCommandAuditFootprint(final DatabaseSide side) {
+        initializeFixture("purchase-order");
+
+        assertThat(harness.queryForInt(side, registerProductCommandCountSql()))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(side, registerProductSupplierTargetCountSql()))
+                .isEqualTo(1);
+
+        final String expectedReplayState = side == DatabaseSide.LEFT ? "EXPORTED" : "PENDING";
+        assertThat(harness.queryForString(side, registerProductReplayStateSql()))
+                .isEqualTo(expectedReplayState);
+
+        final int expectedAuditRowCount = side == DatabaseSide.LEFT ? 3 : 0;
+        assertThat(harness.queryForInt(side, registerProductAuditProductTargetCountSql()))
+                .isEqualTo(expectedAuditRowCount);
     }
 
     private static void initializeFixture(final String fixtureName) {
@@ -222,6 +245,56 @@ class SqlServerHarnessIT {
                   AND c.name = '%s'
                   AND ic.key_ordinal = %d
                 """.formatted(schemaName, tableName, columnName, keyOrdinal);
+    }
+
+    private static String foreignKeyExistsSql(
+            final String schemaName,
+            final String tableName,
+            final String foreignKeyName) {
+        return """
+                SELECT COUNT(*)
+                FROM sys.foreign_keys fk
+                JOIN sys.tables t ON fk.parent_object_id = t.object_id
+                JOIN sys.schemas s ON t.schema_id = s.schema_id
+                WHERE s.name = '%s'
+                  AND t.name = '%s'
+                  AND fk.name = '%s'
+                """.formatted(schemaName, tableName, foreignKeyName);
+    }
+
+    private static String registerProductCommandCountSql() {
+        return """
+                SELECT COUNT(*)
+                FROM causewayExtCommandLog.CommandLogEntry
+                WHERE logicalMemberIdentifier = 'supplier.Supplier#registerProduct'
+                """;
+    }
+
+    private static String registerProductSupplierTargetCountSql() {
+        return """
+                SELECT COUNT(*)
+                FROM causewayExtCommandLog.CommandLogEntry
+                WHERE logicalMemberIdentifier = 'supplier.Supplier#registerProduct'
+                  AND target LIKE 'supplier.Supplier:%'
+                """;
+    }
+
+    private static String registerProductAuditProductTargetCountSql() {
+        return """
+                SELECT COUNT(*)
+                FROM causewayExtAuditTrail.AuditTrailEntry a
+                JOIN causewayExtCommandLog.CommandLogEntry c ON c.interactionId = a.interactionId
+                WHERE c.logicalMemberIdentifier = 'supplier.Supplier#registerProduct'
+                  AND a.target LIKE 'product.Product:%'
+                """;
+    }
+
+    private static String registerProductReplayStateSql() {
+        return """
+                SELECT TOP 1 replayState
+                FROM causewayExtCommandLog.CommandLogEntry
+                WHERE logicalMemberIdentifier = 'supplier.Supplier#registerProduct'
+                """;
     }
 
     private static String purchaseOrderRowversionColumnCountSql() {
