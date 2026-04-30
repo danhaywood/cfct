@@ -21,22 +21,22 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 ### New features
 
-- /opsx-propose: the goal now is to bring in autoselection of tables to be compared.   This is going to be driven from command log/audit records, where the command log holds commands that have been executed, and the audit trail tracks which objects were modified as a result.  the idea is that the user will specify one or several commands, indicating that these have been executed, and then the auto selector will find the corresponding audit records to locate the tables - the 'footprint' of changes.  The records in the audit log use logical identifiers which we'll need to map onto the logical entities, but we can get there later.  For now, I just want to start building out the fixtures.  So, extend the fixture to add the following two tables:
-  create table isiscommand.CommandWithArchive (
-  transactionId     uniqueidentifier -- varchar(36)
-  , executeIn         varchar(10)      -- "FOREGROUND", "BACKGROUND"        
-  , memberIdentifier  varchar(255)     -- eg: "customer.Customer#placeOrder"
-  , timestamp         datetime2
-  , target            varchar(2000)    -- eg: "customer.Customer:1234"        
-  , replayState.      replayState.     -- "UNDEFINED", "PENDING", "FAILED", "OK"
+- /opsx-propose: the goal now is to bring in autoselection of tables to be compared.   This is going to be driven from command log/audit records, where the command log holds commands that have been executed, and the audit trail tracks which objects were modified as a result.  the idea is that the user will choose one or several commands that have been executed, and then the auto selector will find the corresponding audit records to locate the tables - the 'footprint' of impacted tables that were modified by the changes.  The records in the audit log actually use logical identifiers which we'll need to map onto the actual tables entities, but that's a refinement we can get to later.  For now, I just want to start building out the fixtures to map to the actual schema (from Apache Causeway).  So, extend the fixture to add the following two tables:
+  create table causewayExtCommandLog.CommandLogEntry (
+    interactionId            uniqueidentifier -- varchar(36)
+  , executeIn                varchar(10)      -- "FOREGROUND", "BACKGROUND"        
+  , logicalMemberIdentifier  varchar(255)     -- eg: "customer.Customer#placeOrder"
+  , timestamp                datetime2
+  , target                   varchar(1500)    -- eg: "customer.Customer:1234"        
+  , replayState.             replayState      -- "UNDEFINED", "PENDING", "FAILED", "OK"
   )
   the PK is transactionId.
   and also:
-  create table isisaudit.AuditEntryWithArchive (
-  transactionId     uniqueidentifier -- varchar(36)
+  create table causewayExtAuditTrail.AuditTrailEntry (
+    interactionId     uniqueidentifier -- varchar(36)
   , sequence          int
-  , target            varchar(810).    -- eg: "customer.Order:1234"
-  , propertyId        varchar(1000)    -- eg: "status"
+  , target            varchar(1500)    -- eg: "customer.Order:1234"
+  , propertyId        varchar(100)     -- eg: "status"
   )
   all four columns are part of the primary key (we don't need the non-PK columns for our use case)
 
