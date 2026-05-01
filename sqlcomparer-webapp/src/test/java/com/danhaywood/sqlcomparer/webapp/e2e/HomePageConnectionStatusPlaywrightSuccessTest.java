@@ -92,6 +92,7 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
             final String initialGridText = page.locator("[data-testid='table-selection-grid']").innerText();
             assertThat(initialGridText).doesNotContain("Eligibility", "Select");
+            assertThat(initialGridText).doesNotContain("CommandLogEntry", "AuditTrailEntry", "LogicalTypeTableMapping");
             assertThat(page.locator("[data-testid='table-checkbox-dbo-purchaseorderwithoutbusinesskey']").getAttribute("disabled")).isNotNull();
             assertThat(page.locator("[data-testid='table-checkbox-dbo-purchaseorderwithoutbusinesskey']").getAttribute("title")).isNotBlank();
 

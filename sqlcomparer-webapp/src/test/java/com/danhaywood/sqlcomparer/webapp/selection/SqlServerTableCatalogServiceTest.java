@@ -9,6 +9,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SqlServerTableCatalogServiceTest {
 
     @Test
+    void excludesCommandAuditAndLogicalTypeMappingTables() {
+        assertThat(SqlServerTableCatalogService.isExcludedTable(new TableRef("causewayExtCommandLog", "CommandLogEntry"))).isTrue();
+        assertThat(SqlServerTableCatalogService.isExcludedTable(new TableRef("causewayExtAuditTrail", "AuditTrailEntry"))).isTrue();
+        assertThat(SqlServerTableCatalogService.isExcludedTable(new TableRef("util", "LogicalTypeTableMapping"))).isTrue();
+        assertThat(SqlServerTableCatalogService.isExcludedTable(new TableRef("dbo", "Supplier"))).isFalse();
+    }
+
+    @Test
     void mapsEligibleTableWhenExactlyOneBkIndexExists() {
         final TableCatalogEntry entry = SqlServerTableCatalogService.mapDiscoveredTable(
                 new TableRef("dbo", "Supplier"),

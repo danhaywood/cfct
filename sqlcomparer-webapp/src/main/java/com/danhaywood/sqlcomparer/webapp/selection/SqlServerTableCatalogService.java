@@ -13,11 +13,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class SqlServerTableCatalogService {
 
     private static final String PK_SUFFIX = "_PK";
+    private static final Set<TableRef> EXCLUDED_SUPPORT_TABLES = Set.of(
+            new TableRef("causewayExtCommandLog", "CommandLogEntry"),
+            new TableRef("causewayExtAuditTrail", "AuditTrailEntry"),
+            new TableRef("util", "LogicalTypeTableMapping"));
 
     private final WebappDataSourceConfiguration dataSourceConfiguration;
     private final AuthenticatedConnectionContextHolder authenticatedContextHolder;
@@ -51,14 +56,22 @@ public class SqlServerTableCatalogService {
                 while (resultSet.next()) {
                     final String schemaName = resultSet.getString("schema_name");
                     final String tableName = resultSet.getString("table_name");
+                    final TableRef table = new TableRef(schemaName, tableName);
+                    if (isExcludedTable(table)) {
+                        continue;
+                    }
                     final int bkKeyObjectCount = resultSet.getInt("bk_key_object_count");
-                    rows.add(mapDiscoveredTable(new TableRef(schemaName, tableName), bkKeyObjectCount));
+                    rows.add(mapDiscoveredTable(table, bkKeyObjectCount));
                 }
                 return rows;
             }
         } catch (SQLException ex) {
             throw new IllegalStateException("Failed to discover tables for manual selection.", ex);
         }
+    }
+
+    static boolean isExcludedTable(final TableRef table) {
+        return EXCLUDED_SUPPORT_TABLES.contains(table);
     }
 
     static TableCatalogEntry mapDiscoveredTable(final TableRef table, final int bkKeyObjectCount) {

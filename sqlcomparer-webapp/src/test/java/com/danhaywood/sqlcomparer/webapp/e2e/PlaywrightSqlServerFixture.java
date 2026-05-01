@@ -58,8 +58,16 @@ final class PlaywrightSqlServerFixture {
         executeSql(databaseName, "CREATE TABLE dbo." + INELIGIBLE_TABLE + " (id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, reference NVARCHAR(40) NOT NULL, [version] DATETIME2(3) NOT NULL);");
 
         executeSql(databaseName, "IF SCHEMA_ID('causewayExtCommandLog') IS NULL EXEC('CREATE SCHEMA causewayExtCommandLog');");
+        executeSql(databaseName, "IF SCHEMA_ID('causewayExtAuditTrail') IS NULL EXEC('CREATE SCHEMA causewayExtAuditTrail');");
+        executeSql(databaseName, "IF SCHEMA_ID('util') IS NULL EXEC('CREATE SCHEMA util');");
+
+        executeSql(databaseName, "DROP TABLE IF EXISTS causewayExtAuditTrail.AuditTrailEntry;");
         executeSql(databaseName, "DROP TABLE IF EXISTS causewayExtCommandLog.CommandLogEntry;");
+        executeSql(databaseName, "DROP TABLE IF EXISTS util.LogicalTypeTableMapping;");
+
         executeSql(databaseName, "CREATE TABLE causewayExtCommandLog.CommandLogEntry (interactionId UNIQUEIDENTIFIER NOT NULL PRIMARY KEY, executeIn VARCHAR(10) NOT NULL, logicalMemberIdentifier VARCHAR(255) NOT NULL, [timestamp] DATETIME2 NOT NULL, target VARCHAR(1500) NOT NULL, replayState VARCHAR(20) NOT NULL);");
+        executeSql(databaseName, "CREATE TABLE causewayExtAuditTrail.AuditTrailEntry (interactionId UNIQUEIDENTIFIER NOT NULL, sequence INT NOT NULL, target VARCHAR(1500) NOT NULL, propertyId VARCHAR(100) NOT NULL, CONSTRAINT PK_AuditTrailEntry PRIMARY KEY (interactionId, sequence, target, propertyId));");
+        executeSql(databaseName, "CREATE TABLE util.LogicalTypeTableMapping (logicalTypeName NVARCHAR(255) NULL, qualifiedName NVARCHAR(255) NOT NULL);");
 
         if (databaseName.contains("left")) {
             executeSql(databaseName, "INSERT INTO dbo." + ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('SUP-001','Supplier One', SYSDATETIME()), ('SUP-002','Supplier Two L', SYSDATETIME());");
