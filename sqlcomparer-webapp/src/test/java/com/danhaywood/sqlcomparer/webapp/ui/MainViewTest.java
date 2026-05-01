@@ -15,6 +15,7 @@ import com.danhaywood.sqlcomparer.webapp.auth.WebappAuthenticationService;
 import com.danhaywood.sqlcomparer.webapp.comparison.WebappComparisonExecutionService;
 import com.danhaywood.sqlcomparer.webapp.config.WebappComparisonProperties;
 import com.danhaywood.sqlcomparer.webapp.selection.CommandCatalogEntry;
+import com.danhaywood.sqlcomparer.webapp.selection.CommandDrivenTableSelectionService;
 import com.danhaywood.sqlcomparer.webapp.selection.SqlServerCommandCatalogService;
 import com.danhaywood.sqlcomparer.webapp.selection.SqlServerTableCatalogService;
 import com.danhaywood.sqlcomparer.webapp.selection.TableCatalogEntry;
@@ -36,6 +37,7 @@ import org.mockito.Mockito;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -160,6 +162,22 @@ class MainViewTest {
 
         assertThat(view.selectedCommandInteractionIdsForStageOne())
                 .containsExactly("11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222");
+    }
+
+    @Test
+    void preselectedCommandsCanDriveInitialBusinessTableSelection() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithPreselectedEntries(),
+                commandDrivenSelectionServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        assertThat(view.selectedTablesForStageTwo())
+                .containsExactly(new TableRef("dbo", "Supplier"), new TableRef("dbo", "Product"));
     }
 
     @Test
@@ -508,6 +526,30 @@ class MainViewTest {
                 new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "EXPORTED", "FOREGROUND", "2026-04-05T10:00:00.000", true),
                 new CommandCatalogEntry("22222222-2222-2222-2222-222222222222", "supplier.Supplier#updateName", "supplier.Supplier:302", "EXPORTED", "FOREGROUND", "2026-04-05T10:30:00.000", true),
                 new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "PENDING", "FOREGROUND", "2026-04-05T11:00:00.000", false)));
+        return service;
+    }
+
+    private CommandDrivenTableSelectionService commandDrivenSelectionServiceWithDefaults() {
+        final CommandDrivenTableSelectionService service = mock(CommandDrivenTableSelectionService.class);
+        when(service.resolveTouchedBusinessTables(Mockito.any(), Mockito.anyList()))
+                .thenAnswer(invocation -> {
+                    @SuppressWarnings("unchecked")
+                    final List<String> interactionIds = (List<String>) invocation.getArgument(0);
+                    if (interactionIds == null || interactionIds.isEmpty()) {
+                        return Set.of();
+                    }
+                    if (interactionIds.contains("11111111-1111-1111-1111-111111111111")
+                            && interactionIds.contains("22222222-2222-2222-2222-222222222222")) {
+                        return Set.of(new TableRef("dbo", "Supplier"), new TableRef("dbo", "Product"));
+                    }
+                    if (interactionIds.contains("11111111-1111-1111-1111-111111111111")) {
+                        return Set.of(new TableRef("dbo", "Supplier"));
+                    }
+                    if (interactionIds.contains("22222222-2222-2222-2222-222222222222")) {
+                        return Set.of(new TableRef("dbo", "Product"));
+                    }
+                    return Set.of();
+                });
         return service;
     }
 

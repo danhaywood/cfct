@@ -4,19 +4,28 @@ import com.danhaywood.sqlcomparer.model.TableRef;
 
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ManualTableSelectionState {
 
     private final Map<TableRef, TableCatalogEntry> entriesByTable = new LinkedHashMap<>();
+    private final Set<TableRef> manualIncludedTables = new LinkedHashSet<>();
+    private final Set<TableRef> manualExcludedTables = new LinkedHashSet<>();
+    private final Set<TableRef> programmaticSelectedTables = new LinkedHashSet<>();
 
     public ManualTableSelectionState(final List<TableCatalogEntry> entries) {
         for (TableCatalogEntry entry : entries) {
             entriesByTable.put(entry.table(), entry);
+            if (entry.selected() && entry.eligible()) {
+                manualIncludedTables.add(entry.table());
+            }
         }
+        recomputeSelectionFlags();
     }
 
     public void updateSelection(final TableRef table, final boolean selected) {
@@ -24,7 +33,26 @@ public class ManualTableSelectionState {
         if (current == null || !current.eligible()) {
             return;
         }
-        entriesByTable.put(table, new TableCatalogEntry(current.table(), true, null, selected));
+        if (selected) {
+            manualIncludedTables.add(table);
+            manualExcludedTables.remove(table);
+        } else {
+            manualIncludedTables.remove(table);
+            manualExcludedTables.add(table);
+        }
+        recomputeSelectionFlags();
+    }
+
+    public void applyProgrammaticSelections(final Set<TableRef> touchedTables) {
+        final Set<TableRef> normalized = touchedTables == null ? Set.of() : touchedTables;
+        programmaticSelectedTables.clear();
+        for (TableRef table : normalized) {
+            final TableCatalogEntry current = entriesByTable.get(table);
+            if (current != null && current.eligible()) {
+                programmaticSelectedTables.add(table);
+            }
+        }
+        recomputeSelectionFlags();
     }
 
     public boolean isSelected(final TableRef table) {
@@ -74,5 +102,23 @@ public class ManualTableSelectionState {
 
     public String feedbackText() {
         return "Selected tables: " + selectedCount();
+    }
+
+    private void recomputeSelectionFlags() {
+        for (Map.Entry<TableRef, TableCatalogEntry> mapEntry : entriesByTable.entrySet()) {
+            final TableRef table = mapEntry.getKey();
+            final TableCatalogEntry current = mapEntry.getValue();
+            if (!current.eligible()) {
+                entriesByTable.put(table, new TableCatalogEntry(current.table(), false, current.eligibilityReason(), false));
+                continue;
+            }
+            final boolean selected = isSelectedByAnySource(table);
+            entriesByTable.put(table, new TableCatalogEntry(current.table(), true, null, selected));
+        }
+    }
+
+    private boolean isSelectedByAnySource(final TableRef table) {
+        final boolean included = programmaticSelectedTables.contains(table) || manualIncludedTables.contains(table);
+        return included && !manualExcludedTables.contains(table);
     }
 }

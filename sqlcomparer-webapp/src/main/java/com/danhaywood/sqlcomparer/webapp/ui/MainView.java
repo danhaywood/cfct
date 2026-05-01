@@ -13,6 +13,7 @@ import com.danhaywood.sqlcomparer.webapp.comparison.WebappComparisonExecutionSer
 import com.danhaywood.sqlcomparer.webapp.config.WebappComparisonProperties;
 import com.danhaywood.sqlcomparer.webapp.selection.CommandCatalogEntry;
 import com.danhaywood.sqlcomparer.webapp.selection.CommandSelectionState;
+import com.danhaywood.sqlcomparer.webapp.selection.CommandDrivenTableSelectionService;
 import com.danhaywood.sqlcomparer.webapp.selection.ManualTableSelectionState;
 import com.danhaywood.sqlcomparer.webapp.selection.SqlServerCommandCatalogService;
 import com.danhaywood.sqlcomparer.webapp.selection.SqlServerTableCatalogService;
@@ -20,6 +21,8 @@ import com.danhaywood.sqlcomparer.webapp.selection.TableCatalogEntry;
 import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationState;
 import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationStatus;
 import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationStatusHolder;
+
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
@@ -75,6 +78,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final WebappAuthenticationService authenticationService;
     private final SqlServerTableCatalogService tableCatalogService;
     private final SqlServerCommandCatalogService commandCatalogService;
+    private final CommandDrivenTableSelectionService commandDrivenTableSelectionService;
     private final ConnectionValidationStatusHolder statusHolder;
     private final WebappComparisonProperties properties;
 
@@ -109,11 +113,33 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             final WebappComparisonExecutionService comparisonExecutionService,
             final AuthenticatedConnectionContextHolder authenticatedContextHolder,
             final WebappAuthenticationService authenticationService) {
+        this(
+                statusHolder,
+                tableCatalogService,
+                commandCatalogService,
+                new CommandDrivenTableSelectionService(),
+                properties,
+                comparisonExecutionService,
+                authenticatedContextHolder,
+                authenticationService);
+    }
+
+    @Autowired
+    public MainView(
+            final ConnectionValidationStatusHolder statusHolder,
+            final SqlServerTableCatalogService tableCatalogService,
+            final SqlServerCommandCatalogService commandCatalogService,
+            final CommandDrivenTableSelectionService commandDrivenTableSelectionService,
+            final WebappComparisonProperties properties,
+            final WebappComparisonExecutionService comparisonExecutionService,
+            final AuthenticatedConnectionContextHolder authenticatedContextHolder,
+            final WebappAuthenticationService authenticationService) {
         this.comparisonExecutionService = comparisonExecutionService;
         this.authenticatedContextHolder = authenticatedContextHolder;
         this.authenticationService = authenticationService;
         this.tableCatalogService = tableCatalogService;
         this.commandCatalogService = commandCatalogService;
+        this.commandDrivenTableSelectionService = commandDrivenTableSelectionService;
         this.statusHolder = statusHolder;
         this.properties = properties;
 
@@ -125,6 +151,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         this.commandSelectionState = new CommandSelectionState(commandCatalogEntries);
         this.selectionDataProvider = new ListDataProvider<>(tableCatalogEntries);
         this.commandSelectionDataProvider = new ListDataProvider<>(commandCatalogEntries);
+        applyCommandDrivenSelection();
 
         setPrimarySection(Section.DRAWER);
         getElement().setAttribute("data-testid", "main-app-layout");
@@ -415,7 +442,10 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             checkbox.setEnabled(authenticatedContextHolder.isAuthenticated());
             checkbox.setValue(commandSelectionState.isSelected(entry.interactionId()));
             checkbox.getElement().setAttribute("data-testid", "command-checkbox-" + entry.interactionId().toLowerCase(Locale.ROOT));
-            checkbox.addValueChangeListener(event -> commandSelectionState.updateSelection(entry.interactionId(), event.getValue()));
+            checkbox.addValueChangeListener(event -> {
+                commandSelectionState.updateSelection(entry.interactionId(), event.getValue());
+                applyCommandDrivenSelection();
+            });
             return checkbox;
         })).setHeader("").setAutoWidth(true).setFlexGrow(0).setTextAlign(ColumnTextAlign.CENTER);
 
@@ -464,6 +494,14 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         if (value != null && !value.isBlank()) {
             dataProvider.addFilter(entry -> selectionState.matchesFilter(entry, value));
         }
+    }
+
+    private void applyCommandDrivenSelection() {
+        final List<String> selectedInteractionIds = commandSelectionState.selectedInteractionIds();
+        final var touchedTables = commandDrivenTableSelectionService.resolveTouchedBusinessTables(selectedInteractionIds, tableCatalogEntries);
+        selectionState.applyProgrammaticSelections(touchedTables);
+        selectionDataProvider.refreshAll();
+        compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
     }
 
     private void executeComparison() {
@@ -733,6 +771,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         selectionState = new ManualTableSelectionState(tableCatalog);
         commandSelectionState = new CommandSelectionState(commandCatalog);
+        applyCommandDrivenSelection();
 
         tableCatalogEntries.clear();
         tableCatalogEntries.addAll(tableCatalog);
@@ -747,6 +786,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private void clearTableCatalog() {
         selectionState = new ManualTableSelectionState(List.of());
         commandSelectionState = new CommandSelectionState(List.of());
+        applyCommandDrivenSelection();
         tableCatalogEntries.clear();
         commandCatalogEntries.clear();
         selectionDataProvider.refreshAll();

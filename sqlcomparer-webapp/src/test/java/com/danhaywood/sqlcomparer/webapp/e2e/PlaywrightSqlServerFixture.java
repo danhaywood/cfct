@@ -14,6 +14,7 @@ final class PlaywrightSqlServerFixture {
     static final String SECOND_ELIGIBLE_TABLE = "Product";
     static final String INELIGIBLE_TABLE = "PurchaseOrderWithoutBusinessKey";
     static final String COMMAND_INTERACTION_ID = "11111111-1111-1111-1111-111111111111";
+    static final String SECOND_COMMAND_INTERACTION_ID = "22222222-2222-2222-2222-222222222222";
 
     private static final MSSQLServerContainer<?> SQL_SERVER = new MSSQLServerContainer<>(
             DockerImageName.parse("mcr.microsoft.com/mssql/server:2022-latest"))
@@ -72,7 +73,12 @@ final class PlaywrightSqlServerFixture {
         if (databaseName.contains("left")) {
             executeSql(databaseName, "INSERT INTO dbo." + ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('SUP-001','Supplier One', SYSDATETIME()), ('SUP-002','Supplier Two L', SYSDATETIME());");
             executeSql(databaseName, "INSERT INTO dbo." + SECOND_ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('PRD-001','Product One', SYSDATETIME()), ('PRD-LEFT','Product Left Only', SYSDATETIME());");
-            executeSql(databaseName, "INSERT INTO causewayExtCommandLog.CommandLogEntry (interactionId, executeIn, logicalMemberIdentifier, [timestamp], target, replayState) VALUES ('" + COMMAND_INTERACTION_ID + "', 'FOREGROUND', 'supplier.Supplier#registerProduct', SYSDATETIME(), 'supplier.Supplier:301', 'EXPORTED');");
+
+            executeSql(databaseName, "INSERT INTO util.LogicalTypeTableMapping (logicalTypeName, qualifiedName) VALUES ('supplier.Supplier', 'dbo.Supplier'), ('product.Product', 'dbo.Product');");
+            executeSql(databaseName, "INSERT INTO causewayExtCommandLog.CommandLogEntry (interactionId, executeIn, logicalMemberIdentifier, [timestamp], target, replayState) VALUES ('" + COMMAND_INTERACTION_ID + "', 'FOREGROUND', 'supplier.Supplier#registerProduct', DATEADD(SECOND, -1, SYSDATETIME()), 'supplier.Supplier:301', 'EXPORTED');");
+            executeSql(databaseName, "INSERT INTO causewayExtCommandLog.CommandLogEntry (interactionId, executeIn, logicalMemberIdentifier, [timestamp], target, replayState) VALUES ('" + SECOND_COMMAND_INTERACTION_ID + "', 'FOREGROUND', 'product.Product#changeStatus', SYSDATETIME(), 'product.Product:701', 'EXPORTED');");
+            executeSql(databaseName, "INSERT INTO causewayExtAuditTrail.AuditTrailEntry (interactionId, sequence, target, propertyId) VALUES ('" + COMMAND_INTERACTION_ID + "', 1, 'supplier.Supplier:301', 'name');");
+            executeSql(databaseName, "INSERT INTO causewayExtAuditTrail.AuditTrailEntry (interactionId, sequence, target, propertyId) VALUES ('" + SECOND_COMMAND_INTERACTION_ID + "', 1, 'product.Product:701', 'name');");
         } else {
             executeSql(databaseName, "INSERT INTO dbo." + ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('SUP-001','Supplier One', SYSDATETIME()), ('SUP-002','Supplier Two R', SYSDATETIME());");
             executeSql(databaseName, "INSERT INTO dbo." + SECOND_ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('PRD-001','Product One Changed', SYSDATETIME()), ('PRD-RIGHT','Product Right Only', SYSDATETIME());");

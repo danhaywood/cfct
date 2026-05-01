@@ -5,6 +5,7 @@ import com.danhaywood.sqlcomparer.model.TableRef;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -69,5 +70,37 @@ class ManualTableSelectionStateTest {
         assertThat(state.entriesSortedByTableName("dbo", false))
                 .extracting(entry -> entry.table().displayName())
                 .containsExactly("dbo.Supplier", "dbo.PurchaseOrder", "dbo.Address");
+    }
+
+    @Test
+    void appliesProgrammaticSelectionAndKeepsManualSelectionWhenProgrammaticIsCleared() {
+        final TableRef supplier = new TableRef("dbo", "Supplier");
+        final TableRef product = new TableRef("dbo", "Product");
+        final ManualTableSelectionState state = new ManualTableSelectionState(List.of(
+                TableCatalogEntry.eligible(supplier),
+                TableCatalogEntry.eligible(product)));
+
+        state.updateSelection(supplier, true);
+        state.applyProgrammaticSelections(Set.of(product));
+
+        assertThat(state.selectedTables()).containsExactly(supplier, product);
+
+        state.applyProgrammaticSelections(Set.of());
+
+        assertThat(state.selectedTables()).containsExactly(supplier);
+    }
+
+    @Test
+    void manualDeselectionOverridesProgrammaticSelection() {
+        final TableRef supplier = new TableRef("dbo", "Supplier");
+        final ManualTableSelectionState state = new ManualTableSelectionState(List.of(
+                TableCatalogEntry.eligible(supplier)));
+
+        state.applyProgrammaticSelections(Set.of(supplier));
+        assertThat(state.isSelected(supplier)).isTrue();
+
+        state.updateSelection(supplier, false);
+
+        assertThat(state.isSelected(supplier)).isFalse();
     }
 }

@@ -83,7 +83,12 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             assertThat(compareTop).isLessThan(tableGridTop);
 
             final String commandGridText = page.locator("[data-testid='command-selection-grid']").innerText();
-            assertThat(commandGridText).contains("Timestamp", "Member", "Interaction", PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID);
+            assertThat(commandGridText).contains(
+                    "Timestamp",
+                    "Member",
+                    "Interaction",
+                    PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID,
+                    PlaywrightSqlServerFixture.SECOND_COMMAND_INTERACTION_ID);
             assertThat(commandGridText.indexOf("Timestamp")).isLessThan(commandGridText.indexOf("Member"));
             assertThat(commandGridText.indexOf("Member")).isLessThan(commandGridText.indexOf("Interaction"));
 
@@ -108,6 +113,22 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             setCommandInteractionFilter(page, PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.substring(0, 8));
             page.waitForFunction("() => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('11111111-1111-1111-1111-111111111111')");
             setCommandInteractionFilter(page, "");
+
+            toggleCheckbox(page, "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.toLowerCase() + "']");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-supplier\"]').checked === true");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-product\"]').checked !== true");
+
+            toggleCheckbox(page, "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.SECOND_COMMAND_INTERACTION_ID.toLowerCase() + "']");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-supplier\"]').checked === true");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-product\"]').checked === true");
+
+            toggleCheckbox(page, "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.toLowerCase() + "']");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-supplier\"]').checked !== true");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-product\"]').checked === true");
+
+            toggleCheckbox(page, "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.SECOND_COMMAND_INTERACTION_ID.toLowerCase() + "']");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-supplier\"]').checked !== true");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-product\"]').checked !== true");
 
             setFilter(page, PlaywrightSqlServerFixture.ELIGIBLE_TABLE);
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('Supplier') && !document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PurchaseOrderWithoutBusinessKey')");
