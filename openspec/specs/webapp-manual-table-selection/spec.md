@@ -6,6 +6,7 @@ TBD - created by archiving change add-webapp-manual-table-selection-panel. Updat
 ### Requirement: Webapp exposes a manual table catalog for selection
 The webapp SHALL discover and present a manual table catalog for comparison selection.
 The webapp SHALL present the catalog in a Vaadin Grid in the AppLayout navigation area.
+The manual table-selection grid SHALL be positioned below the command-selection grid when both sections are present.
 Each catalog row SHALL include table identity.
 The Grid SHALL NOT include a dedicated eligibility column.
 The Grid SHALL make ineligible rows non-selectable and expose the eligibility reason as a tooltip.
@@ -48,6 +49,10 @@ The manual selection state SHALL be available as input to the later comparison-e
 #### Scenario: Selected tables become execution input
 - **WHEN** a user marks eligible tables as selected
 - **THEN** the resulting selected-table set is available as the stage-one output for comparison execution
+
+#### Scenario: Manual table grid remains below command selection
+- **WHEN** command selection and manual table selection sections are both visible
+- **THEN** the manual table-selection grid is rendered below the command-selection grid
 
 ### Requirement: Manual selection supports future auto-selection overlays
 The manual selection model SHALL support future auto-selection defaults with user include and exclude overrides.
