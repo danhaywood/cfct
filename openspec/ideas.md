@@ -22,24 +22,9 @@ Until then, ideas here are notes only and do not represent current system behavi
 ### New features
 
 
-- /opsx-propose: next, we need to think about mapping the logical identifiers in the command/audit tables to the physical tables.  
- 
-  ```
-  IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = '_util')
-      EXEC('CREATE SCHEMA _util');
-  
-  IF OBJECT_ID(N'_util.LogicalTypeTableMapping', N'U') IS NULL
-  BEGIN
-      CREATE TABLE _util.LogicalTypeTableMapping (
-          logicalTypeName NVARCHAR(255) NULL,
-          qualifiedName NVARCHAR(255) NOT NULL    -- qualified table name
-      );
-  END;
-  ```
-  a logical type typically maps to a single table, but there could be multiple rows, eg if there's inheritance with NEW_TABLE defined for both super and subclass tables.
+- /opsx-propose: we now have the command/audit table and the mapping table from logical identifiers to table.  Now let's have a repository service of some sort that can be passed in one or more command interactionIds, and then use that to join to the audit, and from the audit's target, parse out the logical type name (format: logicalTypeName:id, eg "customer.Customer:123") and via the mapping table identify the table(s) touched.
 
-  Extend the fixtures to set up these tables and to populate them with appropriate data.  
-
+In other words: command(s) -> audit entries -> logical types names thereof -> table(s)
 
 - /opsx-propose: extend the library so that it can perform comparisons multi-threaded, each table in its own thread, rather than one at a time.  To support this, there will (I imagine) need to be a connection pool / DataSource.  The size of this pool should be specified as a cli argument, or read from a config property
 - /opsx-propose: extend the library so that it can provide progress, and update the CLI to use this, by printing out as each table is compared.  I would imagine that the library will allow a callback to be registered, and the CLI registers an appropriate implementation.
