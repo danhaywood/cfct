@@ -1,0 +1,6 @@
+scenario: single interaction
+interactionIds:
+- 11111111-1111-1111-1111-111111111111
+touchedTables:
+- dbo.Product
+- dbo.ProductInventory

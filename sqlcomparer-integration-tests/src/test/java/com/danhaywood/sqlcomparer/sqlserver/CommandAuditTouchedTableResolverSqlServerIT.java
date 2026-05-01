@@ -2,18 +2,23 @@ package com.danhaywood.sqlcomparer.sqlserver;
 
 import com.danhaywood.sqlcomparer.harness.DatabaseSide;
 import com.danhaywood.sqlcomparer.harness.SqlServerTestHarness;
+import org.approvaltests.Approvals;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
+import java.util.Collection;
 import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.SortedSet;
 
 @Tag("integration")
 class CommandAuditTouchedTableResolverSqlServerIT {
+
+    private static final String REGISTER_PRODUCT_INTERACTION_ID = "11111111-1111-1111-1111-111111111111";
+    private static final String SUPPLIER_UPDATE_INTERACTION_ID = "22222222-2222-2222-2222-222222222222";
+    private static final String PRODUCT_STATUS_INTERACTION_ID = "33333333-3333-3333-3333-333333333333";
 
     private static SqlServerTestHarness harness;
 
@@ -32,55 +37,51 @@ class CommandAuditTouchedTableResolverSqlServerIT {
     }
 
     @Test
-    void resolvesTouchedTablesForSingleInteraction() throws Exception {
+    void approvesTouchedTablesForSingleInteraction() throws Exception {
         initializeFixture("purchase-order");
 
+        final List<String> interactionIds = List.of(REGISTER_PRODUCT_INTERACTION_ID);
+        final SortedSet<String> touchedTables;
         try (Connection connection = harness.openConnection(DatabaseSide.LEFT)) {
-            assertThat(resolver.resolveTouchedQualifiedTableNames(connection,
-                    List.of("11111111-1111-1111-1111-111111111111")))
-                    .containsExactly("dbo.Product", "dbo.ProductInventory");
+            touchedTables = resolver.resolveTouchedQualifiedTableNames(connection, interactionIds);
         }
+
+        Approvals.verify(renderResolution("single interaction", interactionIds, touchedTables));
     }
 
     @Test
-    void resolvesDistinctDeterministicUnionAcrossMultipleInteractions() throws Exception {
+    void approvesTouchedTablesForMultipleInteractionsUnion() throws Exception {
         initializeFixture("purchase-order");
-        seedAdditionalInteractions(DatabaseSide.LEFT);
+        harness.initializeFromResource(DatabaseSide.LEFT, "/sql/fixtures/purchase-order/left-extra-command-audit-interactions.sql");
 
+        final List<String> interactionIds = List.of(
+                REGISTER_PRODUCT_INTERACTION_ID,
+                SUPPLIER_UPDATE_INTERACTION_ID,
+                PRODUCT_STATUS_INTERACTION_ID);
+
+        final SortedSet<String> touchedTables;
         try (Connection connection = harness.openConnection(DatabaseSide.LEFT)) {
-            assertThat(resolver.resolveTouchedQualifiedTableNames(connection,
-                    List.of(
-                            "11111111-1111-1111-1111-111111111111",
-                            "22222222-2222-2222-2222-222222222222",
-                            "33333333-3333-3333-3333-333333333333")))
-                    .containsExactly("dbo.Product", "dbo.ProductInventory", "dbo.Supplier");
+            touchedTables = resolver.resolveTouchedQualifiedTableNames(connection, interactionIds);
         }
+
+        Approvals.verify(renderResolution("multiple interactions", interactionIds, touchedTables));
     }
 
-    private static void seedAdditionalInteractions(final DatabaseSide side) {
-        harness.executeScript(side, """
-                INSERT INTO causewayExtCommandLog.CommandLogEntry (
-                    interactionId,
-                    executeIn,
-                    logicalMemberIdentifier,
-                    [timestamp],
-                    target,
-                    replayState
-                ) VALUES
-                    ('22222222-2222-2222-2222-222222222222', 'FOREGROUND', 'supplier.Supplier#updateName', '2026-04-05T10:30:00.000', 'supplier.Supplier:302', 'EXPORTED'),
-                    ('33333333-3333-3333-3333-333333333333', 'FOREGROUND', 'product.Product#changeStatus', '2026-04-05T11:00:00.000', 'product.Product:702', 'EXPORTED');
-
-                INSERT INTO causewayExtAuditTrail.AuditTrailEntry (
-                    interactionId,
-                    sequence,
-                    target,
-                    propertyId
-                ) VALUES
-                    ('22222222-2222-2222-2222-222222222222', 1, 'supplier.Supplier:302', 'name'),
-                    ('22222222-2222-2222-2222-222222222222', 2, 'malformedTargetWithoutSeparator', 'ignored'),
-                    ('22222222-2222-2222-2222-222222222222', 3, 'unknown.Type:1', 'ignored'),
-                    ('33333333-3333-3333-3333-333333333333', 1, 'product.Product:702', 'status');
-                """);
+    private static String renderResolution(
+            final String scenario,
+            final Collection<String> interactionIds,
+            final SortedSet<String> touchedTables) {
+        return """
+                scenario: %s
+                interactionIds:
+                %s
+                touchedTables:
+                %s
+                """.formatted(
+                scenario,
+                interactionIds.stream().map(id -> "- " + id).reduce((a, b) -> a + "\n" + b).orElse("(none)"),
+                touchedTables.stream().map(table -> "- " + table).reduce((a, b) -> a + "\n" + b).orElse("(none)")
+        );
     }
 
     private static void initializeFixture(final String fixtureName) {
