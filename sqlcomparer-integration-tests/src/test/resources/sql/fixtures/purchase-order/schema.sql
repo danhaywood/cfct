@@ -1,3 +1,13 @@
+DROP TABLE IF EXISTS dbo.PurchaseOrderLine;
+GO
+DROP TABLE IF EXISTS dbo.ProductInventory;
+GO
+DROP TABLE IF EXISTS dbo.Product;
+GO
+DROP TABLE IF EXISTS dbo.Supplier;
+GO
+DROP TABLE IF EXISTS dbo.Customer;
+GO
 DROP TABLE IF EXISTS dbo.PurchaseOrder;
 GO
 IF SCHEMA_ID('causewayExtCommandLog') IS NULL EXEC('CREATE SCHEMA causewayExtCommandLog');
@@ -10,6 +20,41 @@ DROP TABLE IF EXISTS causewayExtAuditTrail.AuditTrailEntry;
 GO
 DROP TABLE IF EXISTS causewayExtCommandLog.CommandLogEntry;
 GO
+CREATE TABLE dbo.Supplier (
+    id INT NOT NULL CONSTRAINT PK_Supplier PRIMARY KEY,
+    reference NVARCHAR(40) NOT NULL,
+    name NVARCHAR(100) NOT NULL,
+    status NVARCHAR(20) NOT NULL,
+    country_code CHAR(2) NOT NULL,
+    [version] DATETIME2(3) NOT NULL
+);
+GO
+CREATE TABLE dbo.Product (
+    id INT NOT NULL CONSTRAINT PK_Product PRIMARY KEY,
+    sku NVARCHAR(40) NOT NULL,
+    name NVARCHAR(100) NOT NULL,
+    category NVARCHAR(40) NOT NULL,
+    unit_price DECIMAL(18,2) NOT NULL,
+    status NVARCHAR(20) NOT NULL,
+    [version] DATETIME2(3) NOT NULL
+);
+GO
+CREATE TABLE dbo.ProductInventory (
+    id INT NOT NULL CONSTRAINT PK_ProductInventory PRIMARY KEY,
+    sku NVARCHAR(40) NOT NULL,
+    quantity_on_hand INT NOT NULL,
+    warehouse_code NVARCHAR(20) NOT NULL,
+    [version] DATETIME2(3) NOT NULL
+);
+GO
+CREATE TABLE dbo.Customer (
+    id INT NOT NULL CONSTRAINT PK_Customer PRIMARY KEY,
+    customer_number NVARCHAR(40) NOT NULL,
+    name NVARCHAR(100) NOT NULL,
+    tier NVARCHAR(20) NOT NULL,
+    [version] DATETIME2(3) NOT NULL
+);
+GO
 CREATE TABLE dbo.PurchaseOrder (
     id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PurchaseOrder PRIMARY KEY,
     reference NVARCHAR(40) NOT NULL,
@@ -20,6 +65,16 @@ CREATE TABLE dbo.PurchaseOrder (
     net_amount DECIMAL(18,2) NOT NULL,
     tax_amount DECIMAL(18,2) NOT NULL,
     gross_amount DECIMAL(18,2) NOT NULL,
+    [version] DATETIME2(3) NOT NULL
+);
+GO
+CREATE TABLE dbo.PurchaseOrderLine (
+    id INT NOT NULL CONSTRAINT PK_PurchaseOrderLine PRIMARY KEY,
+    line_reference NVARCHAR(40) NOT NULL,
+    purchase_order_reference NVARCHAR(40) NOT NULL,
+    sku NVARCHAR(40) NOT NULL,
+    quantity INT NOT NULL,
+    unit_price DECIMAL(18,2) NOT NULL,
     [version] DATETIME2(3) NOT NULL
 );
 GO
@@ -52,6 +107,15 @@ BEGIN
     );
 END;
 GO
-CREATE UNIQUE INDEX PurchaseOrder_PK
-ON dbo.PurchaseOrder(reference);
+CREATE UNIQUE INDEX Supplier_PK ON dbo.Supplier(reference);
+GO
+CREATE UNIQUE INDEX Product_PK ON dbo.Product(sku);
+GO
+CREATE UNIQUE INDEX ProductInventory_PK ON dbo.ProductInventory(sku);
+GO
+CREATE UNIQUE INDEX Customer_PK ON dbo.Customer(customer_number);
+GO
+CREATE UNIQUE INDEX PurchaseOrder_PK ON dbo.PurchaseOrder(reference);
+GO
+CREATE UNIQUE INDEX PurchaseOrderLine_PK ON dbo.PurchaseOrderLine(line_reference);
 GO

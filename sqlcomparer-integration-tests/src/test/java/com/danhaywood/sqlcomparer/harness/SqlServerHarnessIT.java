@@ -173,6 +173,29 @@ class SqlServerHarnessIT {
                 .isEqualTo("dbo.Product,dbo.ProductInventory");
     }
 
+    @ParameterizedTest
+    @EnumSource(DatabaseSide.class)
+    void purchaseOrderFixtureSeedsAdditionalCommandAuditAndBusinessData(final DatabaseSide side) {
+        initializeFixture("purchase-order");
+
+        assertThat(harness.queryForInt(side, tableExistsSql("Supplier"))).isEqualTo(1);
+        assertThat(harness.queryForInt(side, tableExistsSql("Product"))).isEqualTo(1);
+        assertThat(harness.queryForInt(side, tableExistsSql("ProductInventory"))).isEqualTo(1);
+        assertThat(harness.queryForInt(side, tableExistsSql("Customer"))).isEqualTo(1);
+        assertThat(harness.queryForInt(side, tableExistsSql("PurchaseOrderLine"))).isEqualTo(1);
+
+        assertThat(harness.queryForInt(side, tableRowCountSql("Supplier"))).isEqualTo(3);
+        assertThat(harness.queryForInt(side, tableRowCountSql("Product"))).isEqualTo(3);
+        assertThat(harness.queryForInt(side, tableRowCountSql("ProductInventory"))).isEqualTo(3);
+        assertThat(harness.queryForInt(side, tableRowCountSql("Customer"))).isEqualTo(2);
+        final int expectedPurchaseOrderLineCount = side == DatabaseSide.LEFT ? 3 : 2;
+        assertThat(harness.queryForInt(side, tableRowCountSql("PurchaseOrderLine"))).isEqualTo(expectedPurchaseOrderLineCount);
+
+        assertThat(harness.queryForInt(side, commandLogRowCountSql())).isEqualTo(5);
+        final int expectedAuditTrailRowCount = side == DatabaseSide.LEFT ? 9 : 5;
+        assertThat(harness.queryForInt(side, auditTrailRowCountSql())).isEqualTo(expectedAuditTrailRowCount);
+    }
+
     private static void initializeFixture(final String fixtureName) {
         initializeFixture(DatabaseSide.LEFT, fixtureName, "/sql/fixtures/%s/left-data.sql".formatted(fixtureName));
         initializeFixture(DatabaseSide.RIGHT, fixtureName, "/sql/fixtures/%s/right-data.sql".formatted(fixtureName));
@@ -351,6 +374,27 @@ class SqlServerHarnessIT {
                 FROM util.LogicalTypeTableMapping
                 WHERE logicalTypeName = '%s'
                 """.formatted(logicalTypeName);
+    }
+
+    private static String commandLogRowCountSql() {
+        return """
+                SELECT COUNT(*)
+                FROM causewayExtCommandLog.CommandLogEntry
+                """;
+    }
+
+    private static String auditTrailRowCountSql() {
+        return """
+                SELECT COUNT(*)
+                FROM causewayExtAuditTrail.AuditTrailEntry
+                """;
+    }
+
+    private static String tableRowCountSql(final String tableName) {
+        return """
+                SELECT COUNT(*)
+                FROM dbo.%s
+                """.formatted(tableName);
     }
 
     private static String purchaseOrderRowversionColumnCountSql() {
