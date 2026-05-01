@@ -419,18 +419,24 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             return checkbox;
         })).setHeader("").setAutoWidth(true).setFlexGrow(0).setTextAlign(ColumnTextAlign.CENTER);
 
-        grid.addColumn(CommandCatalogEntry::interactionId)
-                .setHeader("Interaction")
+        grid.addColumn(CommandCatalogEntry::timestamp)
+                .setHeader("Timestamp")
                 .setSortable(true)
-                .setComparator(Comparator.comparing(CommandCatalogEntry::interactionId, String.CASE_INSENSITIVE_ORDER))
+                .setComparator(Comparator.comparing(CommandCatalogEntry::timestamp, String.CASE_INSENSITIVE_ORDER))
                 .setAutoWidth(true)
-                .setKey("interaction");
+                .setKey("timestamp");
         grid.addColumn(CommandCatalogEntry::logicalMemberIdentifier)
                 .setHeader("Member")
                 .setSortable(true)
                 .setComparator(Comparator.comparing(CommandCatalogEntry::logicalMemberIdentifier, String.CASE_INSENSITIVE_ORDER))
                 .setAutoWidth(true)
                 .setKey("member");
+        grid.addColumn(CommandCatalogEntry::interactionId)
+                .setHeader("Interaction")
+                .setSortable(true)
+                .setComparator(Comparator.comparing(CommandCatalogEntry::interactionId, String.CASE_INSENSITIVE_ORDER))
+                .setAutoWidth(true)
+                .setKey("interaction");
 
         return grid;
     }

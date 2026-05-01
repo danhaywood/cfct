@@ -132,6 +132,22 @@ class MainViewTest {
     }
 
     @Test
+    void commandGridDisplaysTimestampMemberInteractionColumnsInOrder() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        final Grid<?> commandGrid = (Grid<?>) findByTestId(view, "command-selection-grid").orElseThrow();
+        final List<String> headers = commandGrid.getColumns().stream().map(Grid.Column::getHeaderText).toList();
+        assertThat(headers).containsExactly("", "Timestamp", "Member", "Interaction");
+    }
+
+    @Test
     void exposesSelectedCommandInteractionIdsForStageOne() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),

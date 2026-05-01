@@ -83,7 +83,9 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             assertThat(compareTop).isLessThan(tableGridTop);
 
             final String commandGridText = page.locator("[data-testid='command-selection-grid']").innerText();
-            assertThat(commandGridText).contains("Interaction", "Member", PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID);
+            assertThat(commandGridText).contains("Timestamp", "Member", "Interaction", PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID);
+            assertThat(commandGridText.indexOf("Timestamp")).isLessThan(commandGridText.indexOf("Member"));
+            assertThat(commandGridText.indexOf("Member")).isLessThan(commandGridText.indexOf("Interaction"));
 
             final double[] footerMetrics = footerStatusAlignmentMetrics(page);
             assertThat(footerMetrics[0]).isGreaterThan(footerMetrics[1]);

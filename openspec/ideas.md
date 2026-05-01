@@ -24,9 +24,17 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 - /opsx-propose: add timestamps to the command grid, display in order timestamp, member, interactionId.  
 
-- /opsx-propose: now, let's wire the selection grid of the commands to the selection of the business tables in the grid underneath.  
+- /opsx-propose: now, let's wire the selection grid of the commands to the selection of the business tables in the grid underneath.  Add a 'select' button below the selection grid; when clicked, evaluate the changed tables and select them in the selection grid below  
 
 - /opsx-propose: filter out the command, audit and logical type mapping tables form the business table grid
+
+- /opsx-propose: add a 'clear' button below the command selection grid.
+
+- /opsx-propose: add a 'clear' button below the business tables selection grid.
+
+- /opsx-propose: download --tables-file from selection
+
+- /opsx-propose: move compare button below the tables grid; make sure it is always visible even if browser is resized
 
 - /opsx-propose: extend the library so that it can perform comparisons multi-threaded, each table in its own thread, rather than one at a time.  To support this, there will (I imagine) need to be a connection pool / DataSource.  The size of this pool should be specified as a cli argument, or read from a config property
 - /opsx-propose: extend the library so that it can provide progress, and update the CLI to use this, by printing out as each table is compared.  I would imagine that the library will allow a callback to be registered, and the CLI registers an appropriate implementation.
