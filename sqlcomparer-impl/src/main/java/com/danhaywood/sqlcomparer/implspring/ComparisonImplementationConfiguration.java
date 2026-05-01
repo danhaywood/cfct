@@ -13,8 +13,10 @@ import com.danhaywood.sqlcomparer.service.MultiTableComparisonReportFormatter;
 import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
 import com.danhaywood.sqlcomparer.service.MultiTableComparisonViewService;
 import com.danhaywood.sqlcomparer.service.TableComparisonService;
+import com.danhaywood.sqlcomparer.spi.CommandAuditTouchedTableResolver;
 import com.danhaywood.sqlcomparer.spi.TableMetadataReader;
 import com.danhaywood.sqlcomparer.spi.TableRowReader;
+import com.danhaywood.sqlcomparer.sqlserver.CommandAuditTouchedTableResolverSqlServer;
 import com.danhaywood.sqlcomparer.sqlserver.TableMetadataReaderSqlServer;
 import com.danhaywood.sqlcomparer.sqlserver.TableRowReaderSqlServer;
 
@@ -38,6 +40,11 @@ public class ComparisonImplementationConfiguration {
     @Bean
     public TableRowReader tableRowReader() {
         return new TableRowReaderSqlServer();
+    }
+
+    @Bean
+    public CommandAuditTouchedTableResolver commandAuditTouchedTableResolver() {
+        return new CommandAuditTouchedTableResolverSqlServer();
     }
 
     @Bean
