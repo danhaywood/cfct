@@ -22,13 +22,13 @@ Until then, ideas here are notes only and do not represent current system behavi
 ### New features
 
 
-- /opsx-propose: add a 'clear' button below the command selection grid.  All the selections in both tables should be removed.
-
 - /opsx-propose: now, let's wire the command selection grid to the selection of the business tables in the grid underneath.  As each command is seleced, evaluate the changed tables and select them in the business table selection grid below.
 
-- /opsx-propose: download --tables-file from selection
+- /opsx-propose: move the 'compare' button below the business tables grid; make sure it is always visible even if browser is resized.  Add a spacer between the two tables.
 
-- /opsx-propose: move compare button below the tables grid; make sure it is always visible even if browser is resized
+- /opsx-propose: add a 'clear' button below the command selection grid.  All the selections in both tables should be removed.   Disable this if there are no rows selected.
+
+- /opsx-propose: add a 'download' button underneath the business tables grid, to the left of 'compare'; when clicked should download a file suitable to feed into CLI's --tables-file param.  Disable this if there are no rows selected.
 
 - /opsx-propose: extend the library so that it can perform comparisons multi-threaded, each table in its own thread, rather than one at a time.  To support this, there will (I imagine) need to be a connection pool / DataSource.  The size of this pool should be specified as a cli argument, or read from a config property
 - /opsx-propose: extend the library so that it can provide progress, and update the CLI to use this, by printing out as each table is compared.  I would imagine that the library will allow a callback to be registered, and the CLI registers an appropriate implementation.
