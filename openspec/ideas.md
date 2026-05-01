@@ -22,6 +22,8 @@ Until then, ideas here are notes only and do not represent current system behavi
 ### New features
 
 
+- /opsx-propose: add timestamps to the command grid, display in order timestamp, member, interactionId.  
+
 - /opsx-propose: now, let's wire the selection grid of the commands to the selection of the business tables in the grid underneath.  
 
 - /opsx-propose: filter out the command, audit and logical type mapping tables form the business table grid
