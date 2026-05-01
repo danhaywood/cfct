@@ -42,3 +42,16 @@ INSERT INTO causewayExtAuditTrail.AuditTrailEntry (
     ('11111111-1111-1111-1111-111111111111', 2, 'product.Product:701', 'name'),
     ('11111111-1111-1111-1111-111111111111', 3, 'product.Product:701', 'status');
 GO
+
+DELETE FROM util.LogicalTypeTableMapping
+WHERE logicalTypeName IN ('supplier.Supplier', 'product.Product');
+GO
+
+INSERT INTO util.LogicalTypeTableMapping (
+    logicalTypeName,
+    qualifiedName
+) VALUES
+    ('supplier.Supplier', 'dbo.Supplier'),
+    ('product.Product', 'dbo.Product'),
+    ('product.Product', 'dbo.ProductInventory');
+GO

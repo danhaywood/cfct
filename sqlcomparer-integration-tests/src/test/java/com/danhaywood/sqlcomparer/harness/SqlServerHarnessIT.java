@@ -106,6 +106,8 @@ class SqlServerHarnessIT {
                 .isEqualTo(1);
         assertThat(harness.queryForInt(side, tableExistsInSchemaSql("causewayExtAuditTrail", "AuditTrailEntry")))
                 .isEqualTo(1);
+        assertThat(harness.queryForInt(side, tableExistsInSchemaSql("util", "LogicalTypeTableMapping")))
+                .isEqualTo(1);
 
         assertThat(harness.queryForInt(side,
                 primaryKeyColumnExistsSql("causewayExtCommandLog", "CommandLogEntry", "interactionId", 1)))
@@ -127,6 +129,13 @@ class SqlServerHarnessIT {
         assertThat(harness.queryForInt(side,
                 foreignKeyExistsSql("causewayExtAuditTrail", "AuditTrailEntry", "FK_AuditTrailEntry_CommandLogEntry_InteractionId")))
                 .isEqualTo(1);
+
+        assertThat(harness.queryForInt(side,
+                columnExistsInSchemaSql("util", "LogicalTypeTableMapping", "logicalTypeName", "nvarchar")))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(side,
+                columnExistsInSchemaSql("util", "LogicalTypeTableMapping", "qualifiedName", "nvarchar")))
+                .isEqualTo(1);
     }
 
     @ParameterizedTest
@@ -146,6 +155,22 @@ class SqlServerHarnessIT {
         final int expectedAuditRowCount = side == DatabaseSide.LEFT ? 3 : 0;
         assertThat(harness.queryForInt(side, registerProductAuditProductTargetCountSql()))
                 .isEqualTo(expectedAuditRowCount);
+    }
+
+    @ParameterizedTest
+    @EnumSource(DatabaseSide.class)
+    void purchaseOrderFixtureSeedsLogicalTypeTableMappings(final DatabaseSide side) {
+        initializeFixture("purchase-order");
+
+        assertThat(harness.queryForInt(side, logicalTypeMappingCountSql("supplier.Supplier")))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(side, logicalTypeMappingCountSql("product.Product")))
+                .isEqualTo(2);
+
+        assertThat(harness.queryForString(side, logicalTypeQualifiedNamesSql("supplier.Supplier")))
+                .isEqualTo("dbo.Supplier");
+        assertThat(harness.queryForString(side, logicalTypeQualifiedNamesSql("product.Product")))
+                .isEqualTo("dbo.Product,dbo.ProductInventory");
     }
 
     private static void initializeFixture(final String fixtureName) {
@@ -247,6 +272,21 @@ class SqlServerHarnessIT {
                 """.formatted(schemaName, tableName, columnName, keyOrdinal);
     }
 
+    private static String columnExistsInSchemaSql(
+            final String schemaName,
+            final String tableName,
+            final String columnName,
+            final String dataType) {
+        return """
+                SELECT COUNT(*)
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = '%s'
+                  AND TABLE_NAME = '%s'
+                  AND COLUMN_NAME = '%s'
+                  AND DATA_TYPE = '%s'
+                """.formatted(schemaName, tableName, columnName, dataType);
+    }
+
     private static String foreignKeyExistsSql(
             final String schemaName,
             final String tableName,
@@ -295,6 +335,22 @@ class SqlServerHarnessIT {
                 FROM causewayExtCommandLog.CommandLogEntry
                 WHERE logicalMemberIdentifier = 'supplier.Supplier#registerProduct'
                 """;
+    }
+
+    private static String logicalTypeMappingCountSql(final String logicalTypeName) {
+        return """
+                SELECT COUNT(*)
+                FROM util.LogicalTypeTableMapping
+                WHERE logicalTypeName = '%s'
+                """.formatted(logicalTypeName);
+    }
+
+    private static String logicalTypeQualifiedNamesSql(final String logicalTypeName) {
+        return """
+                SELECT STRING_AGG(qualifiedName, ',') WITHIN GROUP (ORDER BY qualifiedName)
+                FROM util.LogicalTypeTableMapping
+                WHERE logicalTypeName = '%s'
+                """.formatted(logicalTypeName);
     }
 
     private static String purchaseOrderRowversionColumnCountSql() {

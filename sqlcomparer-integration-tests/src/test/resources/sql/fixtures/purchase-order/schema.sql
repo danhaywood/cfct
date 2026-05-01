@@ -4,6 +4,8 @@ IF SCHEMA_ID('causewayExtCommandLog') IS NULL EXEC('CREATE SCHEMA causewayExtCom
 GO
 IF SCHEMA_ID('causewayExtAuditTrail') IS NULL EXEC('CREATE SCHEMA causewayExtAuditTrail');
 GO
+IF SCHEMA_ID('util') IS NULL EXEC('CREATE SCHEMA util');
+GO
 DROP TABLE IF EXISTS causewayExtAuditTrail.AuditTrailEntry;
 GO
 DROP TABLE IF EXISTS causewayExtCommandLog.CommandLogEntry;
@@ -41,6 +43,14 @@ CREATE TABLE causewayExtAuditTrail.AuditTrailEntry (
         FOREIGN KEY (interactionId)
         REFERENCES causewayExtCommandLog.CommandLogEntry (interactionId)
 );
+GO
+IF OBJECT_ID(N'util.LogicalTypeTableMapping', N'U') IS NULL
+BEGIN
+    CREATE TABLE util.LogicalTypeTableMapping (
+        logicalTypeName NVARCHAR(255) NULL,
+        qualifiedName NVARCHAR(255) NOT NULL
+    );
+END;
 GO
 CREATE UNIQUE INDEX PurchaseOrder_PK
 ON dbo.PurchaseOrder(reference);

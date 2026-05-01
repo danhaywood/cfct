@@ -14,12 +14,16 @@ FIXTURE_ROOT="${REPO_ROOT}/sqlcomparer-integration-tests/src/test/resources/sql/
 
 usage() {
   cat <<USAGE
-Usage: $(basename "$0") <start|stop|status>
+Usage: $(basename "$0") <start|restart|stop|status> [--restart]
 
 Commands:
-  start   Start SQL Server, create fixture databases, and load demo data.
-  stop    Stop and remove the fixture SQL Server container if present.
-  status  Show whether the fixture container is running.
+  start        Start SQL Server, create fixture databases, and load demo data.
+  restart      Recreate SQL Server container, then create fixture databases and load demo data.
+  stop         Stop and remove the fixture SQL Server container if present.
+  status       Show whether the fixture container is running.
+
+Flags:
+  --restart    Only valid with 'start'. Recreate the container even if already running.
 
 Environment overrides:
   SQLCOMPARER_FIXTURE_CONTAINER  Container name (default: ${CONTAINER_NAME})
@@ -104,10 +108,17 @@ load_demo_data() {
 }
 
 start_fixture() {
+  local restart="${1:-false}"
+
   command -v docker >/dev/null 2>&1 || {
     echo "Error: docker is required but was not found." >&2
     exit 1
   }
+
+  if [[ "${restart}" == "true" ]] && container_exists; then
+    echo "Restart requested, removing fixture container ${CONTAINER_NAME}..."
+    docker rm -f "${CONTAINER_NAME}" >/dev/null
+  fi
 
   if container_running; then
     echo "Fixture SQL Server is already running as ${CONTAINER_NAME}."
@@ -157,9 +168,35 @@ status_fixture() {
 
 main() {
   local command="${1:-}"
+  local flag="${2:-}"
+
   case "${command}" in
     start)
-      start_fixture
+      case "${flag}" in
+        "")
+          start_fixture false
+          ;;
+        --restart)
+          start_fixture true
+          ;;
+        *)
+          echo "Error: unknown flag '${flag}' for start." >&2
+          usage >&2
+          exit 2
+          ;;
+      esac
+      ;;
+    restart)
+      case "${flag}" in
+        "")
+          start_fixture true
+          ;;
+        *)
+          echo "Error: command 'restart' does not accept flag '${flag}'." >&2
+          usage >&2
+          exit 2
+          ;;
+      esac
       ;;
     stop)
       stop_fixture

@@ -31,3 +31,16 @@ INSERT INTO causewayExtCommandLog.CommandLogEntry (
 ) VALUES
     ('11111111-1111-1111-1111-111111111111', 'FOREGROUND', 'supplier.Supplier#registerProduct', '2026-04-05T10:00:00.000', 'supplier.Supplier:301', 'PENDING');
 GO
+
+DELETE FROM util.LogicalTypeTableMapping
+WHERE logicalTypeName IN ('supplier.Supplier', 'product.Product');
+GO
+
+INSERT INTO util.LogicalTypeTableMapping (
+    logicalTypeName,
+    qualifiedName
+) VALUES
+    ('supplier.Supplier', 'dbo.Supplier'),
+    ('product.Product', 'dbo.Product'),
+    ('product.Product', 'dbo.ProductInventory');
+GO
