@@ -56,6 +56,7 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isDisabled()).isTrue();
             page.click("[data-testid='login-submit']");
             page.waitForSelector("[data-testid='connection-status-state']");
+            page.waitForSelector("[data-testid='command-selection-grid']");
             page.waitForSelector("[data-testid='table-selection-grid']");
 
             final String statusText = page.locator("[data-testid='connection-status-state']").innerText();
@@ -73,9 +74,16 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             assertThat(page.locator("[data-testid='account-menu']").count()).isEqualTo(1);
             assertThat(page.locator("[data-testid='logout-button']").count()).isZero();
 
+            assertThat(page.locator("[data-testid='command-selection-spacer']").count()).isEqualTo(1);
+
+            final double commandGridTop = positionOf(page, "[data-testid='command-selection-grid']")[1];
             final double compareTop = positionOf(page, "[data-testid='navigation-compare-action-bar']")[1];
-            final double gridTop = positionOf(page, "[data-testid='table-selection-grid']")[1];
-            assertThat(compareTop).isLessThan(gridTop);
+            final double tableGridTop = positionOf(page, "[data-testid='table-selection-grid']")[1];
+            assertThat(commandGridTop).isLessThan(tableGridTop);
+            assertThat(compareTop).isLessThan(tableGridTop);
+
+            final String commandGridText = page.locator("[data-testid='command-selection-grid']").innerText();
+            assertThat(commandGridText).contains("Interaction", "Member", PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID);
 
             final double[] footerMetrics = footerStatusAlignmentMetrics(page);
             assertThat(footerMetrics[0]).isGreaterThan(footerMetrics[1]);
@@ -93,6 +101,10 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
             page.click("[data-testid='hamburger-menu']");
             page.waitForTimeout(200);
+
+            setCommandInteractionFilter(page, PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.substring(0, 8));
+            page.waitForFunction("() => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('11111111-1111-1111-1111-111111111111')");
+            setCommandInteractionFilter(page, "");
 
             setFilter(page, PlaywrightSqlServerFixture.ELIGIBLE_TABLE);
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('Supplier') && !document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PurchaseOrderWithoutBusinessKey')");
@@ -138,6 +150,11 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
     private void setFilter(final Page page, final String value) {
         page.locator("[data-testid='table-filter-table'] input").fill(value);
+        page.keyboard().press("Tab");
+    }
+
+    private void setCommandInteractionFilter(final Page page, final String value) {
+        page.locator("[data-testid='command-filter-interaction-id'] input").fill(value);
         page.keyboard().press("Tab");
     }
 

@@ -11,7 +11,10 @@ import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContextHold
 import com.danhaywood.sqlcomparer.webapp.auth.WebappAuthenticationService;
 import com.danhaywood.sqlcomparer.webapp.comparison.WebappComparisonExecutionService;
 import com.danhaywood.sqlcomparer.webapp.config.WebappComparisonProperties;
+import com.danhaywood.sqlcomparer.webapp.selection.CommandCatalogEntry;
+import com.danhaywood.sqlcomparer.webapp.selection.CommandSelectionState;
 import com.danhaywood.sqlcomparer.webapp.selection.ManualTableSelectionState;
+import com.danhaywood.sqlcomparer.webapp.selection.SqlServerCommandCatalogService;
 import com.danhaywood.sqlcomparer.webapp.selection.SqlServerTableCatalogService;
 import com.danhaywood.sqlcomparer.webapp.selection.TableCatalogEntry;
 import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationState;
@@ -66,15 +69,19 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private static final DateTimeFormatter FILE_TS = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
 
     private ManualTableSelectionState selectionState;
+    private CommandSelectionState commandSelectionState;
     private final WebappComparisonExecutionService comparisonExecutionService;
     private final AuthenticatedConnectionContextHolder authenticatedContextHolder;
     private final WebappAuthenticationService authenticationService;
     private final SqlServerTableCatalogService tableCatalogService;
+    private final SqlServerCommandCatalogService commandCatalogService;
     private final ConnectionValidationStatusHolder statusHolder;
     private final WebappComparisonProperties properties;
 
     private final List<TableCatalogEntry> tableCatalogEntries = new ArrayList<>();
+    private final List<CommandCatalogEntry> commandCatalogEntries = new ArrayList<>();
     private final ListDataProvider<TableCatalogEntry> selectionDataProvider;
+    private final ListDataProvider<CommandCatalogEntry> commandSelectionDataProvider;
     private final Dialog loginDialog = new Dialog();
 
     private final Button compareButton = new Button("Compare");
@@ -97,6 +104,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     public MainView(
             final ConnectionValidationStatusHolder statusHolder,
             final SqlServerTableCatalogService tableCatalogService,
+            final SqlServerCommandCatalogService commandCatalogService,
             final WebappComparisonProperties properties,
             final WebappComparisonExecutionService comparisonExecutionService,
             final AuthenticatedConnectionContextHolder authenticatedContextHolder,
@@ -105,14 +113,18 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         this.authenticatedContextHolder = authenticatedContextHolder;
         this.authenticationService = authenticationService;
         this.tableCatalogService = tableCatalogService;
+        this.commandCatalogService = commandCatalogService;
         this.statusHolder = statusHolder;
         this.properties = properties;
 
         if (authenticatedContextHolder.isAuthenticated()) {
             tableCatalogEntries.addAll(tableCatalogService.discoverTableCatalog());
+            commandCatalogEntries.addAll(commandCatalogService.discoverCommandCatalog());
         }
         this.selectionState = new ManualTableSelectionState(tableCatalogEntries);
+        this.commandSelectionState = new CommandSelectionState(commandCatalogEntries);
         this.selectionDataProvider = new ListDataProvider<>(tableCatalogEntries);
+        this.commandSelectionDataProvider = new ListDataProvider<>(commandCatalogEntries);
 
         setPrimarySection(Section.DRAWER);
         getElement().setAttribute("data-testid", "main-app-layout");
@@ -124,6 +136,10 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         refreshConnectionFooter();
         refreshAuthUiState();
         renderEmptyComparisonState();
+    }
+
+    public List<String> selectedCommandInteractionIdsForStageOne() {
+        return commandSelectionState.selectedInteractionIds();
     }
 
     public List<TableRef> selectedTablesForStageTwo() {
@@ -292,13 +308,27 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("padding", "var(--lumo-space-m)");
 
         final VerticalLayout layout = new VerticalLayout();
-        layout.setPadding(false);
+        layout.setPadding(true);
         layout.setSpacing(true);
         layout.getStyle().set("gap", "var(--lumo-space-m)");
 
-        final TextField tableFilter = filterField("Filter table", "table-filter-table", selectionDataProvider);
-        tableFilter.setWidthFull();
-        final Grid<TableCatalogEntry> tableGrid = buildSelectionGrid();
+        final Div commandSpacer = new Div();
+        commandSpacer.getElement().setAttribute("data-testid", "command-selection-spacer");
+        commandSpacer.getStyle()
+                .set("height", "  calc(var(--lumo-size-xl, 2.0rem) + var(--lumo-space-xl, 1rem))")
+                .set("width", "100%");
+
+        final TextField commandInteractionFilter = new TextField();
+        commandInteractionFilter.setPlaceholder("Filter interaction id");
+        commandInteractionFilter.setClearButtonVisible(true);
+        commandInteractionFilter.setValueChangeMode(ValueChangeMode.EAGER);
+        commandInteractionFilter.getElement().setAttribute("data-testid", "command-filter-interaction-id");
+        commandInteractionFilter.setWidthFull();
+
+        commandInteractionFilter.addValueChangeListener(event ->
+                applyCommandFilter(commandInteractionFilter.getValue()));
+
+        final Grid<CommandCatalogEntry> commandGrid = buildCommandSelectionGrid();
 
         final Div actionBar = new Div(compareButton);
         actionBar.getElement().setAttribute("data-testid", "navigation-compare-action-bar");
@@ -307,7 +337,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("display", "flex")
                 .set("justify-content", "flex-end")
                 .set("width", "100%")
-                .set("margin-top", "calc(var(--lumo-size-xl) + var(--lumo-space-xl))")
+                .set("margin-top", "var(--lumo-space-xs)")
                 .set("margin-bottom", "var(--lumo-space-xs)");
 
         compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
@@ -315,7 +345,11 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         compareButton.getElement().setAttribute("title", "Execute comparison for selected eligible tables.");
         compareButton.addClickListener(event -> executeComparison());
 
-        layout.add(actionBar, tableFilter, tableGrid);
+        final TextField tableFilter = filterField("Filter table", "table-filter-table", selectionDataProvider);
+        tableFilter.setWidthFull();
+        final Grid<TableCatalogEntry> tableGrid = buildSelectionGrid();
+
+        layout.add(commandSpacer, commandInteractionFilter, commandGrid, actionBar, tableFilter, tableGrid);
         panel.add(layout);
         return panel;
     }
@@ -367,6 +401,43 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .setKey("table");
 
         return grid;
+    }
+
+    private Grid<CommandCatalogEntry> buildCommandSelectionGrid() {
+        final Grid<CommandCatalogEntry> grid = new Grid<>();
+        grid.getElement().setAttribute("data-testid", "command-selection-grid");
+        grid.setAllRowsVisible(true);
+        grid.setWidthFull();
+        grid.setDataProvider(commandSelectionDataProvider);
+
+        grid.addColumn(new ComponentRenderer<>(entry -> {
+            final Checkbox checkbox = new Checkbox();
+            checkbox.setEnabled(authenticatedContextHolder.isAuthenticated());
+            checkbox.setValue(commandSelectionState.isSelected(entry.interactionId()));
+            checkbox.getElement().setAttribute("data-testid", "command-checkbox-" + entry.interactionId().toLowerCase(Locale.ROOT));
+            checkbox.addValueChangeListener(event -> commandSelectionState.updateSelection(entry.interactionId(), event.getValue()));
+            return checkbox;
+        })).setHeader("").setAutoWidth(true).setFlexGrow(0).setTextAlign(ColumnTextAlign.CENTER);
+
+        grid.addColumn(CommandCatalogEntry::interactionId)
+                .setHeader("Interaction")
+                .setSortable(true)
+                .setComparator(Comparator.comparing(CommandCatalogEntry::interactionId, String.CASE_INSENSITIVE_ORDER))
+                .setAutoWidth(true)
+                .setKey("interaction");
+        grid.addColumn(CommandCatalogEntry::logicalMemberIdentifier)
+                .setHeader("Member")
+                .setSortable(true)
+                .setComparator(Comparator.comparing(CommandCatalogEntry::logicalMemberIdentifier, String.CASE_INSENSITIVE_ORDER))
+                .setAutoWidth(true)
+                .setKey("member");
+
+        return grid;
+    }
+
+    private void applyCommandFilter(final String interactionIdFilter) {
+        commandSelectionDataProvider.clearFilters();
+        commandSelectionDataProvider.addFilter(entry -> commandSelectionState.matchesFilter(entry, interactionIdFilter));
     }
 
     private TextField filterField(
@@ -652,17 +723,28 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
     private void reloadTableCatalog() {
         final List<TableCatalogEntry> tableCatalog = tableCatalogService.discoverTableCatalog();
+        final List<CommandCatalogEntry> commandCatalog = commandCatalogService.discoverCommandCatalog();
+
         selectionState = new ManualTableSelectionState(tableCatalog);
+        commandSelectionState = new CommandSelectionState(commandCatalog);
+
         tableCatalogEntries.clear();
         tableCatalogEntries.addAll(tableCatalog);
+        commandCatalogEntries.clear();
+        commandCatalogEntries.addAll(commandCatalog);
+
         selectionDataProvider.refreshAll();
+        commandSelectionDataProvider.refreshAll();
         compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
     }
 
     private void clearTableCatalog() {
         selectionState = new ManualTableSelectionState(List.of());
+        commandSelectionState = new CommandSelectionState(List.of());
         tableCatalogEntries.clear();
+        commandCatalogEntries.clear();
         selectionDataProvider.refreshAll();
+        commandSelectionDataProvider.refreshAll();
         compareButton.setEnabled(false);
     }
 

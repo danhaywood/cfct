@@ -14,6 +14,8 @@ import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContextHold
 import com.danhaywood.sqlcomparer.webapp.auth.WebappAuthenticationService;
 import com.danhaywood.sqlcomparer.webapp.comparison.WebappComparisonExecutionService;
 import com.danhaywood.sqlcomparer.webapp.config.WebappComparisonProperties;
+import com.danhaywood.sqlcomparer.webapp.selection.CommandCatalogEntry;
+import com.danhaywood.sqlcomparer.webapp.selection.SqlServerCommandCatalogService;
 import com.danhaywood.sqlcomparer.webapp.selection.SqlServerTableCatalogService;
 import com.danhaywood.sqlcomparer.webapp.selection.TableCatalogEntry;
 import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationState;
@@ -49,6 +51,7 @@ class MainViewTest {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 unauthenticatedHolder(),
@@ -71,6 +74,7 @@ class MainViewTest {
         final MainView view = new MainView(
                 holder,
                 catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
@@ -92,6 +96,7 @@ class MainViewTest {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
@@ -102,10 +107,51 @@ class MainViewTest {
     }
 
     @Test
+    void rendersCommandGridAboveTableGridWithSpacer() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        assertThat(findByTestId(view, "command-selection-spacer")).isPresent();
+        assertThat(findByTestId(view, "command-selection-grid")).isPresent();
+        assertThat(findByTestId(view, "table-selection-grid")).isPresent();
+
+        final List<String> testIdsInOrder = view.getChildren()
+                .flatMap(this::streamWithDescendants)
+                .map(component -> component.getElement().getAttribute("data-testid"))
+                .filter(id -> id != null && !id.isBlank())
+                .toList();
+
+        assertThat(testIdsInOrder.indexOf("command-selection-grid"))
+                .isLessThan(testIdsInOrder.indexOf("table-selection-grid"));
+    }
+
+    @Test
+    void exposesSelectedCommandInteractionIdsForStageOne() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithPreselectedEntries(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        assertThat(view.selectedCommandInteractionIdsForStageOne())
+                .containsExactly("11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222");
+    }
+
+    @Test
     void rendersFooterConnectionDetailsWithoutPassword() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
@@ -127,6 +173,7 @@ class MainViewTest {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
                 propertiesWithDefaults(),
                 comparisonExecutionService,
                 authenticatedHolder(),
@@ -153,6 +200,7 @@ class MainViewTest {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 holder,
@@ -168,6 +216,7 @@ class MainViewTest {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
@@ -203,6 +252,7 @@ class MainViewTest {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithPreselectedProduct(),
+                commandCatalogServiceWithDefaults(),
                 propertiesWithDefaults(),
                 comparisonExecutionService,
                 authenticatedHolder(),
@@ -220,6 +270,7 @@ class MainViewTest {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
@@ -247,6 +298,7 @@ class MainViewTest {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
@@ -263,6 +315,7 @@ class MainViewTest {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
@@ -286,6 +339,7 @@ class MainViewTest {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
@@ -421,6 +475,23 @@ class MainViewTest {
                 TableCatalogEntry.eligible(new TableRef("dbo", "Supplier")),
                 new TableCatalogEntry(new TableRef("dbo", "Product"), true, null, true),
                 TableCatalogEntry.ineligible(new TableRef("dbo", "PurchaseOrderWithoutBusinessKey"), "No unique index ending with _PK.")));
+        return service;
+    }
+
+    private SqlServerCommandCatalogService commandCatalogServiceWithDefaults() {
+        final SqlServerCommandCatalogService service = Mockito.mock(SqlServerCommandCatalogService.class);
+        when(service.discoverCommandCatalog()).thenReturn(List.of(
+                new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "EXPORTED", "FOREGROUND", "2026-04-05T10:00:00.000", false),
+                new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "PENDING", "FOREGROUND", "2026-04-05T11:00:00.000", false)));
+        return service;
+    }
+
+    private SqlServerCommandCatalogService commandCatalogServiceWithPreselectedEntries() {
+        final SqlServerCommandCatalogService service = Mockito.mock(SqlServerCommandCatalogService.class);
+        when(service.discoverCommandCatalog()).thenReturn(List.of(
+                new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "EXPORTED", "FOREGROUND", "2026-04-05T10:00:00.000", true),
+                new CommandCatalogEntry("22222222-2222-2222-2222-222222222222", "supplier.Supplier#updateName", "supplier.Supplier:302", "EXPORTED", "FOREGROUND", "2026-04-05T10:30:00.000", true),
+                new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "PENDING", "FOREGROUND", "2026-04-05T11:00:00.000", false)));
         return service;
     }
 

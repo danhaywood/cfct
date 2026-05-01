@@ -13,6 +13,7 @@ final class PlaywrightSqlServerFixture {
     static final String ELIGIBLE_TABLE = "Supplier";
     static final String SECOND_ELIGIBLE_TABLE = "Product";
     static final String INELIGIBLE_TABLE = "PurchaseOrderWithoutBusinessKey";
+    static final String COMMAND_INTERACTION_ID = "11111111-1111-1111-1111-111111111111";
 
     private static final MSSQLServerContainer<?> SQL_SERVER = new MSSQLServerContainer<>(
             DockerImageName.parse("mcr.microsoft.com/mssql/server:2022-latest"))
@@ -56,9 +57,14 @@ final class PlaywrightSqlServerFixture {
         executeSql(databaseName, "DROP TABLE IF EXISTS dbo." + INELIGIBLE_TABLE + ";");
         executeSql(databaseName, "CREATE TABLE dbo." + INELIGIBLE_TABLE + " (id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, reference NVARCHAR(40) NOT NULL, [version] DATETIME2(3) NOT NULL);");
 
+        executeSql(databaseName, "IF SCHEMA_ID('causewayExtCommandLog') IS NULL EXEC('CREATE SCHEMA causewayExtCommandLog');");
+        executeSql(databaseName, "DROP TABLE IF EXISTS causewayExtCommandLog.CommandLogEntry;");
+        executeSql(databaseName, "CREATE TABLE causewayExtCommandLog.CommandLogEntry (interactionId UNIQUEIDENTIFIER NOT NULL PRIMARY KEY, executeIn VARCHAR(10) NOT NULL, logicalMemberIdentifier VARCHAR(255) NOT NULL, [timestamp] DATETIME2 NOT NULL, target VARCHAR(1500) NOT NULL, replayState VARCHAR(20) NOT NULL);");
+
         if (databaseName.contains("left")) {
             executeSql(databaseName, "INSERT INTO dbo." + ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('SUP-001','Supplier One', SYSDATETIME()), ('SUP-002','Supplier Two L', SYSDATETIME());");
             executeSql(databaseName, "INSERT INTO dbo." + SECOND_ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('PRD-001','Product One', SYSDATETIME()), ('PRD-LEFT','Product Left Only', SYSDATETIME());");
+            executeSql(databaseName, "INSERT INTO causewayExtCommandLog.CommandLogEntry (interactionId, executeIn, logicalMemberIdentifier, [timestamp], target, replayState) VALUES ('" + COMMAND_INTERACTION_ID + "', 'FOREGROUND', 'supplier.Supplier#registerProduct', SYSDATETIME(), 'supplier.Supplier:301', 'EXPORTED');");
         } else {
             executeSql(databaseName, "INSERT INTO dbo." + ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('SUP-001','Supplier One', SYSDATETIME()), ('SUP-002','Supplier Two R', SYSDATETIME());");
             executeSql(databaseName, "INSERT INTO dbo." + SECOND_ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('PRD-001','Product One Changed', SYSDATETIME()), ('PRD-RIGHT','Product Right Only', SYSDATETIME());");
