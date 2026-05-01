@@ -1,8 +1,5 @@
-# webapp-command-selection-grid Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change add-webapp-command-selection-grid. Update Purpose after archive.
-## Requirements
 ### Requirement: Webapp exposes a command catalog grid for selection
 The webapp SHALL display command-log entries in a Vaadin Grid in the left navigation area.
 The command grid SHALL allow selecting one or more command rows.
@@ -21,12 +18,3 @@ The command grid SHALL display visible command identity columns in the order `ti
 - **WHEN** the command grid is rendered
 - **THEN** visible columns include timestamp, member, and interactionId
 - **AND** the visible identity-column order is timestamp first, then member, then interactionId
-
-### Requirement: Command grid supports live filtering
-The command grid SHALL provide filtering inputs for visible command identity columns.
-Filtering SHALL narrow visible command rows without requiring a separate apply-filter action.
-
-#### Scenario: User filters command rows by visible identity values
-- **WHEN** a user enters filter text for a command identity field
-- **THEN** only matching command rows remain visible in the grid without pressing an apply button
-
