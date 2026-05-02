@@ -12,8 +12,6 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 - /opsx-propose: add a 'download' button underneath the business tables grid, to the left of 'compare'; when clicked should download a file suitable to feed into CLI's --tables-file param.  Disable this if there are no rows selected.
 
-- /opsx-propose: provide an "IgnoreColumnAdvisor" SPI for the responsibility fo determining if a column should be ignored in the comparison.  This SPI should be in the -api module.  Have the core library take a @Inject'd List<IgnoreColumnAdvisor>, so that more than one implementation can be consulted.  Rework the current implementations as separate services/beans, called something like IgnoreColumnAdvisorForIdentityColumns, and IgnoreColumnAdvisorForUuidColumns, and IgnoreColumnAdvisorForTimestamps.  For each of these implementations, add a config property (using @ConfigurationProperties so is typesafe) that can enable/disable the advisor, defaulting to eanabled.  
-
 - /opsx-propose: add a new IgnoreColumnAdvisorUsingExtendedProperties, have it check for the presence of an "sqlcomparer.ignored" metadata attribute set to a truthy value (as per sp_extendedproperty); if so then ignore the property. 
 - auto select from command/audit
   - drop down from/to of commands
