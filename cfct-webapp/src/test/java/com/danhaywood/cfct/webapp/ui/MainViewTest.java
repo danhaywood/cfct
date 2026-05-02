@@ -241,7 +241,7 @@ class MainViewTest {
     @Test
     void executesCompareAndRendersResultTabs() {
         final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
-        when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class)))
+        when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class)))
                 .thenReturn(sampleComparisonOutcome());
 
         final MainView view = new MainView(
@@ -258,7 +258,7 @@ class MainViewTest {
 
         invokeExecuteComparison(view);
 
-        verify(comparisonExecutionService).compare(Mockito.any(MultiTableComparisonRequest.class));
+        verify(comparisonExecutionService).compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class));
         assertThat(findByTestId(view, "comparison-result-export-actions")).isPresent();
         assertThat(findByTestId(view, "comparison-result-actions")).isPresent();
         assertThat(findByTestId(view, "comparison-table-filter")).isPresent();
@@ -266,6 +266,8 @@ class MainViewTest {
         assertThat(findByTestId(view, "download-excel")).isPresent();
         assertThat(findByTestId(view, "comparison-stage-error")).isPresent();
         assertThat(findByTestId(view, "comparison-stage-state")).isEmpty();
+        final Span progress = (Span) findByTestId(view, "comparison-progress-summary").orElseThrow();
+        assertThat(progress.getText()).isNotBlank();
     }
 
     @Test
@@ -320,7 +322,7 @@ class MainViewTest {
     @Test
     void compareRequestUsesCurrentSelectedTables() {
         final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
-        when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class)))
+        when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class)))
                 .thenReturn(sampleComparisonOutcome());
 
         final MainView view = new MainView(
@@ -335,7 +337,7 @@ class MainViewTest {
         invokeExecuteComparison(view);
 
         final ArgumentCaptor<MultiTableComparisonRequest> captor = ArgumentCaptor.forClass(MultiTableComparisonRequest.class);
-        verify(comparisonExecutionService).compare(captor.capture());
+        verify(comparisonExecutionService).compare(captor.capture(), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class));
         assertThat(captor.getValue().tables()).containsExactly(new TableRef("dbo", "Product"));
     }
 

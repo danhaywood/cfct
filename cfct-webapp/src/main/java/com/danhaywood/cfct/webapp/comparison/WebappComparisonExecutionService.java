@@ -3,7 +3,9 @@ package com.danhaywood.cfct.webapp.comparison;
 import com.danhaywood.cfct.model.ComparisonViewModelMapper;
 import com.danhaywood.cfct.model.MultiTableComparisonResult;
 import com.danhaywood.cfct.model.MultiTableComparisonViewResult;
+import com.danhaywood.cfct.request.ComparisonOptions;
 import com.danhaywood.cfct.request.MultiTableComparisonRequest;
+import com.danhaywood.cfct.service.ComparisonProgressListener;
 import com.danhaywood.cfct.service.MultiTableComparisonReportFormatter;
 import com.danhaywood.cfct.service.MultiTableComparisonService;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContextHolder;
@@ -32,8 +34,21 @@ public class WebappComparisonExecutionService {
     }
 
     public ComparisonExecutionOutcome compare(final MultiTableComparisonRequest request) {
+        return compare(request, ComparisonProgressListener.NO_OP);
+    }
+
+    public ComparisonExecutionOutcome compare(
+            final MultiTableComparisonRequest request,
+            final ComparisonProgressListener progressListener) {
         final WebappDataSources dataSources = dataSourceConfiguration.dataSourcesFor(authenticatedContextHolder.required());
-        final MultiTableComparisonResult rawResult = comparisonService.compare(dataSources.left(), dataSources.right(), request);
+        final ComparisonOptions options = new ComparisonOptions(
+                request.options().businessKeyIndexSuffix(),
+                request.options().ignoredColumnNames(),
+                progressListener);
+        final MultiTableComparisonResult rawResult = comparisonService.compare(
+                dataSources.left(),
+                dataSources.right(),
+                new MultiTableComparisonRequest(request.tables(), options));
         final MultiTableComparisonViewResult viewResult = ComparisonViewModelMapper.toViewResult(rawResult);
         final String json = reportFormatter.renderJson(rawResult);
         final byte[] excel = reportFormatter.renderExcel(rawResult);

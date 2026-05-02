@@ -6,6 +6,8 @@ import com.danhaywood.cfct.model.ComparisonRowView;
 import com.danhaywood.cfct.model.TableComparisonViewResult;
 import com.danhaywood.cfct.model.TableRef;
 import com.danhaywood.cfct.request.MultiTableComparisonRequest;
+import com.danhaywood.cfct.service.ComparisonProgressEvent;
+import com.danhaywood.cfct.service.ComparisonProgressPhase;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContextHolder;
 import com.danhaywood.cfct.webapp.auth.WebappAuthenticationService;
@@ -102,6 +104,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Span connectionDatabases = new Span();
     private final Span connectionStatusState = new Span();
     private final Span connectionStatusSummary = new Span();
+    private final Span comparisonProgressSummary = new Span();
     private final MenuBar accountMenu = new MenuBar();
 
     private WebappComparisonExecutionService.ComparisonExecutionOutcome latestOutcome;
@@ -321,7 +324,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         connectionStatusState.getElement().setAttribute("data-testid", "connection-status-state");
         connectionStatusState.getStyle().set("font-weight", "600");
         connectionStatusSummary.getElement().setAttribute("data-testid", "connection-status-summary");
-        statusPanel.add(connectionStatusState, connectionStatusSummary);
+        comparisonProgressSummary.getElement().setAttribute("data-testid", "comparison-progress-summary");
+        statusPanel.add(connectionStatusState, connectionStatusSummary, comparisonProgressSummary);
 
         footer.add(connectionDetails, statusPanel);
         return footer;
@@ -568,9 +572,13 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         compareButton.setEnabled(false);
         comparisonError.setText("");
+        comparisonProgressSummary.setText("Comparison running...");
 
         try {
-            latestOutcome = comparisonExecutionService.compare(MultiTableComparisonRequest.forTables(selectedTables));
+            latestOutcome = comparisonExecutionService.compare(
+                    MultiTableComparisonRequest.forTables(selectedTables),
+                    this::onComparisonProgress);
+            comparisonProgressSummary.setText("Comparison complete.");
             resultActions.setVisible(true);
             refreshDownloadLinks();
             renderComparisonTabs();
@@ -579,6 +587,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             resultActions.setVisible(false);
             comparisonResultsContainer.removeAll();
             comparisonError.setText(safeError(ex));
+            comparisonProgressSummary.setText("Comparison failed.");
             renderEmptyComparisonState();
         } finally {
             compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
@@ -843,6 +852,24 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         selectionDataProvider.refreshAll();
         commandSelectionDataProvider.refreshAll();
         refreshActionButtons();
+    }
+
+    private void onComparisonProgress(final ComparisonProgressEvent event) {
+        if (event.phase() == ComparisonProgressPhase.TABLE_STARTED) {
+            comparisonProgressSummary.setText("Comparing %s (%d/%d)".formatted(
+                    event.table().displayName(),
+                    event.completedTables() + 1,
+                    event.totalTables()));
+            return;
+        }
+        if (event.phase() == ComparisonProgressPhase.TABLE_COMPLETED) {
+            comparisonProgressSummary.setText("Compared %s (%d/%d)".formatted(
+                    event.table().displayName(),
+                    event.completedTables(),
+                    event.totalTables()));
+            return;
+        }
+        comparisonProgressSummary.setText("Comparison failed on %s".formatted(event.table().displayName()));
     }
 
     private void refreshConnectionFooter() {

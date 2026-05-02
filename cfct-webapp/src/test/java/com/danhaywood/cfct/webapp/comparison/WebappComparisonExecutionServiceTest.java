@@ -58,7 +58,11 @@ class WebappComparisonExecutionServiceTest {
         assertThat(outcome.excel()).containsExactly(1, 2, 3);
         assertThat(delegate.leftConnection).isSameAs(leftConnection);
         assertThat(delegate.rightConnection).isSameAs(rightConnection);
-        assertThat(delegate.request).isSameAs(request);
+        assertThat(delegate.request.tables()).isEqualTo(request.tables());
+        assertThat(delegate.request.options().businessKeyIndexSuffix())
+                .isEqualTo(request.options().businessKeyIndexSuffix());
+        assertThat(delegate.request.options().ignoredColumnNames())
+                .isEqualTo(request.options().ignoredColumnNames());
         verify(leftConnection).close();
         verify(rightConnection).close();
     }

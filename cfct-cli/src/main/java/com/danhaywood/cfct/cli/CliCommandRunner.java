@@ -24,7 +24,7 @@ public final class CliCommandRunner {
     int run(final String[] args, final PrintStream out, final PrintStream err) {
         try {
             final CliArguments parsed = parser.parse(args);
-            final CliExecutionOutput output = executor.execute(parsed);
+            final CliExecutionOutput output = executor.execute(parsed, err);
             writeOutput(parsed, output, out);
             return 0;
         } catch (IllegalArgumentException ex) {
