@@ -80,11 +80,7 @@ public class LoginForm extends VerticalLayout {
         logo.getElement().setAttribute("data-testid", "login-branding-logo");
         logo.setWidth("360px");
 
-        final Span brandName = new Span("CFCT");
-        brandName.getElement().setAttribute("data-testid", "login-branding-name");
-        brandName.getStyle().set("font-weight", "700");
-
-        brandingPanel.add(logo, brandName);
+        brandingPanel.add(logo);
 
         final HorizontalLayout content = new HorizontalLayout(fieldsColumn, brandingPanel);
         content.setWidthFull();
