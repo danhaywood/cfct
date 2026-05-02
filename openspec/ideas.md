@@ -30,8 +30,6 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 - /opsx-propose: add a 'download' button underneath the business tables grid, to the left of 'compare'; when clicked should download a file suitable to feed into CLI's --tables-file param.  Disable this if there are no rows selected.
 
-- /opsx-propose: add a 'download yaml' button.
-
 - /opsx-propose: extend the library so that it can perform comparisons multi-threaded, each table in its own thread, rather than one at a time.  To support this, there will (I imagine) need to be a connection pool / DataSource.  The size of this pool should be specified as a cli argument, or read from a config property
 
 - /opsx-propose: extend the library so that it can provide progress, and update the CLI to use this, by printing out as each table is compared.  I would imagine that the library will allow a callback to be registered, and the CLI registers an appropriate implementation.  Also extend the webapp so that it can provide feedback to the user as the comparison progresses.  I would imagine the webapp could register a listener, and then use a Vaadin capability to show progress in the status bar
