@@ -29,7 +29,7 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 ### New features
 
-
+- /opsx-propose: perform checks that the target database has all required system tables.
 
 - /opsx-propose: provide summary panel for all selected tables; this should be above the tabs.
 
@@ -39,9 +39,7 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 - /opsx-propose: extend the library so that it can perform comparisons multi-threaded, each table in its own thread, rather than one at a time.  To support this, there will (I imagine) need to be a connection pool / DataSource.  The size of this pool should be specified as a cli argument, or read from a config property
 
-- /opsx-propose: extend the library so that it can provide progress, and update the CLI to use this, by printing out as each table is compared.  I would imagine that the library will allow a callback to be registered, and the CLI registers an appropriate implementation.
-
-- /opsx-propose: extend the webapp so that it can provide feedback to the user as the comparison progresses.  I would imagine the webapp could register a listener, and then use a Vaadin capability to show progress in the status bar
+- /opsx-propose: extend the library so that it can provide progress, and update the CLI to use this, by printing out as each table is compared.  I would imagine that the library will allow a callback to be registered, and the CLI registers an appropriate implementation.  Also extend the webapp so that it can provide feedback to the user as the comparison progresses.  I would imagine the webapp could register a listener, and then use a Vaadin capability to show progress in the status bar
 
 - /opsx-propose: provide an "IgnoreColumnAdvisor" SPI for the responsibility fo determining if a column should be ignored in the comparison.  This SPI should be in the -api module.  Have the core library take a @Inject'd List<IgnoreColumnAdvisor>, so that more than one implementation can be consulted.  Rework the current implementations as separate services/beans, called something like IgnoreColumnAdvisorForIdentityColumns, and IgnoreColumnAdvisorForUuidColumns, and IgnoreColumnAdvisorForTimestamps.  For each of these implementations, add a config property (using @ConfigurationProperties so is typesafe) that can enable/disable the advisor, defaulting to eanabled.  
 
