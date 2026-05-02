@@ -11,7 +11,8 @@ Until then, ideas here are notes only and do not represent current system behavi
 ### Cosmetic
 
 - webapp:
-  - /opsx-propose: cosmetic fix to webapp: combine the three download buttons into one, with a choices drop down.  Make download as json the default.  
+
+  - /opsx-propose: after logging in, place the focus on the command selection table.  Allow space to be used to toggle the selection.  Ensure that the up/down + l/r arrows are useful/behave appropriately
   
   - /opsx-propose: cosmetic fix to webapp: make the status line the same colour as the menu bar, add appropriate spaces between the labels
   
@@ -19,13 +20,7 @@ Until then, ideas here are notes only and do not represent current system behavi
   
   - /opsx-propose: cosmetic fix to webapp: change 'Account' label on the menu bar to be the username logged in
   
-  - /opsx-propose: cosmetic fix to webapp: improve the login dialog, use the space better.  Also, there are redundant lobels saying "Login", remove the clutter 
-  
-  - /opsx-propose: cosmetic fix to webapp: after logging in, place the focus on the selection table
-  
-  - /opsx-propose: cosmetic fix to webapp: on the selection table, allow space to be used to toggle the selection.  Ensure that the up/down + l/r arrows are useful/behave appropriately 
-  
-  - /opsx-propose: add a logo/icon
+  - /opsx-propose: extend the build to pick up the git commit; incorporate onto the status bar as a version number.
 
 ### New features
 
