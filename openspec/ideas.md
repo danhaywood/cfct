@@ -22,9 +22,7 @@ Until then, ideas here are notes only and do not represent current system behavi
 ### New features
 
 
-- /opsx-propose: now, let's wire the command selection grid to the selection of the business tables in the grid underneath.  As each command is seleced, evaluate the changed tables and select them in the business table selection grid below.
-
-- /opsx-propose: move the 'compare' button below the business tables grid; make sure it is always visible even if browser is resized.  Add a spacer between the two tables.
+/opsx-propose: as the two tables contain more data, they both need to fit reasonably onto the page.  Add scrollbars where required, ensure is responsive to different page sizes.
 
 - /opsx-propose: add a 'clear' button below the command selection grid.  All the selections in both tables should be removed.   Disable this if there are no rows selected.
 
