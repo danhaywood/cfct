@@ -143,6 +143,7 @@ The navigation drawer lists discovered tables in a sortable and filterable Vaadi
 Tables that do not meet the `_PK` suffix requirement on a unique index or unique constraint are still shown, but their checkboxes are disabled and expose the eligibility reason as tooltip text.
 The schema column auto-sizes, the select column is centered, and the select header text is intentionally blank.
 The footer/status bar shows compact connection context and right-aligns current SQL connectivity status.
+During comparison execution, the footer/status bar also shows live table-by-table progress and a terminal completion or failure message.
 Logout is now in the top-right account menu.
 
 The login and logout flow now looks like this.
@@ -366,6 +367,7 @@ The CLI supports these output options:
 `text` is the default when `--output-format` is omitted.
 Text, JSON, and YAML are written to stdout as UTF-8 when `-o` is omitted.
 When `-o` is supplied, successful output is written to that file instead.
+CLI comparison progress is emitted to stderr as per-table progress lines so stdout or output files remain reserved for comparison artifacts.
 Excel output requires `-o`, for example `--output-format excel -o comparison.xlsx`.
 
 Explicit CLI values override values loaded from `--env-file`.

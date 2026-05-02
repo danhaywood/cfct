@@ -22,5 +22,5 @@
 ## 4. Verification and Documentation
 
 - [x] 4.1 Run relevant unit and integration test suites for core, CLI, and webapp modules.
-- [ ] 4.2 Validate manual flows for CLI and webapp progress behavior against multi-table comparison scenarios.
-- [ ] 4.3 Update release-facing documentation or notes describing optional listener adoption and new progress feedback behavior.
+- [x] 4.2 Validate manual flows for CLI and webapp progress behavior against multi-table comparison scenarios.
+- [x] 4.3 Update release-facing documentation or notes describing optional listener adoption and new progress feedback behavior.
