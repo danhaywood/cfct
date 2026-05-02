@@ -89,6 +89,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Dialog loginDialog = new Dialog();
 
     private final Button compareButton = new Button("Compare");
+    private final Button clearSelectionsButton = new Button("Clear");
     private final Span comparisonError = new Span();
     private final Div comparisonResultsContainer = new Div();
     private final TextField comparedTableFilter = new TextField();
@@ -377,16 +378,26 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("padding-bottom", "var(--lumo-space-xs)")
                 .set("margin-top", "var(--lumo-space-xs)");
 
-        compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
         compareButton.getElement().setAttribute("data-testid", "compare-button");
         compareButton.getElement().setAttribute("title", "Execute comparison for selected eligible tables.");
         compareButton.addClickListener(event -> executeComparison());
+
+        clearSelectionsButton.getElement().setAttribute("data-testid", "clear-selections-button");
+        clearSelectionsButton.getElement().setAttribute("title", "Clear command and business table selections.");
+        clearSelectionsButton.addClickListener(event -> clearAllSelections());
+
+        final Div clearActionBar = new Div(clearSelectionsButton);
+        clearActionBar.getElement().setAttribute("data-testid", "command-clear-action-bar");
+        clearActionBar.getStyle()
+                .set("display", "flex")
+                .set("justify-content", "flex-end")
+                .set("width", "100%");
 
         final TextField tableFilter = filterField("Filter table", "table-filter-table", selectionDataProvider);
         tableFilter.setWidthFull();
         final Grid<TableCatalogEntry> tableGrid = buildSelectionGrid();
 
-        layout.add(commandInteractionFilter, commandGrid, commandSpacer, tableFilter, tableGrid, actionBar);
+        layout.add(commandInteractionFilter, commandGrid, clearActionBar, commandSpacer, tableFilter, tableGrid, actionBar);
         panel.add(layout);
         return panel;
     }
@@ -412,7 +423,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             }
             checkbox.addValueChangeListener(event -> {
                 selectionState.updateSelection(entry.table(), event.getValue());
-                compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
+                refreshActionButtons();
             });
             return checkbox;
         })).setHeader("").setAutoWidth(true).setFlexGrow(0).setTextAlign(ColumnTextAlign.CENTER);
@@ -511,7 +522,20 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         final var touchedTables = commandDrivenTableSelectionService.resolveTouchedBusinessTables(selectedInteractionIds, tableCatalogEntries);
         selectionState.applyProgrammaticSelections(touchedTables);
         selectionDataProvider.refreshAll();
-        compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
+        refreshActionButtons();
+    }
+
+    private void clearAllSelections() {
+        commandSelectionState.clearSelections();
+        selectionState.clearSelections();
+        commandSelectionDataProvider.refreshAll();
+        applyCommandDrivenSelection();
+    }
+
+    private void refreshActionButtons() {
+        final boolean authenticated = authenticatedContextHolder.isAuthenticated();
+        compareButton.setEnabled(selectionState.isCompareEnabled() && authenticated);
+        clearSelectionsButton.setEnabled(authenticated && (selectionState.selectedCount() > 0 || commandSelectionState.selectedCount() > 0));
     }
 
     private void executeComparison() {
@@ -790,7 +814,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         selectionDataProvider.refreshAll();
         commandSelectionDataProvider.refreshAll();
-        compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
+        refreshActionButtons();
     }
 
     private void clearTableCatalog() {
@@ -801,7 +825,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         commandCatalogEntries.clear();
         selectionDataProvider.refreshAll();
         commandSelectionDataProvider.refreshAll();
-        compareButton.setEnabled(false);
+        refreshActionButtons();
     }
 
     private void refreshConnectionFooter() {
@@ -830,7 +854,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private void refreshAuthUiState() {
         final boolean authenticated = authenticatedContextHolder.isAuthenticated();
         accountMenu.setVisible(authenticated);
-        compareButton.setEnabled(selectionState.isCompareEnabled() && authenticated);
+        refreshActionButtons();
         if (!authenticated) {
             rebuildLoginDialogForm();
             if (getUI().isPresent()) {

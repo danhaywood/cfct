@@ -104,6 +104,13 @@ public class ManualTableSelectionState {
         return "Selected tables: " + selectedCount();
     }
 
+    public void clearSelections() {
+        manualIncludedTables.clear();
+        manualExcludedTables.clear();
+        programmaticSelectedTables.clear();
+        recomputeSelectionFlags();
+    }
+
     private void recomputeSelectionFlags() {
         for (Map.Entry<TableRef, TableCatalogEntry> mapEntry : entriesByTable.entrySet()) {
             final TableRef table = mapEntry.getKey();

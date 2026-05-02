@@ -39,4 +39,18 @@ class CommandSelectionStateTest {
         assertThat(state.matchesFilter(entry, "2222")).isFalse();
         assertThat(state.matchesFilter(entry, "")).isTrue();
     }
+
+    @Test
+    void clearsAllSelectedCommands() {
+        final CommandSelectionState state = new CommandSelectionState(List.of(
+                new CommandCatalogEntry("111", "a", "a", "EXPORTED", "FOREGROUND", "2026-04-05T10:00:00.000", true),
+                new CommandCatalogEntry("222", "b", "b", "EXPORTED", "FOREGROUND", "2026-04-05T10:01:00.000", false)));
+
+        assertThat(state.selectedCount()).isEqualTo(1);
+
+        state.clearSelections();
+
+        assertThat(state.selectedCount()).isZero();
+        assertThat(state.selectedInteractionIds()).isEmpty();
+    }
 }

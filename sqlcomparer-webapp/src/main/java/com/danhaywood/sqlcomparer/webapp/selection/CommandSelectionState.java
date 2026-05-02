@@ -36,6 +36,20 @@ public class CommandSelectionState {
                 .collect(Collectors.toList());
     }
 
+    public int selectedCount() {
+        return (int) entriesByInteractionId.values().stream()
+                .filter(CommandCatalogEntry::selected)
+                .count();
+    }
+
+    public void clearSelections() {
+        for (Map.Entry<String, CommandCatalogEntry> entry : entriesByInteractionId.entrySet()) {
+            if (entry.getValue().selected()) {
+                entriesByInteractionId.put(entry.getKey(), entry.getValue().withSelected(false));
+            }
+        }
+    }
+
     public boolean matchesFilter(
             final CommandCatalogEntry entry,
             final String interactionIdFilter) {

@@ -121,6 +121,7 @@ class MainViewTest {
 
         assertThat(findByTestId(view, "command-selection-spacer")).isPresent();
         assertThat(findByTestId(view, "command-selection-grid")).isPresent();
+        assertThat(findByTestId(view, "clear-selections-button")).isPresent();
         assertThat(findByTestId(view, "table-selection-grid")).isPresent();
 
         final List<String> testIdsInOrder = view.getChildren()
@@ -130,6 +131,8 @@ class MainViewTest {
                 .toList();
 
         assertThat(testIdsInOrder.indexOf("command-selection-grid"))
+                .isLessThan(testIdsInOrder.indexOf("clear-selections-button"));
+        assertThat(testIdsInOrder.indexOf("clear-selections-button"))
                 .isLessThan(testIdsInOrder.indexOf("table-selection-grid"));
         assertThat(testIdsInOrder.indexOf("table-selection-grid"))
                 .isLessThan(testIdsInOrder.indexOf("navigation-compare-action-bar"));
@@ -180,6 +183,35 @@ class MainViewTest {
 
         assertThat(view.selectedTablesForStageTwo())
                 .containsExactly(new TableRef("dbo", "Supplier"), new TableRef("dbo", "Product"));
+
+        final Button clearButton = (Button) findByTestId(view, "clear-selections-button").orElseThrow();
+        assertThat(clearButton.isEnabled()).isTrue();
+    }
+
+    @Test
+    void clearActionClearsCommandAndBusinessSelectionsAndDisablesItself() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithPreselectedEntries(),
+                commandDrivenSelectionServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        assertThat(view.selectedCommandInteractionIdsForStageOne()).isNotEmpty();
+        assertThat(view.selectedTablesForStageTwo()).isNotEmpty();
+
+        invokeClearAllSelections(view);
+
+        assertThat(view.selectedCommandInteractionIdsForStageOne()).isEmpty();
+        assertThat(view.selectedTablesForStageTwo()).isEmpty();
+
+        final Button compareButton = (Button) findByTestId(view, "compare-button").orElseThrow();
+        final Button clearButton = (Button) findByTestId(view, "clear-selections-button").orElseThrow();
+        assertThat(compareButton.isEnabled()).isFalse();
+        assertThat(clearButton.isEnabled()).isFalse();
     }
 
     @Test
@@ -480,6 +512,16 @@ class MainViewTest {
     private void invokeExecuteComparison(final MainView view) {
         try {
             final var method = MainView.class.getDeclaredMethod("executeComparison");
+            method.setAccessible(true);
+            method.invoke(view);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void invokeClearAllSelections(final MainView view) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("clearAllSelections");
             method.setAccessible(true);
             method.invoke(view);
         } catch (Exception ex) {

@@ -70,6 +70,7 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
             assertThat(page.locator("[data-testid='selected-table-feedback']").count()).isZero();
             assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isDisabled()).isTrue();
+            assertThat(page.locator("[data-testid='clear-selections-button']").isDisabled()).isTrue();
             assertThat(page.locator("[data-testid='apply-table-filter']").count()).isZero();
             assertThat(page.locator("[data-testid='account-menu']").count()).isEqualTo(1);
             assertThat(page.locator("[data-testid='logout-button']").count()).isZero();
@@ -122,18 +123,18 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             toggleCheckbox(page, "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.toLowerCase() + "']");
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-supplier\"]').checked === true");
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-product\"]').checked !== true");
+            assertThat(page.locator("[data-testid='clear-selections-button']").isEnabled()).isTrue();
 
             toggleCheckbox(page, "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.SECOND_COMMAND_INTERACTION_ID.toLowerCase() + "']");
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-supplier\"]').checked === true");
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-product\"]').checked === true");
 
-            toggleCheckbox(page, "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.toLowerCase() + "']");
-            page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-supplier\"]').checked !== true");
-            page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-product\"]').checked === true");
-
-            toggleCheckbox(page, "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.SECOND_COMMAND_INTERACTION_ID.toLowerCase() + "']");
+            page.click("[data-testid='clear-selections-button']");
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-supplier\"]').checked !== true");
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-product\"]').checked !== true");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"command-checkbox-11111111-1111-1111-1111-111111111111\"]').checked !== true");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"command-checkbox-22222222-2222-2222-2222-222222222222\"]').checked !== true");
+            assertThat(page.locator("[data-testid='clear-selections-button']").isDisabled()).isTrue();
 
             setFilter(page, PlaywrightSqlServerFixture.ELIGIBLE_TABLE);
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('Supplier') && !document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PurchaseOrderWithoutBusinessKey')");

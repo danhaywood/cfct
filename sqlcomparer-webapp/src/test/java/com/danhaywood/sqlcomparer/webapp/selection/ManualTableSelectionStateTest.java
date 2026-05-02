@@ -103,4 +103,22 @@ class ManualTableSelectionStateTest {
 
         assertThat(state.isSelected(supplier)).isFalse();
     }
+
+    @Test
+    void clearsManualAndProgrammaticSelections() {
+        final TableRef supplier = new TableRef("dbo", "Supplier");
+        final TableRef product = new TableRef("dbo", "Product");
+        final ManualTableSelectionState state = new ManualTableSelectionState(List.of(
+                TableCatalogEntry.eligible(supplier),
+                TableCatalogEntry.eligible(product)));
+
+        state.updateSelection(supplier, true);
+        state.applyProgrammaticSelections(Set.of(product));
+        assertThat(state.selectedCount()).isEqualTo(2);
+
+        state.clearSelections();
+
+        assertThat(state.selectedCount()).isZero();
+        assertThat(state.selectedTables()).isEmpty();
+    }
 }
