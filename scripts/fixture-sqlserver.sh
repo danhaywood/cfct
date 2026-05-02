@@ -15,7 +15,7 @@ FIXTURE_ROOT="${REPO_ROOT}/cfct-integration-tests/src/test/resources/sql/fixture
 
 usage() {
   cat <<USAGE
-Usage: $(basename "$0") <start|restart|stop|status> [--restart] [--invalid-target-db]
+Usage: $(basename "$0") <start|restart|stop|status> [--restart] [--invalid-target-db] [--missing-system-tables]
 
 Commands:
   start        Start SQL Server, create fixture databases, and load demo data.
@@ -24,8 +24,9 @@ Commands:
   status       Show whether the fixture container is running.
 
 Flags:
-  --restart            Recreate the container even if already running.
-  --invalid-target-db  Do not create the target database and print a non-existent target name for manual failure testing.
+  --restart               Recreate the container even if already running.
+  --invalid-target-db     Do not create the target database and print a non-existent target name for manual failure testing.
+  --missing-system-tables Remove required target system objects after fixture load for manual failure testing.
 
 Environment overrides:
   SQLCOMPARER_FIXTURE_CONTAINER       Container name (default: ${CONTAINER_NAME})
@@ -100,8 +101,23 @@ apply_fixture() {
   exec_sql "${database}" < "${data_file}" >/dev/null
 }
 
+drop_required_target_objects() {
+  local database="$1"
+  echo "Removing required target system objects from ${database} for manual missing-system-tables testing..."
+  cat <<'SQL' | exec_sql "${database}" >/dev/null
+IF OBJECT_ID(N'causewayExtAuditTrail.AuditTrailEntry', N'V') IS NOT NULL DROP VIEW causewayExtAuditTrail.AuditTrailEntry;
+IF OBJECT_ID(N'causewayExtAuditTrail.AuditTrailEntry', N'U') IS NOT NULL DROP TABLE causewayExtAuditTrail.AuditTrailEntry;
+IF OBJECT_ID(N'causewayExtCommandLog.CommandLogEntry', N'V') IS NOT NULL DROP VIEW causewayExtCommandLog.CommandLogEntry;
+IF OBJECT_ID(N'causewayExtCommandLog.CommandLogEntry', N'U') IS NOT NULL DROP TABLE causewayExtCommandLog.CommandLogEntry;
+IF OBJECT_ID(N'util.LogicalTypeTableMapping', N'V') IS NOT NULL DROP VIEW util.LogicalTypeTableMapping;
+IF OBJECT_ID(N'util.LogicalTypeTableMapping', N'U') IS NOT NULL DROP TABLE util.LogicalTypeTableMapping;
+GO
+SQL
+}
+
 load_demo_data() {
   local invalid_target_db="${1:-false}"
+  local missing_system_tables="${2:-false}"
 
   create_database "${LEFT_DATABASE}"
 
@@ -118,11 +134,16 @@ load_demo_data() {
       apply_fixture "${fixture}" "${RIGHT_DATABASE}" right
     fi
   done
+
+  if [[ "${invalid_target_db}" != "true" && "${missing_system_tables}" == "true" ]]; then
+    drop_required_target_objects "${RIGHT_DATABASE}"
+  fi
 }
 
 start_fixture() {
   local restart="${1:-false}"
   local invalid_target_db="${2:-false}"
+  local missing_system_tables="${3:-false}"
 
   command -v docker >/dev/null 2>&1 || {
     echo "Error: docker is required but was not found." >&2
@@ -152,13 +173,16 @@ start_fixture() {
   fi
 
   wait_for_sqlserver
-  load_demo_data "${invalid_target_db}"
+  load_demo_data "${invalid_target_db}" "${missing_system_tables}"
   echo "Fixture SQL Server ready at localhost:${HOST_PORT}."
   if [[ "${invalid_target_db}" == "true" ]]; then
     echo "Databases: ${LEFT_DATABASE}."
     echo "Invalid target database for manual testing: ${INVALID_TARGET_DATABASE}."
   else
     echo "Databases: ${LEFT_DATABASE}, ${RIGHT_DATABASE}."
+    if [[ "${missing_system_tables}" == "true" ]]; then
+      echo "Missing-system-tables mode enabled on target database: ${RIGHT_DATABASE}."
+    fi
   fi
 }
 
@@ -191,6 +215,7 @@ main() {
 
   local restart_requested="false"
   local invalid_target_db="false"
+  local missing_system_tables="false"
 
   while (($# > 0)); do
     case "$1" in
@@ -199,6 +224,9 @@ main() {
         ;;
       --invalid-target-db)
         invalid_target_db="true"
+        ;;
+      --missing-system-tables)
+        missing_system_tables="true"
         ;;
       *)
         echo "Error: unknown flag '$1'." >&2
@@ -209,12 +237,17 @@ main() {
     shift
   done
 
+  if [[ "${invalid_target_db}" == "true" && "${missing_system_tables}" == "true" ]]; then
+    echo "Error: --invalid-target-db and --missing-system-tables cannot be used together." >&2
+    exit 2
+  fi
+
   case "${command}" in
     start)
-      start_fixture "${restart_requested}" "${invalid_target_db}"
+      start_fixture "${restart_requested}" "${invalid_target_db}" "${missing_system_tables}"
       ;;
     restart)
-      start_fixture true "${invalid_target_db}"
+      start_fixture true "${invalid_target_db}" "${missing_system_tables}"
       ;;
     stop)
       stop_fixture

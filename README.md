@@ -112,7 +112,16 @@ scripts/fixture-sqlserver.sh restart --invalid-target-db
 Use the printed `Invalid target database for manual testing` value as the target database in the login form.
 Login should fail with a clear validation message.
 
-6. Stop the fixture when done.
+6. Optional manual negative-path check for missing required target system objects.
+
+```bash
+scripts/fixture-sqlserver.sh restart --missing-system-tables
+```
+
+In this mode, the target database exists but required system objects are removed.
+Login should fail with a clear missing-system-objects validation message.
+
+7. Stop the fixture when done.
 
 ```bash
 scripts/fixture-sqlserver.sh stop
@@ -223,7 +232,7 @@ Playwright tests are headless and use Testcontainers-backed SQL Server settings 
 
 Use `scripts/fixture-sqlserver.sh` to manage a local SQL Server container for the fixture example.
 The script starts SQL Server 2022, creates `left_db` and `right_db`, and loads fixture data for the example tables.
-The script also supports an invalid-target mode for manual login-validation failure testing.
+The script also supports invalid-target and missing-system-tables modes for manual login-validation failure testing.
 
 Start the fixture:
 
@@ -238,6 +247,14 @@ scripts/fixture-sqlserver.sh start --invalid-target-db
 ```
 
 In invalid-target mode, the script prints a non-existent target database name for manual login testing.
+
+Start the fixture with missing required target system objects:
+
+```bash
+scripts/fixture-sqlserver.sh start --missing-system-tables
+```
+
+In missing-system-tables mode, the target database exists but required objects are removed after fixture load.
 
 Check fixture status:
 
