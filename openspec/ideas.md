@@ -23,8 +23,6 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 
 
-- /opsx-propose: rename from sqlcomparer to cfct.  comparedb.sh also rename to cfct.sh
-
 - /opsx-propose: provide summary panel for all selected tables; this should be above the tabs.
 
 - /opsx-propose: add a 'download' button underneath the business tables grid, to the left of 'compare'; when clicked should download a file suitable to feed into CLI's --tables-file param.  Disable this if there are no rows selected.
