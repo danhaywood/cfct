@@ -21,6 +21,7 @@ import com.danhaywood.cfct.sqlserver.CommandAuditTouchedTableResolverSqlServer;
 import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorForIdentityColumns;
 import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorForTimestamps;
 import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorForUuidColumns;
+import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorUsingExtendedProperties;
 import com.danhaywood.cfct.sqlserver.TableMetadataReaderSqlServer;
 import com.danhaywood.cfct.sqlserver.TableRowReaderSqlServer;
 
@@ -61,6 +62,12 @@ public class ComparisonImplementationConfiguration {
     public IgnoreColumnAdvisor ignoreColumnAdvisorForTimestamps(
             final IgnoreColumnAdvisorsProperties properties) {
         return new IgnoreColumnAdvisorForTimestamps(properties.isTimestampsEnabled());
+    }
+
+    @Bean
+    public IgnoreColumnAdvisor ignoreColumnAdvisorUsingExtendedProperties(
+            final IgnoreColumnAdvisorsProperties properties) {
+        return new IgnoreColumnAdvisorUsingExtendedProperties(properties.isExtendedPropertiesEnabled());
     }
 
     @Bean

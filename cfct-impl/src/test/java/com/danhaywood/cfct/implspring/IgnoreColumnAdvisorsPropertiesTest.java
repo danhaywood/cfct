@@ -23,11 +23,12 @@ class IgnoreColumnAdvisorsPropertiesTest {
         contextRunner.run(context -> {
             assertThat(context).hasNotFailed();
             final List<IgnoreColumnAdvisor> advisors = context.getBeanProvider(IgnoreColumnAdvisor.class).orderedStream().toList();
-            assertThat(advisors).hasSize(3);
+            assertThat(advisors).hasSize(4);
 
             assertThat(ignoredByAny(advisors, new ColumnMetadata(new ColumnRef("id"), true, "int"))).isTrue();
             assertThat(ignoredByAny(advisors, new ColumnMetadata(new ColumnRef("uuid"), false, "uniqueidentifier"))).isTrue();
             assertThat(ignoredByAny(advisors, new ColumnMetadata(new ColumnRef("version"), false, "datetime2"))).isTrue();
+            assertThat(ignoredByAny(advisors, new ColumnMetadata(new ColumnRef("notes"), false, "nvarchar", "true"))).isTrue();
         });
     }
 
@@ -38,11 +39,27 @@ class IgnoreColumnAdvisorsPropertiesTest {
                 .run(context -> {
                     assertThat(context).hasNotFailed();
                     final List<IgnoreColumnAdvisor> advisors = context.getBeanProvider(IgnoreColumnAdvisor.class).orderedStream().toList();
-                    assertThat(advisors).hasSize(3);
+                    assertThat(advisors).hasSize(4);
 
                     assertThat(ignoredByAny(advisors, new ColumnMetadata(new ColumnRef("id"), true, "int"))).isTrue();
                     assertThat(ignoredByAny(advisors, new ColumnMetadata(new ColumnRef("uuid"), false, "uniqueidentifier"))).isFalse();
                     assertThat(ignoredByAny(advisors, new ColumnMetadata(new ColumnRef("version"), false, "datetime2"))).isTrue();
+                    assertThat(ignoredByAny(advisors, new ColumnMetadata(new ColumnRef("notes"), false, "nvarchar", "true"))).isTrue();
+                });
+    }
+
+    @Test
+    void extendedPropertiesAdvisorCanBeDisabledIndependently() {
+        contextRunner
+                .withPropertyValues("cfct.comparison.ignore-column-advisors.extended-properties-enabled=false")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    final List<IgnoreColumnAdvisor> advisors = context.getBeanProvider(IgnoreColumnAdvisor.class).orderedStream().toList();
+                    assertThat(advisors).hasSize(4);
+
+                    assertThat(ignoredByAny(advisors, new ColumnMetadata(new ColumnRef("id"), true, "int"))).isTrue();
+                    assertThat(ignoredByAny(advisors, new ColumnMetadata(new ColumnRef("version"), false, "datetime2"))).isTrue();
+                    assertThat(ignoredByAny(advisors, new ColumnMetadata(new ColumnRef("notes"), false, "nvarchar", "true"))).isFalse();
                 });
     }
 

@@ -31,7 +31,8 @@ public final class TableMetadataReaderSqlServer implements TableMetadataReader {
         this(List.of(
                 new IgnoreColumnAdvisorForIdentityColumns(true),
                 new IgnoreColumnAdvisorForUuidColumns(true),
-                new IgnoreColumnAdvisorForTimestamps(true)));
+                new IgnoreColumnAdvisorForTimestamps(true),
+                new IgnoreColumnAdvisorUsingExtendedProperties(true)));
     }
 
     public TableMetadataReaderSqlServer(final List<IgnoreColumnAdvisor> ignoreColumnAdvisors) {
@@ -65,11 +66,19 @@ public final class TableMetadataReaderSqlServer implements TableMetadataReader {
 
     private List<ColumnMetadata> readColumns(final Connection connection, final TableRef table) {
         final String sql = """
-                SELECT c.name, c.is_identity, ty.name AS sql_type_name
+                SELECT c.name,
+                       c.is_identity,
+                       ty.name AS sql_type_name,
+                       CONVERT(nvarchar(255), ep.value) AS ignored_extended_property_value
                 FROM sys.schemas s
                 JOIN sys.tables t ON s.schema_id = t.schema_id
                 JOIN sys.columns c ON t.object_id = c.object_id
                 JOIN sys.types ty ON c.user_type_id = ty.user_type_id
+                LEFT JOIN sys.extended_properties ep
+                       ON ep.class = 1
+                      AND ep.major_id = t.object_id
+                      AND ep.minor_id = c.column_id
+                      AND ep.name = 'cfct.ignored'
                 WHERE s.name = ? AND t.name = ?
                 ORDER BY c.column_id
                 """;
@@ -82,7 +91,8 @@ public final class TableMetadataReaderSqlServer implements TableMetadataReader {
                     columns.add(new ColumnMetadata(
                             new ColumnRef(resultSet.getString("name")),
                             resultSet.getBoolean("is_identity"),
-                            resultSet.getString("sql_type_name")));
+                            resultSet.getString("sql_type_name"),
+                            resultSet.getString("ignored_extended_property_value")));
                 }
                 return columns;
             }

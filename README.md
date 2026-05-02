@@ -144,6 +144,10 @@ All default to `true`.
 - `cfct.comparison.ignore-column-advisors.identity-enabled`
 - `cfct.comparison.ignore-column-advisors.uuid-enabled`
 - `cfct.comparison.ignore-column-advisors.timestamps-enabled`
+- `cfct.comparison.ignore-column-advisors.extended-properties-enabled`
+
+For extended-property based ignores, set a column-level SQL Server extended property named `cfct.ignored`.
+Truthy values are interpreted case-insensitively and include: `true`, `1`, `yes`, `y`, `on`.
 
 ## Webapp Usage
 
