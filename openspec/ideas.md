@@ -10,8 +10,6 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 ### Prioritized
 
-- /opsx-propose: after logging in, place the focus on the command selection table.  Allow space to be used to toggle the selection.  Ensure that the up/down + l/r arrows are useful/behave appropriately
-  
 - /opsx-propose: perform checks that the target database has all required system tables.
 
 - /opsx-propose: provide summary panel for all selected tables; this should be above the tabs.
