@@ -126,6 +126,7 @@ Webapp usage is now a three-stage workflow.
 - Stage 1: login in a startup modal dialog with server, source database, target database, username, and password, with defaults loaded from config props.
 - Stage 2: select eligible tables in the AppLayout navigation drawer and trigger comparison using the right-aligned `Compare` action above the table grid.
 - After successful login, focus moves to the command selection grid so keyboard users can use arrow keys to navigate and Space to toggle command selection.
+- When compare is enabled, pressing Enter in the selection workflow triggers Compare as the default action.
 - Stage 3: view comparison output in the main comparison area as dynamic tabs, one tab per selected table.
 
 Comparison grids use Excel-like visual cues.

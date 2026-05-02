@@ -80,6 +80,26 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
     }
 
     @Test
+    void pressingEnterRunsCompareAfterCommandDrivenSelectionEnablesCompare() {
+        try (Playwright playwright = Playwright.create();
+             Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+             Page page = browser.newPage()) {
+            page.setViewportSize(1440, 900);
+            page.navigate("http://localhost:" + serverPort + "/");
+            page.waitForSelector("[data-testid='login-modal']");
+            page.click("[data-testid='login-submit']");
+            page.waitForSelector("[data-testid='command-selection-grid']");
+
+            toggleCheckbox(page, "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.toLowerCase() + "']");
+            page.waitForFunction("() => !document.querySelector('[data-testid=\"compare-button\"]').disabled");
+
+            page.keyboard().press("Enter");
+            page.waitForSelector("[data-testid='comparison-results-tabs']");
+            assertThat(page.locator("[data-testid^='comparison-result-tab-']").count()).isGreaterThan(0);
+        }
+    }
+
+    @Test
     void showsOkStatusAndMainUiHappyPathOnHomePage() {
         try (Playwright playwright = Playwright.create();
              Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));

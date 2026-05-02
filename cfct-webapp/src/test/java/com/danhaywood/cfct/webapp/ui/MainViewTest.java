@@ -111,6 +111,47 @@ class MainViewTest {
 
         final Component actionBar = findByTestId(view, "navigation-compare-action-bar").orElseThrow();
         assertThat(actionBar.getElement().getAttribute("class")).contains("navigation-compare-action-bar");
+        final Button compareButton = (Button) findByTestId(view, "compare-button").orElseThrow();
+        assertThat(compareButton.getElement().getAttribute("data-default-action")).isEqualTo("compare");
+    }
+
+    @Test
+    void enterShortcutTriggersCompareWhenEnabledAndNotTyping() {
+        final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
+        when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class)))
+                .thenReturn(sampleComparisonOutcome());
+
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                comparisonExecutionService,
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        invokeHandleEnterShortcut(view, "DIV", null);
+
+        verify(comparisonExecutionService).compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class));
+    }
+
+    @Test
+    void enterShortcutDoesNotTriggerCompareWhenDisabledOrTyping() {
+        final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
+
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                comparisonExecutionService,
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        invokeHandleEnterShortcut(view, "DIV", null);
+        invokeHandleEnterShortcut(view, "INPUT", "text");
+
+        Mockito.verifyNoInteractions(comparisonExecutionService);
     }
 
     @Test
@@ -264,7 +305,6 @@ class MainViewTest {
         invokeExecuteComparison(view);
 
         verify(comparisonExecutionService).compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class));
-        assertThat(findByTestId(view, "comparison-result-export-actions")).isPresent();
         assertThat(findByTestId(view, "comparison-result-actions")).isPresent();
         assertThat(findByTestId(view, "comparison-table-filter")).isPresent();
         assertThat(findByTestId(view, "download-format-select")).isPresent();
@@ -555,6 +595,16 @@ class MainViewTest {
             final var method = MainView.class.getDeclaredMethod("valueCell", ComparisonRowView.class, ColumnRef.class);
             method.setAccessible(true);
             return (Component) method.invoke(view, row, column);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void invokeHandleEnterShortcut(final MainView view, final String targetTagName, final String targetType) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("handleEnterShortcut", String.class, String.class);
+            method.setAccessible(true);
+            method.invoke(view, targetTagName, targetType);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

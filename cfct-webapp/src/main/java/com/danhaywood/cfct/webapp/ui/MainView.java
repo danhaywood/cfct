@@ -348,6 +348,13 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private Div buildSelectionPanel() {
         final Div panel = new Div();
         panel.getElement().setAttribute("data-testid", "table-selection-panel");
+        panel.getElement()
+                .addEventListener("keydown", event -> handleEnterShortcut(
+                        asText(event.getEventData().get("event.target.tagName")),
+                        asText(event.getEventData().get("event.target.getAttribute('type')"))))
+                .setFilter("event.key === 'Enter'")
+                .addEventData("event.target.tagName")
+                .addEventData("event.target.getAttribute('type')");
         panel.getStyle()
                 .set("width", "32rem")
                 .set("max-width", "100%")
@@ -414,6 +421,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("margin-top", "var(--lumo-space-xs)");
 
         compareButton.getElement().setAttribute("data-testid", "compare-button");
+        compareButton.getElement().setAttribute("data-default-action", "compare");
         compareButton.getElement().setAttribute("title", "Execute comparison for selected eligible tables.");
         compareButton.addClickListener(event -> executeComparison());
 
@@ -600,6 +608,30 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         final boolean authenticated = authenticatedContextHolder.isAuthenticated();
         compareButton.setEnabled(selectionState.isCompareEnabled() && authenticated);
         clearSelectionsButton.setEnabled(authenticated && (selectionState.selectedCount() > 0 || commandSelectionState.selectedCount() > 0));
+    }
+
+    private String asText(final tools.jackson.databind.JsonNode node) {
+        return node == null || node.isNull() ? null : node.asText();
+    }
+
+    private void handleEnterShortcut(final String targetTagName, final String targetType) {
+        if (loginDialog.isOpened() || !compareButton.isEnabled()) {
+            return;
+        }
+
+        final String tag = targetTagName == null ? "" : targetTagName.toUpperCase(Locale.ROOT);
+        if ("INPUT".equals(tag) || "TEXTAREA".equals(tag) || "SELECT".equals(tag) || "BUTTON".equals(tag)) {
+            return;
+        }
+
+        if (targetType != null && !targetType.isBlank()) {
+            final String type = targetType.toLowerCase(Locale.ROOT);
+            if ("text".equals(type) || "password".equals(type) || "search".equals(type) || "email".equals(type)) {
+                return;
+            }
+        }
+
+        executeComparison();
     }
 
     private void executeComparison() {
