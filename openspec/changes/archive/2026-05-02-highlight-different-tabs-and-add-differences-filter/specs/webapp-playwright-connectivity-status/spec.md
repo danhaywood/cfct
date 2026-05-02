@@ -1,8 +1,5 @@
-# webapp-playwright-connectivity-status Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change add-homepage-connection-status-playwright-tests. Update Purpose after archive.
-## Requirements
 ### Requirement: Headless Playwright validates home-page SQL connectivity status
 The project SHALL provide headless Playwright tests for webapp home-page SQL connectivity status behavior.
 Playwright tests SHALL verify both success and failure status rendering on the home page.
@@ -53,12 +50,3 @@ Playwright tests SHALL run against Testcontainers-provisioned SQL Server scenari
 #### Scenario: Playwright captures collapsed navigation screenshot
 - **WHEN** a headless Playwright test collapses the navigation panel
 - **THEN** the test captures a baseline screenshot for the collapsed navigation state
-
-### Requirement: Playwright execution is scriptable for local and CI usage
-The project SHALL provide a documented command or helper script that runs the connectivity-status Playwright tests headlessly.
-The execution path SHALL be compatible with non-interactive CI environments.
-
-#### Scenario: Headless Playwright command executes in CI-style environment
-- **WHEN** the documented Playwright command is run in a non-interactive environment with required dependencies
-- **THEN** connectivity-status browser tests execute without requiring a visible browser session
-
