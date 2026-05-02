@@ -14,6 +14,7 @@ The shell SHALL keep the navbar minimal without persistent collapsed-state label
 The shell SHALL provide a top-right account menu area in the navbar for authenticated session actions.
 The shell SHALL place logout inside the account menu instead of the left navigation area.
 The shell SHALL add spacer treatment above the command-selection grid block in the left navigation area.
+The shell SHALL render compact branding in the navbar, including a small logo/icon and visible `CFCT` name.
 
 #### Scenario: Hamburger menu is available
 - **WHEN** the home page is rendered
@@ -38,6 +39,10 @@ The shell SHALL add spacer treatment above the command-selection grid block in t
 #### Scenario: Command grid section includes spacer above
 - **WHEN** the selection stage is visible in the navigation panel
 - **THEN** a visible spacer is rendered above the command-selection grid block to improve vertical rhythm
+
+#### Scenario: Navbar shows compact CFCT branding
+- **WHEN** an authenticated user views the main UI shell
+- **THEN** the navbar displays a compact logo/icon and `CFCT` brand label with deterministic test hooks
 
 ### Requirement: Webapp footer displays non-sensitive connection details
 The webapp SHALL display configured connection details and SQL connectivity status in a fixed footer/status bar on the main UI.
