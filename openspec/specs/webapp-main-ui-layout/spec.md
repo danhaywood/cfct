@@ -77,6 +77,7 @@ The `Compare` action row SHALL include top margin that visually aligns the compa
 The `Compare` button SHALL be disabled when no eligible table is selected.
 The `Compare` button SHALL be enabled when one or more eligible tables are selected.
 Activating the `Compare` button SHALL execute comparison orchestration for all currently selected eligible tables.
+Pressing Enter in the active selection workflow SHALL activate compare when the `Compare` action is enabled.
 The comparison stage SHALL render the execution outcome in the right-side content area.
 
 #### Scenario: Compare button is disabled before selection
@@ -98,6 +99,10 @@ The comparison stage SHALL render the execution outcome in the right-side conten
 #### Scenario: Compare button executes selected-table comparison
 - **WHEN** a user activates the enabled `Compare` button
 - **THEN** comparison is executed for the current selected eligible tables and the right-side comparison stage updates with resulting content
+
+#### Scenario: Enter activates compare when enabled
+- **WHEN** compare is enabled in the selection workflow and the user presses Enter
+- **THEN** comparison is executed for the current selected eligible tables and the comparison stage updates with resulting content
 
 ### Requirement: Compare action is below business table grid and visible on resize
 The webapp SHALL render the compare action below the business table grid in the left navigation panel.

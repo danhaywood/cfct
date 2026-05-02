@@ -34,6 +34,7 @@ Filtering SHALL narrow visible command rows without requiring a separate apply-f
 The webapp SHALL evaluate touched business tables for the currently selected commands.
 The webapp SHALL update business table selections to include the resolved touched tables.
 The webapp SHALL use union semantics across all selected commands.
+The webapp SHALL allow users to press Enter to execute compare immediately after command-driven table selection has enabled compare.
 
 #### Scenario: Selecting one command auto-selects touched business tables
 - **WHEN** a user selects a command row in the command grid
@@ -53,6 +54,10 @@ The webapp SHALL use union semantics across all selected commands.
 #### Scenario: Clearing command selection clears command-driven table selection
 - **WHEN** the user clears all command selections
 - **THEN** no command-driven table selection remains active in the manual table grid
+
+#### Scenario: Enter executes compare after command-driven selection enables compare
+- **WHEN** command-driven table selection has produced at least one eligible selected table and the user presses Enter
+- **THEN** compare execution starts using the currently selected eligible tables
 
 ### Requirement: Clear control resets command and business selections
 The webapp SHALL render a Clear control below the command selection grid.
