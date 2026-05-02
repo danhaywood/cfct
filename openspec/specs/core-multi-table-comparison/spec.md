@@ -6,6 +6,9 @@ TBD - created by archiving change compare-multiple-tables. Update Purpose after 
 ### Requirement: Core library compares a caller-specified set of tables
 The system SHALL provide a core library API that compares a caller-specified collection of SQL Server tables between a left JDBC connection and a right JDBC connection.
 The API SHALL compare exactly the requested tables.
+The API SHALL support optional registration of a progress listener for table-level comparison lifecycle events.
+The API SHALL emit a start event before each requested table comparison begins.
+The API SHALL emit a completion or failure event after each requested table comparison finishes.
 
 #### Scenario: Caller compares selected tables
 - **WHEN** a caller provides left and right JDBC connections and a collection of table references
@@ -18,6 +21,10 @@ The API SHALL compare exactly the requested tables.
 #### Scenario: Empty table set is rejected
 - **WHEN** a caller requests a multi-table comparison with no table references
 - **THEN** the core library fails with a clear validation error
+
+#### Scenario: Progress listener receives per-table lifecycle notifications
+- **WHEN** a caller provides a progress listener and requests multiple tables
+- **THEN** the core library invokes the listener for each table start and completion-or-failure lifecycle point in request order
 
 ### Requirement: Multi-table comparison reuses single-table comparison
 The system SHALL compare each requested table using the same metadata discovery, business-key matching, ignored-column handling, and row-difference behavior as single-table comparison.
@@ -33,6 +40,7 @@ The system SHALL compare each requested table using the same metadata discovery,
 #### Scenario: Table metadata errors fail clearly
 - **WHEN** one requested table cannot be compared because its metadata is invalid
 - **THEN** the multi-table comparison fails with an error that identifies the failing table
+
 ### Requirement: Core library reports structured multi-table results
 The system SHALL return a structured multi-table comparison result.
 The result SHALL contain one single-table comparison result for each requested table.
