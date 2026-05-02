@@ -10,11 +10,12 @@ HOST_PORT="${SQLCOMPARER_FIXTURE_PORT:-14333}"
 SA_PASSWORD="${SQLCOMPARER_FIXTURE_PASSWORD:-Str0ng_password!123}"
 LEFT_DATABASE="${SQLCOMPARER_LEFT_DATABASE:-left_db}"
 RIGHT_DATABASE="${SQLCOMPARER_RIGHT_DATABASE:-right_db}"
+INVALID_TARGET_DATABASE="${SQLCOMPARER_INVALID_TARGET_DATABASE:-${RIGHT_DATABASE}_missing}"
 FIXTURE_ROOT="${REPO_ROOT}/cfct-integration-tests/src/test/resources/sql/fixtures"
 
 usage() {
   cat <<USAGE
-Usage: $(basename "$0") <start|restart|stop|status> [--restart]
+Usage: $(basename "$0") <start|restart|stop|status> [--restart] [--invalid-target-db]
 
 Commands:
   start        Start SQL Server, create fixture databases, and load demo data.
@@ -23,13 +24,15 @@ Commands:
   status       Show whether the fixture container is running.
 
 Flags:
-  --restart    Only valid with 'start'. Recreate the container even if already running.
+  --restart            Recreate the container even if already running.
+  --invalid-target-db  Do not create the target database and print a non-existent target name for manual failure testing.
 
 Environment overrides:
-  SQLCOMPARER_FIXTURE_CONTAINER  Container name (default: ${CONTAINER_NAME})
-  SQLCOMPARER_FIXTURE_IMAGE      SQL Server image (default: ${SQLSERVER_IMAGE})
-  SQLCOMPARER_FIXTURE_PORT       Host port (default: ${HOST_PORT})
-  SQLCOMPARER_FIXTURE_PASSWORD   sa password (default: fixture demo password)
+  SQLCOMPARER_FIXTURE_CONTAINER       Container name (default: ${CONTAINER_NAME})
+  SQLCOMPARER_FIXTURE_IMAGE           SQL Server image (default: ${SQLSERVER_IMAGE})
+  SQLCOMPARER_FIXTURE_PORT            Host port (default: ${HOST_PORT})
+  SQLCOMPARER_FIXTURE_PASSWORD        sa password (default: fixture demo password)
+  SQLCOMPARER_INVALID_TARGET_DATABASE Missing target name used with --invalid-target-db (default: ${INVALID_TARGET_DATABASE})
 USAGE
 }
 
@@ -98,17 +101,28 @@ apply_fixture() {
 }
 
 load_demo_data() {
+  local invalid_target_db="${1:-false}"
+
   create_database "${LEFT_DATABASE}"
-  create_database "${RIGHT_DATABASE}"
+
+  if [[ "${invalid_target_db}" == "true" ]]; then
+    echo "Skipping target database creation for manual invalid-target testing."
+    echo "Use target database: ${INVALID_TARGET_DATABASE}"
+  else
+    create_database "${RIGHT_DATABASE}"
+  fi
 
   for fixture in supplier product customer-address purchase-order purchase-order-without-business-key; do
     apply_fixture "${fixture}" "${LEFT_DATABASE}" left
-    apply_fixture "${fixture}" "${RIGHT_DATABASE}" right
+    if [[ "${invalid_target_db}" != "true" ]]; then
+      apply_fixture "${fixture}" "${RIGHT_DATABASE}" right
+    fi
   done
 }
 
 start_fixture() {
   local restart="${1:-false}"
+  local invalid_target_db="${2:-false}"
 
   command -v docker >/dev/null 2>&1 || {
     echo "Error: docker is required but was not found." >&2
@@ -138,9 +152,14 @@ start_fixture() {
   fi
 
   wait_for_sqlserver
-  load_demo_data
+  load_demo_data "${invalid_target_db}"
   echo "Fixture SQL Server ready at localhost:${HOST_PORT}."
-  echo "Databases: ${LEFT_DATABASE}, ${RIGHT_DATABASE}."
+  if [[ "${invalid_target_db}" == "true" ]]; then
+    echo "Databases: ${LEFT_DATABASE}."
+    echo "Invalid target database for manual testing: ${INVALID_TARGET_DATABASE}."
+  else
+    echo "Databases: ${LEFT_DATABASE}, ${RIGHT_DATABASE}."
+  fi
 }
 
 stop_fixture() {
@@ -168,35 +187,34 @@ status_fixture() {
 
 main() {
   local command="${1:-}"
-  local flag="${2:-}"
+  shift || true
+
+  local restart_requested="false"
+  local invalid_target_db="false"
+
+  while (($# > 0)); do
+    case "$1" in
+      --restart)
+        restart_requested="true"
+        ;;
+      --invalid-target-db)
+        invalid_target_db="true"
+        ;;
+      *)
+        echo "Error: unknown flag '$1'." >&2
+        usage >&2
+        exit 2
+        ;;
+    esac
+    shift
+  done
 
   case "${command}" in
     start)
-      case "${flag}" in
-        "")
-          start_fixture false
-          ;;
-        --restart)
-          start_fixture true
-          ;;
-        *)
-          echo "Error: unknown flag '${flag}' for start." >&2
-          usage >&2
-          exit 2
-          ;;
-      esac
+      start_fixture "${restart_requested}" "${invalid_target_db}"
       ;;
     restart)
-      case "${flag}" in
-        "")
-          start_fixture true
-          ;;
-        *)
-          echo "Error: command 'restart' does not accept flag '${flag}'." >&2
-          usage >&2
-          exit 2
-          ;;
-      esac
+      start_fixture true "${invalid_target_db}"
       ;;
     stop)
       stop_fixture

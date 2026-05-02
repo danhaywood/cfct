@@ -68,7 +68,8 @@ mvn -pl cfct-webapp -am spring-boot:run
 ```
 
 The webapp now uses a login-first flow.
-SQL connectivity and database existence are validated when the user submits the login form.
+SQL connectivity, database existence, and required target-system object presence are validated when the user submits the login form.
+Required target-system objects may be either tables or views.
 The login form is pre-populated from `sqlcomparer.webapp.comparison.connection.*` configuration values, and every field remains editable.
 
 Happy-path connectivity check with the demo fixture SQL Server:
@@ -102,7 +103,16 @@ Expected startup line includes:
 Started SqlComparerWebApplication
 ```
 
-5. Stop the fixture when done.
+5. Optional manual negative-path check for invalid target database.
+
+```bash
+scripts/fixture-sqlserver.sh restart --invalid-target-db
+```
+
+Use the printed `Invalid target database for manual testing` value as the target database in the login form.
+Login should fail with a clear validation message.
+
+6. Stop the fixture when done.
 
 ```bash
 scripts/fixture-sqlserver.sh stop
@@ -213,12 +223,21 @@ Playwright tests are headless and use Testcontainers-backed SQL Server settings 
 
 Use `scripts/fixture-sqlserver.sh` to manage a local SQL Server container for the fixture example.
 The script starts SQL Server 2022, creates `left_db` and `right_db`, and loads fixture data for the example tables.
+The script also supports an invalid-target mode for manual login-validation failure testing.
 
 Start the fixture:
 
 ```bash
 scripts/fixture-sqlserver.sh start
 ```
+
+Start the fixture in invalid-target mode:
+
+```bash
+scripts/fixture-sqlserver.sh start --invalid-target-db
+```
+
+In invalid-target mode, the script prints a non-existent target database name for manual login testing.
 
 Check fixture status:
 
@@ -240,6 +259,7 @@ SQLCOMPARER_FIXTURE_PORT=14334 scripts/fixture-sqlserver.sh start
 ```
 
 If you change the port, also update the env file used by the comparison wrapper or pass a different env file with `--env-file` or `COMPAREDB_ENV_FILE`.
+Use `SQLCOMPARER_INVALID_TARGET_DATABASE` to override the invalid target name used by `--invalid-target-db`.
 
 ## Comparison wrapper
 
