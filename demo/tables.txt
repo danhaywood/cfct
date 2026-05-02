@@ -1,3 +1,4 @@
 dbo.Supplier
 dbo.Product
+dbo.CustomerAddress
 dbo.PurchaseOrder

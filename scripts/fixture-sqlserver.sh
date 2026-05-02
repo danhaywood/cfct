@@ -101,7 +101,7 @@ load_demo_data() {
   create_database "${LEFT_DATABASE}"
   create_database "${RIGHT_DATABASE}"
 
-  for fixture in supplier product purchase-order purchase-order-without-business-key; do
+  for fixture in supplier product customer-address purchase-order purchase-order-without-business-key; do
     apply_fixture "${fixture}" "${LEFT_DATABASE}" left
     apply_fixture "${fixture}" "${RIGHT_DATABASE}" right
   done

@@ -98,6 +98,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Span comparisonError = new Span();
     private final Div comparisonResultsContainer = new Div();
     private final TextField comparedTableFilter = new TextField();
+    private final Checkbox differencesOnlyFilter = new Checkbox("Diffs only");
     private final Anchor downloadAction = new Anchor();
     private final Select<DownloadFormat> downloadFormatSelect = new Select<>();
     private final HorizontalLayout resultActions = new HorizontalLayout();
@@ -259,6 +260,13 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         comparedTableFilter.getElement().setAttribute("data-testid", "comparison-table-filter");
         comparedTableFilter.addValueChangeListener(event -> renderComparisonTabs());
 
+        differencesOnlyFilter.getElement().setAttribute("data-testid", "comparison-differences-only-filter");
+        differencesOnlyFilter.setValue(true);
+        differencesOnlyFilter.getStyle().setPaddingLeft(".3em");
+        differencesOnlyFilter.getStyle().setPaddingRight(".3em");
+        differencesOnlyFilter.getStyle().setAlignSelf(Style.AlignSelf.CENTER);
+        differencesOnlyFilter.addValueChangeListener(event -> renderComparisonTabs());
+
         downloadFormatSelect.setItems(DownloadFormat.JSON, DownloadFormat.YAML, DownloadFormat.EXCEL);
         downloadFormatSelect.setItemLabelGenerator(DownloadFormat::label);
         downloadFormatSelect.setValue(DownloadFormat.JSON);
@@ -270,7 +278,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         downloadAction.getElement().setAttribute("download", true);
 
         resultActions.getElement().setAttribute("data-testid", "comparison-result-actions");
-        resultActions.add(comparedTableFilter, downloadFormatSelect, downloadAction);
+        resultActions.addClassName("comparison-result-actions");
+        resultActions.add(comparedTableFilter, differencesOnlyFilter, downloadFormatSelect, downloadAction);
         resultActions.expand(comparedTableFilter);
         resultActions.setVisible(false);
         resultActions.setPadding(true);
@@ -718,7 +727,12 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         final Map<Tab, TableComparisonViewResult> mapping = new LinkedHashMap<>();
         for (TableComparisonViewResult tableResult : filtered) {
             final Tab tab = new Tab(tableResult.tableDisplayName());
+            final boolean hasDifferences = hasDifferences(tableResult);
             tab.getElement().setAttribute("data-testid", "comparison-result-tab-" + selectorToken(tableResult.table()));
+            tab.getElement().setAttribute("data-has-differences", Boolean.toString(hasDifferences));
+            if (hasDifferences) {
+                tab.addClassName("comparison-result-tab-different");
+            }
             mapping.put(tab, tableResult);
             tabs.add(tab);
         }
@@ -740,11 +754,18 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     }
 
     private boolean matchesComparedTableFilter(final TableComparisonViewResult result) {
+        if (Boolean.TRUE.equals(differencesOnlyFilter.getValue()) && !hasDifferences(result)) {
+            return false;
+        }
         final String filter = comparedTableFilter.getValue();
         if (filter == null || filter.isBlank()) {
             return true;
         }
         return result.tableDisplayName().toLowerCase(Locale.ROOT).contains(filter.toLowerCase(Locale.ROOT));
+    }
+
+    private boolean hasDifferences(final TableComparisonViewResult result) {
+        return result.rows().stream().anyMatch(row -> row.status() != ComparisonRowStatus.MATCH);
     }
 
     private void renderEmptyComparisonState() {

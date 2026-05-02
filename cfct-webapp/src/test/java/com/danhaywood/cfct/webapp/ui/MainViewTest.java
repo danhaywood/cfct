@@ -318,6 +318,39 @@ class MainViewTest {
     }
 
     @Test
+    void differencesOnlyFilterUsesDifferenceStatusForTabFiltering() {
+        final WebappComparisonExecutionService.ComparisonExecutionOutcome outcome = sampleComparisonOutcome();
+        final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
+        when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class)))
+                .thenReturn(outcome);
+
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                comparisonExecutionService,
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        invokeExecuteComparison(view);
+
+        final com.vaadin.flow.component.checkbox.Checkbox differencesOnly =
+                (com.vaadin.flow.component.checkbox.Checkbox) findByTestId(view, "comparison-differences-only-filter").orElseThrow();
+        assertThat(differencesOnly.getValue()).isFalse();
+
+        final TableComparisonViewResult supplier = outcome.viewResult().tableResults().get(0);
+        final TableComparisonViewResult customerAddress = outcome.viewResult().tableResults().get(1);
+
+        assertThat(invokeHasDifferences(view, supplier)).isTrue();
+        assertThat(invokeHasDifferences(view, customerAddress)).isFalse();
+
+        differencesOnly.setValue(true);
+        assertThat(invokeMatchesComparedTableFilter(view, supplier)).isTrue();
+        assertThat(invokeMatchesComparedTableFilter(view, customerAddress)).isFalse();
+    }
+
+    @Test
     void reloadTableCatalogAfterLoginFromUnauthenticatedStateDoesNotThrow() {
         final AuthenticatedConnectionContextHolder holder = unauthenticatedHolder();
         final MainView view = new MainView(
@@ -545,6 +578,16 @@ class MainViewTest {
                 .findFirst();
     }
 
+    private List<Component> findByTestIdPrefix(final Component root, final String testIdPrefix) {
+        return root.getChildren()
+                .flatMap(this::streamWithDescendants)
+                .filter(component -> {
+                    final String testId = component.getElement().getAttribute("data-testid");
+                    return testId != null && testId.startsWith(testIdPrefix);
+                })
+                .toList();
+    }
+
     private Stream<Component> streamWithDescendants(final Component component) {
         return Stream.concat(Stream.of(component), component.getChildren().flatMap(this::streamWithDescendants));
     }
@@ -595,6 +638,26 @@ class MainViewTest {
             final var method = MainView.class.getDeclaredMethod("valueCell", ComparisonRowView.class, ColumnRef.class);
             method.setAccessible(true);
             return (Component) method.invoke(view, row, column);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private boolean invokeHasDifferences(final MainView view, final TableComparisonViewResult tableResult) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("hasDifferences", TableComparisonViewResult.class);
+            method.setAccessible(true);
+            return (boolean) method.invoke(view, tableResult);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private boolean invokeMatchesComparedTableFilter(final MainView view, final TableComparisonViewResult tableResult) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("matchesComparedTableFilter", TableComparisonViewResult.class);
+            method.setAccessible(true);
+            return (boolean) method.invoke(view, tableResult);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -720,7 +783,7 @@ class MainViewTest {
 
     private WebappComparisonExecutionService.ComparisonExecutionOutcome sampleComparisonOutcome() {
         final ColumnRef name = new ColumnRef("name");
-        final ComparisonRowView row = new ComparisonRowView(
+        final ComparisonRowView supplierDifferent = new ComparisonRowView(
                 new RowKey(List.of("SUP-001")),
                 ComparisonRowStatus.DIFFERENT,
                 Map.of(name, "Supplier A"),
@@ -729,8 +792,20 @@ class MainViewTest {
         final TableComparisonViewResult supplier = new TableComparisonViewResult(
                 new TableRef("dbo", "Supplier"),
                 List.of(name),
-                List.of(row));
-        final MultiTableComparisonViewResult viewResult = new MultiTableComparisonViewResult(List.of(supplier));
+                List.of(supplierDifferent));
+
+        final ComparisonRowView customerAddressMatch = new ComparisonRowView(
+                new RowKey(List.of("ADDR-001")),
+                ComparisonRowStatus.MATCH,
+                Map.of(name, "10 High Street"),
+                Map.of(name, "10 High Street"),
+                List.of());
+        final TableComparisonViewResult customerAddress = new TableComparisonViewResult(
+                new TableRef("dbo", "CustomerAddress"),
+                List.of(name),
+                List.of(customerAddressMatch));
+
+        final MultiTableComparisonViewResult viewResult = new MultiTableComparisonViewResult(List.of(supplier, customerAddress));
         final MultiTableComparisonResult rawResult = new MultiTableComparisonResult(List.of());
         return new WebappComparisonExecutionService.ComparisonExecutionOutcome(rawResult, viewResult, "{}", "a: b\n", new byte[]{1, 2});
     }

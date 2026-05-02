@@ -10,6 +10,11 @@
   gap: var(--lumo-space-s);
 }
 
+.comparison-result-tab-different {
+  color: #b45309;
+  font-weight: 700;
+}
+
 .comparison-result-export-actions {
   justify-content: flex-end;
   margin-left: auto;

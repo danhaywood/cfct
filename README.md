@@ -177,6 +177,7 @@ The initial table-selection view looks like this.
 ![Webapp table selection with footer status bar](docs/images/webapp-main.png)
 
 After selecting eligible tables and clicking `Compare`, the right-side stage renders per-table result tabs with compact value columns.
+Tabs for tables with differences are color-highlighted, and a `Differences only` checkbox can hide unchanged tables.
 Equal values are shown once, while differing values are shown inline as `L: ... | R: ...`.
 Excel-like status coloring and unified JSON/YAML/Excel download controls are preserved.
 
@@ -325,6 +326,7 @@ SQLCOMPARER_RIGHT_DATABASE=right_db
 ```text
 dbo.Supplier
 dbo.Product
+dbo.CustomerAddress
 dbo.PurchaseOrder
 ```
 

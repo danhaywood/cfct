@@ -13,6 +13,7 @@ final class PlaywrightSqlServerFixture {
     static final String ELIGIBLE_TABLE = "Supplier";
     static final String SECOND_ELIGIBLE_TABLE = "Product";
     static final String INELIGIBLE_TABLE = "PurchaseOrderWithoutBusinessKey";
+    static final String EQUAL_TABLE = "CustomerAddress";
     static final String COMMAND_INTERACTION_ID = "11111111-1111-1111-1111-111111111111";
     static final String SECOND_COMMAND_INTERACTION_ID = "22222222-2222-2222-2222-222222222222";
 
@@ -58,6 +59,10 @@ final class PlaywrightSqlServerFixture {
         executeSql(databaseName, "DROP TABLE IF EXISTS dbo." + INELIGIBLE_TABLE + ";");
         executeSql(databaseName, "CREATE TABLE dbo." + INELIGIBLE_TABLE + " (id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, reference NVARCHAR(40) NOT NULL, [version] DATETIME2(3) NOT NULL);");
 
+        executeSql(databaseName, "DROP TABLE IF EXISTS dbo." + EQUAL_TABLE + ";");
+        executeSql(databaseName, "CREATE TABLE dbo." + EQUAL_TABLE + " (id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, reference NVARCHAR(40) NOT NULL, customerReference NVARCHAR(40) NOT NULL, line1 NVARCHAR(120) NOT NULL, city NVARCHAR(80) NOT NULL, postcode NVARCHAR(20) NOT NULL, [version] DATETIME2(3) NOT NULL);");
+        executeSql(databaseName, "CREATE UNIQUE INDEX " + EQUAL_TABLE + "_PK ON dbo." + EQUAL_TABLE + "(reference);");
+
         executeSql(databaseName, "IF SCHEMA_ID('causewayExtCommandLog') IS NULL EXEC('CREATE SCHEMA causewayExtCommandLog');");
         executeSql(databaseName, "IF SCHEMA_ID('causewayExtAuditTrail') IS NULL EXEC('CREATE SCHEMA causewayExtAuditTrail');");
         executeSql(databaseName, "IF SCHEMA_ID('util') IS NULL EXEC('CREATE SCHEMA util');");
@@ -73,8 +78,9 @@ final class PlaywrightSqlServerFixture {
         if (databaseName.contains("left")) {
             executeSql(databaseName, "INSERT INTO dbo." + ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('SUP-001','Supplier One', SYSDATETIME()), ('SUP-002','Supplier Two L', SYSDATETIME());");
             executeSql(databaseName, "INSERT INTO dbo." + SECOND_ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('PRD-001','Product One', SYSDATETIME()), ('PRD-LEFT','Product Left Only', SYSDATETIME());");
+            executeSql(databaseName, "INSERT INTO dbo." + EQUAL_TABLE + " (reference, customerReference, line1, city, postcode, [version]) VALUES ('ADDR-001', 'CUS-001', '10 High Street', 'Bristol', 'BS1 1AA', SYSDATETIME()), ('ADDR-002', 'CUS-002', '22 River Road', 'Bath', 'BA1 2BB', SYSDATETIME());");
 
-            executeSql(databaseName, "INSERT INTO util.LogicalTypeTableMapping (logicalTypeName, qualifiedName) VALUES ('supplier.Supplier', 'dbo.Supplier'), ('product.Product', 'dbo.Product');");
+            executeSql(databaseName, "INSERT INTO util.LogicalTypeTableMapping (logicalTypeName, qualifiedName) VALUES ('supplier.Supplier', 'dbo.Supplier'), ('product.Product', 'dbo.Product'), ('customer.CustomerAddress', 'dbo.CustomerAddress');");
             executeSql(databaseName, "INSERT INTO causewayExtCommandLog.CommandLogEntry (interactionId, executeIn, logicalMemberIdentifier, [timestamp], target, replayState) VALUES ('" + COMMAND_INTERACTION_ID + "', 'FOREGROUND', 'supplier.Supplier#registerProduct', DATEADD(SECOND, -1, SYSDATETIME()), 'supplier.Supplier:301', 'EXPORTED');");
             executeSql(databaseName, "INSERT INTO causewayExtCommandLog.CommandLogEntry (interactionId, executeIn, logicalMemberIdentifier, [timestamp], target, replayState) VALUES ('" + SECOND_COMMAND_INTERACTION_ID + "', 'FOREGROUND', 'product.Product#changeStatus', SYSDATETIME(), 'product.Product:701', 'EXPORTED');");
             executeSql(databaseName, "INSERT INTO causewayExtAuditTrail.AuditTrailEntry (interactionId, sequence, target, propertyId) VALUES ('" + COMMAND_INTERACTION_ID + "', 1, 'supplier.Supplier:301', 'name');");
@@ -82,6 +88,7 @@ final class PlaywrightSqlServerFixture {
         } else {
             executeSql(databaseName, "INSERT INTO dbo." + ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('SUP-001','Supplier One', SYSDATETIME()), ('SUP-002','Supplier Two R', SYSDATETIME());");
             executeSql(databaseName, "INSERT INTO dbo." + SECOND_ELIGIBLE_TABLE + " (reference, name, [version]) VALUES ('PRD-001','Product One Changed', SYSDATETIME()), ('PRD-RIGHT','Product Right Only', SYSDATETIME());");
+            executeSql(databaseName, "INSERT INTO dbo." + EQUAL_TABLE + " (reference, customerReference, line1, city, postcode, [version]) VALUES ('ADDR-001', 'CUS-001', '10 High Street', 'Bristol', 'BS1 1AA', SYSDATETIME()), ('ADDR-002', 'CUS-002', '22 River Road', 'Bath', 'BA1 2BB', SYSDATETIME());");
         }
     }
 

@@ -216,14 +216,23 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
             page.click("[data-testid='compare-button']");
             page.waitForSelector("[data-testid='comparison-results-tabs']");
-            assertThat(page.locator("[data-testid^='comparison-result-tab-']").count()).isEqualTo(2);
+            assertThat(page.locator("[data-testid^='comparison-result-tab-']").count()).isEqualTo(3);
+            assertThat(page.locator("[data-testid='comparison-result-tab-dbo-supplier']").getAttribute("data-has-differences")).isEqualTo("true");
+            assertThat(page.locator("[data-testid='comparison-result-tab-dbo-product']").getAttribute("data-has-differences")).isEqualTo("true");
+            assertThat(page.locator("[data-testid='comparison-result-tab-dbo-customeraddress']").getAttribute("data-has-differences")).isEqualTo("false");
+
+            toggleCheckbox(page, "[data-testid='comparison-differences-only-filter']");
+            page.waitForFunction("() => document.querySelectorAll('[data-testid^=\"comparison-result-tab-\"]').length === 2");
+            assertThat(page.locator("[data-testid='comparison-result-tab-dbo-customeraddress']").count()).isZero();
+
             assertThat(page.locator("[data-testid^='comparison-grid-dbo-']").count()).isEqualTo(1);
             final String gridText = page.locator("[data-testid^='comparison-grid-dbo-']").first().innerText();
             assertThat(gridText).contains("Business Key", "Status", "name");
             assertThat(gridText).doesNotContain("L:", "R:");
             assertThat(page.locator("[data-testid='comparison-table-filter']").count()).isEqualTo(1);
-            assertThat(page.locator("[data-testid='download-json']").count()).isEqualTo(1);
-            assertThat(page.locator("[data-testid='download-excel']").count()).isEqualTo(1);
+            assertThat(page.locator("[data-testid='comparison-differences-only-filter']").count()).isEqualTo(1);
+            assertThat(page.locator("[data-testid='download-format-select']").count()).isEqualTo(1);
+            assertThat(page.locator("[data-testid='download-action']").count()).isEqualTo(1);
 
             page.screenshot(new Page.ScreenshotOptions().setPath(screenshotPath("webapp-selected.png")).setFullPage(true));
         }
