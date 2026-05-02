@@ -345,11 +345,18 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("height", "100%")
                 .set("overflow", "auto");
 
-        final Div commandSpacer = new Div();
-        commandSpacer.getElement().setAttribute("data-testid", "command-selection-spacer");
-        commandSpacer.getStyle()
+        final Div topSpacer = new Div();
+        topSpacer.getElement().setAttribute("data-testid", "command-selection-spacer");
+        topSpacer.getStyle()
                 .set("height", "calc(var(--lumo-size-s, 0.5rem) + var(--lumo-space-m, 0.5rem))")
                 .set("width", "100%");
+
+        final TextField commandMemberFilter = new TextField();
+        commandMemberFilter.setPlaceholder("Filter member id");
+        commandMemberFilter.setClearButtonVisible(true);
+        commandMemberFilter.setValueChangeMode(ValueChangeMode.EAGER);
+        commandMemberFilter.getElement().setAttribute("data-testid", "command-filter-member-id");
+        commandMemberFilter.setWidthFull();
 
         final TextField commandInteractionFilter = new TextField();
         commandInteractionFilter.setPlaceholder("Filter interaction id");
@@ -358,8 +365,18 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         commandInteractionFilter.getElement().setAttribute("data-testid", "command-filter-interaction-id");
         commandInteractionFilter.setWidthFull();
 
+        commandMemberFilter.addValueChangeListener(event ->
+                applyCommandFilter(commandMemberFilter.getValue(), commandInteractionFilter.getValue()));
         commandInteractionFilter.addValueChangeListener(event ->
-                applyCommandFilter(commandInteractionFilter.getValue()));
+                applyCommandFilter(commandMemberFilter.getValue(), commandInteractionFilter.getValue()));
+
+        final HorizontalLayout commandFilterRow = new HorizontalLayout(commandMemberFilter, commandInteractionFilter);
+        commandFilterRow.getElement().setAttribute("data-testid", "command-filter-row");
+        commandFilterRow.setWidthFull();
+        commandFilterRow.setSpacing(true);
+        commandFilterRow.setPadding(false);
+        commandFilterRow.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.END);
+        commandFilterRow.expand(commandMemberFilter, commandInteractionFilter);
 
         final Grid<CommandCatalogEntry> commandGrid = buildCommandSelectionGrid();
 
@@ -397,7 +414,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         tableFilter.setWidthFull();
         final Grid<TableCatalogEntry> tableGrid = buildSelectionGrid();
 
-        layout.add(commandInteractionFilter, commandGrid, clearActionBar, commandSpacer, tableFilter, tableGrid, actionBar);
+        layout.add(topSpacer, commandFilterRow, commandGrid, clearActionBar, tableFilter, tableGrid, actionBar);
         panel.add(layout);
         return panel;
     }
@@ -492,9 +509,9 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         return grid;
     }
 
-    private void applyCommandFilter(final String interactionIdFilter) {
+    private void applyCommandFilter(final String memberIdFilter, final String interactionIdFilter) {
         commandSelectionDataProvider.clearFilters();
-        commandSelectionDataProvider.addFilter(entry -> commandSelectionState.matchesFilter(entry, interactionIdFilter));
+        commandSelectionDataProvider.addFilter(entry -> commandSelectionState.matchesFilter(entry, memberIdFilter, interactionIdFilter));
     }
 
     private TextField filterField(

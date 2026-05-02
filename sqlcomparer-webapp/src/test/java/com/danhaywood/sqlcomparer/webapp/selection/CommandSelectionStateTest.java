@@ -24,7 +24,7 @@ class CommandSelectionStateTest {
     }
 
     @Test
-    void matchesFilterByInteractionId() {
+    void matchesFilterByMemberAndInteractionId() {
         final CommandSelectionState state = new CommandSelectionState(List.of());
         final CommandCatalogEntry entry = new CommandCatalogEntry(
                 "11111111-1111-1111-1111-111111111111",
@@ -35,9 +35,10 @@ class CommandSelectionStateTest {
                 "2026-04-05T10:00:00.000",
                 false);
 
-        assertThat(state.matchesFilter(entry, "1111")).isTrue();
-        assertThat(state.matchesFilter(entry, "2222")).isFalse();
-        assertThat(state.matchesFilter(entry, "")).isTrue();
+        assertThat(state.matchesFilter(entry, "supplier", "1111")).isTrue();
+        assertThat(state.matchesFilter(entry, "invoice", "1111")).isFalse();
+        assertThat(state.matchesFilter(entry, "supplier", "2222")).isFalse();
+        assertThat(state.matchesFilter(entry, "", "")).isTrue();
     }
 
     @Test

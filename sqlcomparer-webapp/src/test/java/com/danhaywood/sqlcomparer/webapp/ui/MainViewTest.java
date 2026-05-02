@@ -120,6 +120,8 @@ class MainViewTest {
                 mock(WebappAuthenticationService.class));
 
         assertThat(findByTestId(view, "command-selection-spacer")).isPresent();
+        assertThat(findByTestId(view, "command-filter-member-id")).isPresent();
+        assertThat(findByTestId(view, "command-filter-interaction-id")).isPresent();
         assertThat(findByTestId(view, "command-selection-grid")).isPresent();
         assertThat(findByTestId(view, "clear-selections-button")).isPresent();
         assertThat(findByTestId(view, "table-selection-grid")).isPresent();
@@ -130,6 +132,10 @@ class MainViewTest {
                 .filter(id -> id != null && !id.isBlank())
                 .toList();
 
+        assertThat(testIdsInOrder.indexOf("command-filter-member-id"))
+                .isLessThan(testIdsInOrder.indexOf("command-filter-interaction-id"));
+        assertThat(testIdsInOrder.indexOf("command-filter-interaction-id"))
+                .isLessThan(testIdsInOrder.indexOf("command-selection-grid"));
         assertThat(testIdsInOrder.indexOf("command-selection-grid"))
                 .isLessThan(testIdsInOrder.indexOf("clear-selections-button"));
         assertThat(testIdsInOrder.indexOf("clear-selections-button"))

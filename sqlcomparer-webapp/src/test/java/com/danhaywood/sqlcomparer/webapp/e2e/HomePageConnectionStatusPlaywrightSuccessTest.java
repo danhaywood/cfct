@@ -77,9 +77,13 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
             assertThat(page.locator("[data-testid='command-selection-spacer']").count()).isEqualTo(1);
 
+            final double memberFilterTop = positionOf(page, "[data-testid='command-filter-member-id']")[1];
+            final double interactionFilterTop = positionOf(page, "[data-testid='command-filter-interaction-id']")[1];
             final double commandGridTop = positionOf(page, "[data-testid='command-selection-grid']")[1];
             final double compareTop = positionOf(page, "[data-testid='navigation-compare-action-bar']")[1];
             final double tableGridTop = positionOf(page, "[data-testid='table-selection-grid']")[1];
+            assertThat(Math.abs(memberFilterTop - interactionFilterTop)).isLessThan(8.0);
+            assertThat(memberFilterTop).isLessThan(commandGridTop);
             assertThat(commandGridTop).isLessThan(tableGridTop);
             assertThat(compareTop).isGreaterThan(tableGridTop);
 
@@ -116,8 +120,11 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             final Object compareVisibleAfterResize = page.evaluate("() => { const bar = document.querySelector('[data-testid=\"navigation-compare-action-bar\"]'); if (!bar) return false; const r = bar.getBoundingClientRect(); return r.top >= 0 && r.bottom <= window.innerHeight; }");
             assertThat(compareVisibleAfterResize).isEqualTo(Boolean.TRUE);
 
+            setCommandMemberFilter(page, "supplier.Supplier");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('supplier.Supplier#registerProduct') && !document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('product.Product#changeStatus')");
             setCommandInteractionFilter(page, PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.substring(0, 8));
             page.waitForFunction("() => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('11111111-1111-1111-1111-111111111111')");
+            setCommandMemberFilter(page, "");
             setCommandInteractionFilter(page, "");
 
             toggleCheckbox(page, "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.toLowerCase() + "']");
@@ -180,6 +187,11 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
     private void setFilter(final Page page, final String value) {
         page.locator("[data-testid='table-filter-table'] input").fill(value);
+        page.keyboard().press("Tab");
+    }
+
+    private void setCommandMemberFilter(final Page page, final String value) {
+        page.locator("[data-testid='command-filter-member-id'] input").fill(value);
         page.keyboard().press("Tab");
     }
 

@@ -52,8 +52,10 @@ public class CommandSelectionState {
 
     public boolean matchesFilter(
             final CommandCatalogEntry entry,
+            final String memberIdFilter,
             final String interactionIdFilter) {
-        return matches(entry.interactionId(), interactionIdFilter);
+        return matches(entry.logicalMemberIdentifier(), memberIdFilter)
+                && matches(entry.interactionId(), interactionIdFilter);
     }
 
     private boolean matches(final String value, final String filter) {
