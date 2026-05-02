@@ -20,7 +20,7 @@ The webapp module SHALL use a stable Vaadin Flow release line, selecting the lat
 ### Requirement: Webapp configuration models the same logical inputs as CLI
 The webapp SHALL provide typed configuration properties for login defaults and execution preferences such as server, database names, username, password, env-file path, output format, and output file.
 The webapp SHALL provide typed configuration properties for default ignore-column advisor enablement flags.
-The webapp SHALL allow independent enable or disable control for identity, uuid/guid, and timestamp ignore advisors.
+The webapp SHALL allow independent enable or disable control for identity, uuid/guid, timestamp, and extended-properties ignore advisors.
 The webapp SHALL default each default ignore-column advisor enablement flag to enabled.
 The webapp SHALL use configured property values only as initial login defaults and SHALL allow users to edit any field before authentication.
 The webapp SHALL NOT require these properties to be present for interactive webapp use.
@@ -41,7 +41,7 @@ The webapp SHALL treat table selection as a strategy concern and SHALL NOT requi
 
 #### Scenario: Ignore-column advisors are enabled by default
 - **WHEN** no explicit ignore-advisor enablement values are provided
-- **THEN** identity, uuid/guid, and timestamp ignore advisors remain enabled
+- **THEN** identity, uuid/guid, timestamp, and extended-properties ignore advisors remain enabled
 
 #### Scenario: One ignore-column advisor can be disabled independently
 - **WHEN** deployment configuration disables one ignore-column advisor flag and leaves others enabled

@@ -66,6 +66,7 @@ Built-in default advisors SHALL preserve current technical-column behavior when 
 Default technical behavior SHALL exclude identity-backed columns from compared columns.
 Default technical behavior SHALL exclude columns named `uuid` or `guid` from compared columns using case-insensitive name matching.
 Default technical behavior SHALL exclude columns with SQL Server datatype `UNIQUEIDENTIFIER` from compared columns.
+Default technical behavior SHALL also support ignoring columns flagged by SQL Server extended property `cfct.ignored` with truthy values.
 Built-in and custom advisor exclusions SHALL apply in addition to caller-provided ignored-column options.
 
 #### Scenario: Default advisors exclude technical identifiers
@@ -87,6 +88,10 @@ Built-in and custom advisor exclusions SHALL apply in addition to caller-provide
 #### Scenario: Any advisor can mark a column ignored
 - **WHEN** one advisor in the injected advisor list marks a column ignored and others do not
 - **THEN** the column is partitioned into ignored columns
+
+#### Scenario: Extended-property advisor ignores marked column
+- **WHEN** a column has SQL Server extended property `cfct.ignored` set to a truthy value
+- **THEN** that column is partitioned into ignored columns
 
 ### Requirement: Core library reports structured row differences
 The system SHALL return a structured table comparison result.
