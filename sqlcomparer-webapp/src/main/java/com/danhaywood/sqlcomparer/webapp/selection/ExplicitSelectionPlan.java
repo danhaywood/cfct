@@ -1,6 +1,6 @@
-package com.danhaywood.sqlcomparer.webapp.selection;
+package com.danhaywood.cfct.webapp.selection;
 
-import com.danhaywood.sqlcomparer.model.TableRef;
+import com.danhaywood.cfct.model.TableRef;
 
 import java.util.List;
 

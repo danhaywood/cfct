@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.model;
+package com.danhaywood.cfct.model;
 
 public record ColumnRef(String name) {
 

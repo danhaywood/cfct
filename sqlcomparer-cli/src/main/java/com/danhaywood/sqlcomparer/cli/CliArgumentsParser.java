@@ -1,6 +1,6 @@
-package com.danhaywood.sqlcomparer.cli;
+package com.danhaywood.cfct.cli;
 
-import com.danhaywood.sqlcomparer.model.TableRef;
+import com.danhaywood.cfct.model.TableRef;
 
 import org.springframework.stereotype.Component;
 
@@ -232,7 +232,7 @@ public final class CliArgumentsParser {
         return new TableRef(schemaName, tableName);
     }
 
-    @Command(name = "sqlcomparer", sortOptions = false)
+    @Command(name = "cfct", sortOptions = false)
     private static final class CliParseOptions {
 
         @Option(names = {"-S", "--server"})

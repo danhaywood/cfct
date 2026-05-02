@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.webapp.validation;
+package com.danhaywood.cfct.webapp.validation;
 
 import java.time.Instant;
 

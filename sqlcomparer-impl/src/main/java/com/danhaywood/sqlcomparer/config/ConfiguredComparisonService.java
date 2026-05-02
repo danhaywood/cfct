@@ -1,10 +1,10 @@
-package com.danhaywood.sqlcomparer.config;
+package com.danhaywood.cfct.config;
 
-import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
-import com.danhaywood.sqlcomparer.report.ExcelMultiTableComparisonReportRenderer;
-import com.danhaywood.sqlcomparer.report.JsonMultiTableComparisonReportRenderer;
-import com.danhaywood.sqlcomparer.report.YamlMultiTableComparisonReportRenderer;
-import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
+import com.danhaywood.cfct.model.MultiTableComparisonResult;
+import com.danhaywood.cfct.report.ExcelMultiTableComparisonReportRenderer;
+import com.danhaywood.cfct.report.JsonMultiTableComparisonReportRenderer;
+import com.danhaywood.cfct.report.YamlMultiTableComparisonReportRenderer;
+import com.danhaywood.cfct.service.MultiTableComparisonService;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;

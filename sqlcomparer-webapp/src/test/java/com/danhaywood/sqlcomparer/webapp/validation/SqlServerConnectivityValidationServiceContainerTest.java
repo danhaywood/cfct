@@ -1,7 +1,7 @@
-package com.danhaywood.sqlcomparer.webapp.validation;
+package com.danhaywood.cfct.webapp.validation;
 
-import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContext;
-import com.danhaywood.sqlcomparer.webapp.config.WebappDataSourceConfiguration;
+import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
+import com.danhaywood.cfct.webapp.config.WebappDataSourceConfiguration;
 
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MSSQLServerContainer;

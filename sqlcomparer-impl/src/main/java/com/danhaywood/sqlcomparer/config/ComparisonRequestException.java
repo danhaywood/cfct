@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.config;
+package com.danhaywood.cfct.config;
 
 public final class ComparisonRequestException extends RuntimeException {
 

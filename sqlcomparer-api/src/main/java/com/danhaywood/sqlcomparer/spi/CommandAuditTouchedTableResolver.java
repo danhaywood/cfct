@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.spi;
+package com.danhaywood.cfct.spi;
 
 import java.sql.Connection;
 import java.util.Collection;

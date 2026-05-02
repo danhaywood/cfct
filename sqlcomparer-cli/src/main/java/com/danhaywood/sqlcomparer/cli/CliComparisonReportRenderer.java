@@ -1,7 +1,7 @@
-package com.danhaywood.sqlcomparer.cli;
+package com.danhaywood.cfct.cli;
 
-import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
-import com.danhaywood.sqlcomparer.service.MultiTableComparisonReportFormatter;
+import com.danhaywood.cfct.model.MultiTableComparisonResult;
+import com.danhaywood.cfct.service.MultiTableComparisonReportFormatter;
 import org.springframework.stereotype.Service;
 
 @Service

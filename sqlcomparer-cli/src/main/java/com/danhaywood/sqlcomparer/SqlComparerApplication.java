@@ -1,14 +1,14 @@
-package com.danhaywood.sqlcomparer;
+package com.danhaywood.cfct;
 
-import com.danhaywood.sqlcomparer.cli.CliCommandRunner;
-import com.danhaywood.sqlcomparer.implspring.ComparisonImplementationConfiguration;
+import com.danhaywood.cfct.cli.CliCommandRunner;
+import com.danhaywood.cfct.implspring.ComparisonImplementationConfiguration;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Import;
 
-@SpringBootApplication(scanBasePackages = "com.danhaywood.sqlcomparer.cli")
+@SpringBootApplication(scanBasePackages = "com.danhaywood.cfct.cli")
 @Import(ComparisonImplementationConfiguration.class)
 public class SqlComparerApplication {
 

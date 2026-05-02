@@ -1,6 +1,6 @@
-package com.danhaywood.sqlcomparer.request;
+package com.danhaywood.cfct.request;
 
-import com.danhaywood.sqlcomparer.model.TableRef;
+import com.danhaywood.cfct.model.TableRef;
 
 import java.util.List;
 

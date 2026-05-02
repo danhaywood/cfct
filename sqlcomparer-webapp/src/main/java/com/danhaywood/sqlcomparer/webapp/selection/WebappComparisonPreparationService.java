@@ -1,6 +1,6 @@
-package com.danhaywood.sqlcomparer.webapp.selection;
+package com.danhaywood.cfct.webapp.selection;
 
-import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
+import com.danhaywood.cfct.request.MultiTableComparisonRequest;
 
 import org.springframework.stereotype.Service;
 

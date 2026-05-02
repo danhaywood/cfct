@@ -1,10 +1,10 @@
-package com.danhaywood.sqlcomparer.sqlserver;
+package com.danhaywood.cfct.sqlserver;
 
-import com.danhaywood.sqlcomparer.model.ColumnRef;
-import com.danhaywood.sqlcomparer.exception.ComparisonException;
-import com.danhaywood.sqlcomparer.model.RowKey;
-import com.danhaywood.sqlcomparer.model.TableMetadata;
-import com.danhaywood.sqlcomparer.spi.TableRowReader;
+import com.danhaywood.cfct.model.ColumnRef;
+import com.danhaywood.cfct.exception.ComparisonException;
+import com.danhaywood.cfct.model.RowKey;
+import com.danhaywood.cfct.model.TableMetadata;
+import com.danhaywood.cfct.spi.TableRowReader;
 
 import java.math.BigDecimal;
 import java.sql.Connection;

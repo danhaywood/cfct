@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.cli;
+package com.danhaywood.cfct.cli;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;

@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.cli;
+package com.danhaywood.cfct.cli;
 
 public interface CliComparisonExecutor {
 

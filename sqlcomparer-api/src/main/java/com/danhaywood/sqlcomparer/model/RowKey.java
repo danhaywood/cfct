@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.model;
+package com.danhaywood.cfct.model;
 
 import java.util.List;
 import java.util.stream.Collectors;

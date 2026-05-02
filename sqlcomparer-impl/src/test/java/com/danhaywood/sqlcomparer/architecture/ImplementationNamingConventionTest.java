@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.architecture;
+package com.danhaywood.cfct.architecture;
 
 import org.junit.jupiter.api.Test;
 

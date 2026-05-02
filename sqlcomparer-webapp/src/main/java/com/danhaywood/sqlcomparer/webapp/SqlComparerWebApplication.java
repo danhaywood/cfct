@@ -1,6 +1,6 @@
-package com.danhaywood.sqlcomparer.webapp;
+package com.danhaywood.cfct.webapp;
 
-import com.danhaywood.sqlcomparer.implspring.ComparisonImplementationConfiguration;
+import com.danhaywood.cfct.implspring.ComparisonImplementationConfiguration;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

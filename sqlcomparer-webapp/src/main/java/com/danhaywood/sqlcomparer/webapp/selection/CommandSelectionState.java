@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.webapp.selection;
+package com.danhaywood.cfct.webapp.selection;
 
 import java.util.LinkedHashMap;
 import java.util.List;

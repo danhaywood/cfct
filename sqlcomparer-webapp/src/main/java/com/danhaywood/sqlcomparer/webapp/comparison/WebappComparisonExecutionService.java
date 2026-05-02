@@ -1,14 +1,14 @@
-package com.danhaywood.sqlcomparer.webapp.comparison;
+package com.danhaywood.cfct.webapp.comparison;
 
-import com.danhaywood.sqlcomparer.model.ComparisonViewModelMapper;
-import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
-import com.danhaywood.sqlcomparer.model.MultiTableComparisonViewResult;
-import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
-import com.danhaywood.sqlcomparer.service.MultiTableComparisonReportFormatter;
-import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
-import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContextHolder;
-import com.danhaywood.sqlcomparer.webapp.config.WebappDataSourceConfiguration;
-import com.danhaywood.sqlcomparer.webapp.config.WebappDataSources;
+import com.danhaywood.cfct.model.ComparisonViewModelMapper;
+import com.danhaywood.cfct.model.MultiTableComparisonResult;
+import com.danhaywood.cfct.model.MultiTableComparisonViewResult;
+import com.danhaywood.cfct.request.MultiTableComparisonRequest;
+import com.danhaywood.cfct.service.MultiTableComparisonReportFormatter;
+import com.danhaywood.cfct.service.MultiTableComparisonService;
+import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContextHolder;
+import com.danhaywood.cfct.webapp.config.WebappDataSourceConfiguration;
+import com.danhaywood.cfct.webapp.config.WebappDataSources;
 
 import org.springframework.stereotype.Service;
 

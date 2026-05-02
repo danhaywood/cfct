@@ -1,11 +1,11 @@
-package com.danhaywood.sqlcomparer.comparison;
+package com.danhaywood.cfct.comparison;
 
-import com.danhaywood.sqlcomparer.model.ComparisonViewModelMapper;
-import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
-import com.danhaywood.sqlcomparer.model.MultiTableComparisonViewResult;
-import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
-import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
-import com.danhaywood.sqlcomparer.service.MultiTableComparisonViewService;
+import com.danhaywood.cfct.model.ComparisonViewModelMapper;
+import com.danhaywood.cfct.model.MultiTableComparisonResult;
+import com.danhaywood.cfct.model.MultiTableComparisonViewResult;
+import com.danhaywood.cfct.request.MultiTableComparisonRequest;
+import com.danhaywood.cfct.service.MultiTableComparisonService;
+import com.danhaywood.cfct.service.MultiTableComparisonViewService;
 
 import java.sql.Connection;
 

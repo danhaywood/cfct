@@ -1,10 +1,10 @@
-package com.danhaywood.sqlcomparer.webapp.auth;
+package com.danhaywood.cfct.webapp.auth;
 
-import com.danhaywood.sqlcomparer.webapp.config.WebappComparisonProperties;
-import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationState;
-import com.danhaywood.sqlcomparer.webapp.validation.ConnectionValidationStatusHolder;
-import com.danhaywood.sqlcomparer.webapp.validation.SqlServerConnectivityValidationException;
-import com.danhaywood.sqlcomparer.webapp.validation.SqlServerConnectivityValidationService;
+import com.danhaywood.cfct.webapp.config.WebappComparisonProperties;
+import com.danhaywood.cfct.webapp.validation.ConnectionValidationState;
+import com.danhaywood.cfct.webapp.validation.ConnectionValidationStatusHolder;
+import com.danhaywood.cfct.webapp.validation.SqlServerConnectivityValidationException;
+import com.danhaywood.cfct.webapp.validation.SqlServerConnectivityValidationService;
 
 import org.junit.jupiter.api.Test;
 

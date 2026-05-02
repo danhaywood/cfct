@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.exception;
+package com.danhaywood.cfct.exception;
 
 public final class MetadataException extends RuntimeException {
 

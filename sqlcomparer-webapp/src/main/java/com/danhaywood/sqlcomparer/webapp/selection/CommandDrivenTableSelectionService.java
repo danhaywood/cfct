@@ -1,10 +1,10 @@
-package com.danhaywood.sqlcomparer.webapp.selection;
+package com.danhaywood.cfct.webapp.selection;
 
-import com.danhaywood.sqlcomparer.model.TableRef;
-import com.danhaywood.sqlcomparer.spi.CommandAuditTouchedTableResolver;
-import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContextHolder;
-import com.danhaywood.sqlcomparer.webapp.config.WebappDataSourceConfiguration;
-import com.danhaywood.sqlcomparer.webapp.config.WebappDataSources;
+import com.danhaywood.cfct.model.TableRef;
+import com.danhaywood.cfct.spi.CommandAuditTouchedTableResolver;
+import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContextHolder;
+import com.danhaywood.cfct.webapp.config.WebappDataSourceConfiguration;
+import com.danhaywood.cfct.webapp.config.WebappDataSources;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

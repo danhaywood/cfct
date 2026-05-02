@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.config;
+package com.danhaywood.cfct.config;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;

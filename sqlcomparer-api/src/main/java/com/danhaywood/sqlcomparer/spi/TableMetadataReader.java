@@ -1,7 +1,7 @@
-package com.danhaywood.sqlcomparer.spi;
+package com.danhaywood.cfct.spi;
 
-import com.danhaywood.sqlcomparer.model.TableMetadata;
-import com.danhaywood.sqlcomparer.request.TableComparisonRequest;
+import com.danhaywood.cfct.model.TableMetadata;
+import com.danhaywood.cfct.request.TableComparisonRequest;
 
 import java.sql.Connection;
 

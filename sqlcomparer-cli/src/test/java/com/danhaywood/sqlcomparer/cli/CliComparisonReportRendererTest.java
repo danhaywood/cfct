@@ -1,11 +1,11 @@
-package com.danhaywood.sqlcomparer.cli;
+package com.danhaywood.cfct.cli;
 
-import com.danhaywood.sqlcomparer.model.BusinessKey;
-import com.danhaywood.sqlcomparer.model.ColumnRef;
-import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
-import com.danhaywood.sqlcomparer.model.TableComparisonResult;
-import com.danhaywood.sqlcomparer.model.TableRef;
-import com.danhaywood.sqlcomparer.service.MultiTableComparisonReportFormatter;
+import com.danhaywood.cfct.model.BusinessKey;
+import com.danhaywood.cfct.model.ColumnRef;
+import com.danhaywood.cfct.model.MultiTableComparisonResult;
+import com.danhaywood.cfct.model.TableComparisonResult;
+import com.danhaywood.cfct.model.TableRef;
+import com.danhaywood.cfct.service.MultiTableComparisonReportFormatter;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;

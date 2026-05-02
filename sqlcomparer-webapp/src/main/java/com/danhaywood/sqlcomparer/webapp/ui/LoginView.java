@@ -1,6 +1,6 @@
-package com.danhaywood.sqlcomparer.webapp.ui;
+package com.danhaywood.cfct.webapp.ui;
 
-import com.danhaywood.sqlcomparer.webapp.auth.WebappAuthenticationService;
+import com.danhaywood.cfct.webapp.auth.WebappAuthenticationService;
 
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;

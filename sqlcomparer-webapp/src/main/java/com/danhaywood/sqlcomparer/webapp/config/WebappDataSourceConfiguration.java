@@ -1,6 +1,6 @@
-package com.danhaywood.sqlcomparer.webapp.config;
+package com.danhaywood.cfct.webapp.config;
 
-import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContext;
+import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
 import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
 
 import org.springframework.stereotype.Component;

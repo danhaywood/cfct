@@ -1,7 +1,7 @@
-package com.danhaywood.sqlcomparer.report;
+package com.danhaywood.cfct.report;
 
-import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
-import com.danhaywood.sqlcomparer.service.MultiTableComparisonReportFormatter;
+import com.danhaywood.cfct.model.MultiTableComparisonResult;
+import com.danhaywood.cfct.service.MultiTableComparisonReportFormatter;
 
 public final class MultiTableComparisonReportFormatterDefault implements MultiTableComparisonReportFormatter {
 

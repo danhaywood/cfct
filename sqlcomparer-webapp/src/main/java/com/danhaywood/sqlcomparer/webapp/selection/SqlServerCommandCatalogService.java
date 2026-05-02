@@ -1,8 +1,8 @@
-package com.danhaywood.sqlcomparer.webapp.selection;
+package com.danhaywood.cfct.webapp.selection;
 
-import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContextHolder;
-import com.danhaywood.sqlcomparer.webapp.config.WebappDataSourceConfiguration;
-import com.danhaywood.sqlcomparer.webapp.config.WebappDataSources;
+import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContextHolder;
+import com.danhaywood.cfct.webapp.config.WebappDataSourceConfiguration;
+import com.danhaywood.cfct.webapp.config.WebappDataSources;
 
 import org.springframework.stereotype.Service;
 

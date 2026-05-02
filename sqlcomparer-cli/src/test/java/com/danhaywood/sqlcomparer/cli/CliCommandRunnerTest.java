@@ -1,6 +1,6 @@
-package com.danhaywood.sqlcomparer.cli;
+package com.danhaywood.cfct.cli;
 
-import com.danhaywood.sqlcomparer.model.TableRef;
+import com.danhaywood.cfct.model.TableRef;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;

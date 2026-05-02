@@ -1,14 +1,14 @@
-package com.danhaywood.sqlcomparer.config;
+package com.danhaywood.cfct.config;
 
-import com.danhaywood.sqlcomparer.comparison.MultiTableComparisonServiceDefault;
-import com.danhaywood.sqlcomparer.comparison.TableComparisonServiceDefault;
-import com.danhaywood.sqlcomparer.harness.DatabaseSide;
-import com.danhaywood.sqlcomparer.harness.SqlServerTestHarness;
-import com.danhaywood.sqlcomparer.report.ExcelMultiTableComparisonReportRenderer;
-import com.danhaywood.sqlcomparer.report.JsonMultiTableComparisonReportRenderer;
-import com.danhaywood.sqlcomparer.report.YamlMultiTableComparisonReportRenderer;
-import com.danhaywood.sqlcomparer.sqlserver.TableMetadataReaderSqlServer;
-import com.danhaywood.sqlcomparer.sqlserver.TableRowReaderSqlServer;
+import com.danhaywood.cfct.comparison.MultiTableComparisonServiceDefault;
+import com.danhaywood.cfct.comparison.TableComparisonServiceDefault;
+import com.danhaywood.cfct.harness.DatabaseSide;
+import com.danhaywood.cfct.harness.SqlServerTestHarness;
+import com.danhaywood.cfct.report.ExcelMultiTableComparisonReportRenderer;
+import com.danhaywood.cfct.report.JsonMultiTableComparisonReportRenderer;
+import com.danhaywood.cfct.report.YamlMultiTableComparisonReportRenderer;
+import com.danhaywood.cfct.sqlserver.TableMetadataReaderSqlServer;
+import com.danhaywood.cfct.sqlserver.TableRowReaderSqlServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.poi.ss.usermodel.Workbook;

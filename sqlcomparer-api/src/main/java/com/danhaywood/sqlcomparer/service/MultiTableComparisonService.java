@@ -1,8 +1,8 @@
-package com.danhaywood.sqlcomparer.service;
+package com.danhaywood.cfct.service;
 
-import com.danhaywood.sqlcomparer.exception.ComparisonException;
-import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
-import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
+import com.danhaywood.cfct.exception.ComparisonException;
+import com.danhaywood.cfct.model.MultiTableComparisonResult;
+import com.danhaywood.cfct.request.MultiTableComparisonRequest;
 
 import javax.sql.DataSource;
 import java.sql.Connection;

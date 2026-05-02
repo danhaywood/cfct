@@ -1,6 +1,6 @@
-package com.danhaywood.sqlcomparer.webapp.selection;
+package com.danhaywood.cfct.webapp.selection;
 
-import com.danhaywood.sqlcomparer.model.TableRef;
+import com.danhaywood.cfct.model.TableRef;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -17,7 +17,7 @@ public class SelectionPlanConfiguration {
     public SelectionPlan selectionPlan(final ExplicitSelectionPlanProperties properties) {
         final List<String> configuredTables = properties.getTables();
         if (configuredTables == null || configuredTables.isEmpty()) {
-            throw new IllegalArgumentException("sqlcomparer.webapp.selection-plan.explicit.tables requires at least one schema.table entry");
+            throw new IllegalArgumentException("cfct.webapp.selection-plan.explicit.tables requires at least one schema.table entry");
         }
 
         final List<TableRef> resolvedTables = new ArrayList<>();

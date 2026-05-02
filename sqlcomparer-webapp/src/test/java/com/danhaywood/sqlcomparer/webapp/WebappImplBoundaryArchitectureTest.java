@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.webapp;
+package com.danhaywood.cfct.webapp;
 
 import org.junit.jupiter.api.Test;
 
@@ -13,10 +13,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 class WebappImplBoundaryArchitectureTest {
 
     private static final List<String> FORBIDDEN_IMPORT_PREFIXES = List.of(
-            "import com.danhaywood.sqlcomparer.comparison.",
-            "import com.danhaywood.sqlcomparer.report.",
-            "import com.danhaywood.sqlcomparer.sqlserver.",
-            "import com.danhaywood.sqlcomparer.config.",
+            "import com.danhaywood.cfct.comparison.",
+            "import com.danhaywood.cfct.report.",
+            "import com.danhaywood.cfct.sqlserver.",
+            "import com.danhaywood.cfct.config.",
             "import java.sql.DriverManager;");
 
     @Test
@@ -38,7 +38,7 @@ class WebappImplBoundaryArchitectureTest {
             return Files.readAllLines(sourceFile).stream()
                     .map(String::trim)
                     .filter(line -> line.startsWith("import "))
-                    .filter(line -> !line.startsWith("import com.danhaywood.sqlcomparer.implspring."))
+                    .filter(line -> !line.startsWith("import com.danhaywood.cfct.implspring."))
                     .filter(this::isForbidden)
                     .map(line -> sourceFile + " -> " + line);
         } catch (IOException ex) {

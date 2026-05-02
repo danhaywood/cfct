@@ -5,10 +5,10 @@
 
     <parent>
         <groupId>com.danhaywood</groupId>
-        <artifactId>sqlcomparer</artifactId>
+        <artifactId>cfct</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>sqlcomparer-api</artifactId>
-    <name>sqlcomparer-api</name>
+    <artifactId>cfct-api</artifactId>
+    <name>cfct-api</name>
 </project>

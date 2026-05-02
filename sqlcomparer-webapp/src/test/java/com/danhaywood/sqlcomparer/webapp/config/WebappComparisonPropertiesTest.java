@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.webapp.config;
+package com.danhaywood.cfct.webapp.config;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -19,16 +19,16 @@ class WebappComparisonPropertiesTest {
     void bindsSharedExecutionPropertiesFromConfiguration() {
         contextRunner
                 .withPropertyValues(
-                        "sqlcomparer.webapp.comparison.connection.server=server-host",
-                        "sqlcomparer.webapp.comparison.connection.username=sa",
-                        "sqlcomparer.webapp.comparison.connection.password=secret",
-                        "sqlcomparer.webapp.comparison.connection.left-database=left_db",
-                        "sqlcomparer.webapp.comparison.connection.right-database=right_db",
-                        "sqlcomparer.webapp.comparison.env-file=demo/.env",
-                        "sqlcomparer.webapp.comparison.output.format=json",
-                        "sqlcomparer.webapp.comparison.output.file=comparison.json",
-                        "sqlcomparer.webapp.comparison.validation.enabled=false",
-                        "sqlcomparer.webapp.comparison.validation.fail-fast=false")
+                        "cfct.webapp.comparison.connection.server=server-host",
+                        "cfct.webapp.comparison.connection.username=sa",
+                        "cfct.webapp.comparison.connection.password=secret",
+                        "cfct.webapp.comparison.connection.left-database=left_db",
+                        "cfct.webapp.comparison.connection.right-database=right_db",
+                        "cfct.webapp.comparison.env-file=demo/.env",
+                        "cfct.webapp.comparison.output.format=json",
+                        "cfct.webapp.comparison.output.file=comparison.json",
+                        "cfct.webapp.comparison.validation.enabled=false",
+                        "cfct.webapp.comparison.validation.fail-fast=false")
                 .run(context -> {
                     assertThat(context).hasNotFailed();
                     final WebappComparisonProperties properties = context.getBean(WebappComparisonProperties.class);
@@ -49,8 +49,8 @@ class WebappComparisonPropertiesTest {
     void ignoresDeprecatedTableSelectionKeysDuringMigration() {
         contextRunner
                 .withPropertyValues(
-                        "sqlcomparer.webapp.comparison.table-selection.tables[0]=dbo.Supplier",
-                        "sqlcomparer.webapp.comparison.table-selection.tables-file=demo/tables.txt")
+                        "cfct.webapp.comparison.table-selection.tables[0]=dbo.Supplier",
+                        "cfct.webapp.comparison.table-selection.tables-file=demo/tables.txt")
                 .run(context -> assertThat(context).hasNotFailed());
     }
 

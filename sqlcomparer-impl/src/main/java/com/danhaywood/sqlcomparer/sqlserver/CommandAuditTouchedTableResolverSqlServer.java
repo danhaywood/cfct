@@ -1,7 +1,7 @@
-package com.danhaywood.sqlcomparer.sqlserver;
+package com.danhaywood.cfct.sqlserver;
 
-import com.danhaywood.sqlcomparer.exception.ComparisonException;
-import com.danhaywood.sqlcomparer.spi.CommandAuditTouchedTableResolver;
+import com.danhaywood.cfct.exception.ComparisonException;
+import com.danhaywood.cfct.spi.CommandAuditTouchedTableResolver;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

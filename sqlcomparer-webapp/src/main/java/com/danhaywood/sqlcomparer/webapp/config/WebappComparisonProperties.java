@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.webapp.config;
+package com.danhaywood.cfct.webapp.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -21,7 +21,7 @@ import jakarta.validation.Valid;
  * </ul>
  * Table selection is intentionally handled by SelectionPlan strategies and not by these shared properties.
  */
-@ConfigurationProperties(prefix = "sqlcomparer.webapp.comparison")
+@ConfigurationProperties(prefix = "cfct.webapp.comparison")
 @Validated
 public class WebappComparisonProperties {
 

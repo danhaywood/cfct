@@ -1,11 +1,11 @@
-package com.danhaywood.sqlcomparer.webapp.selection;
+package com.danhaywood.cfct.webapp.selection;
 
-import com.danhaywood.sqlcomparer.model.TableRef;
-import com.danhaywood.sqlcomparer.spi.CommandAuditTouchedTableResolver;
-import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContext;
-import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContextHolder;
-import com.danhaywood.sqlcomparer.webapp.config.WebappDataSourceConfiguration;
-import com.danhaywood.sqlcomparer.webapp.config.WebappDataSources;
+import com.danhaywood.cfct.model.TableRef;
+import com.danhaywood.cfct.spi.CommandAuditTouchedTableResolver;
+import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
+import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContextHolder;
+import com.danhaywood.cfct.webapp.config.WebappDataSourceConfiguration;
+import com.danhaywood.cfct.webapp.config.WebappDataSources;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

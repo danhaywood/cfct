@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.request;
+package com.danhaywood.cfct.request;
 
 import java.util.Locale;
 import java.util.Set;

@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.webapp.auth;
+package com.danhaywood.cfct.webapp.auth;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.SessionScope;

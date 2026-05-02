@@ -1,6 +1,6 @@
-package com.danhaywood.sqlcomparer.service;
+package com.danhaywood.cfct.service;
 
-import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
+import com.danhaywood.cfct.model.MultiTableComparisonResult;
 
 public interface MultiTableComparisonReportFormatter {
 

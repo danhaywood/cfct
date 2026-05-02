@@ -1,4 +1,4 @@
-sqlcomparer:
+cfct:
   webapp:
     comparison:
       connection:
@@ -15,8 +15,8 @@ sqlcomparer:
         enabled: true
         fail-fast: true
     # Migration note: legacy keys removed
-    # - sqlcomparer.webapp.comparison.table-selection.tables
-    # - sqlcomparer.webapp.comparison.table-selection.tables-file
+    # - cfct.webapp.comparison.table-selection.tables
+    # - cfct.webapp.comparison.table-selection.tables-file
     selection-plan:
       explicit:
         tables:

@@ -1,16 +1,16 @@
-package com.danhaywood.sqlcomparer.comparison;
+package com.danhaywood.cfct.comparison;
 
-import com.danhaywood.sqlcomparer.model.BusinessKey;
-import com.danhaywood.sqlcomparer.model.ColumnDifference;
-import com.danhaywood.sqlcomparer.model.ColumnRef;
-import com.danhaywood.sqlcomparer.model.ComparisonRowStatus;
-import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
-import com.danhaywood.sqlcomparer.model.RowDifference;
-import com.danhaywood.sqlcomparer.model.RowKey;
-import com.danhaywood.sqlcomparer.model.TableComparisonResult;
-import com.danhaywood.sqlcomparer.model.TableRef;
-import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
-import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
+import com.danhaywood.cfct.model.BusinessKey;
+import com.danhaywood.cfct.model.ColumnDifference;
+import com.danhaywood.cfct.model.ColumnRef;
+import com.danhaywood.cfct.model.ComparisonRowStatus;
+import com.danhaywood.cfct.model.MultiTableComparisonResult;
+import com.danhaywood.cfct.model.RowDifference;
+import com.danhaywood.cfct.model.RowKey;
+import com.danhaywood.cfct.model.TableComparisonResult;
+import com.danhaywood.cfct.model.TableRef;
+import com.danhaywood.cfct.request.MultiTableComparisonRequest;
+import com.danhaywood.cfct.service.MultiTableComparisonService;
 
 import org.junit.jupiter.api.Test;
 

@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.harness;
+package com.danhaywood.cfct.harness;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

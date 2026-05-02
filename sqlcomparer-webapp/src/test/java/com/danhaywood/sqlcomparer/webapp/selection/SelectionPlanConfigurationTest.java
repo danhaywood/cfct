@@ -1,6 +1,6 @@
-package com.danhaywood.sqlcomparer.webapp.selection;
+package com.danhaywood.cfct.webapp.selection;
 
-import com.danhaywood.sqlcomparer.model.TableRef;
+import com.danhaywood.cfct.model.TableRef;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -21,8 +21,8 @@ class SelectionPlanConfigurationTest {
     void createsSelectionPlanFromExplicitTableProperties() {
         contextRunner
                 .withPropertyValues(
-                        "sqlcomparer.webapp.selection-plan.explicit.tables[0]=dbo.Supplier",
-                        "sqlcomparer.webapp.selection-plan.explicit.tables[1]=dbo.PurchaseOrder")
+                        "cfct.webapp.selection-plan.explicit.tables[0]=dbo.Supplier",
+                        "cfct.webapp.selection-plan.explicit.tables[1]=dbo.PurchaseOrder")
                 .run(context -> {
                     assertThat(context).hasNotFailed();
                     final SelectionPlan plan = context.getBean(SelectionPlan.class);

@@ -1,14 +1,14 @@
-package com.danhaywood.sqlcomparer.sqlserver;
+package com.danhaywood.cfct.sqlserver;
 
-import com.danhaywood.sqlcomparer.model.BusinessKey;
-import com.danhaywood.sqlcomparer.model.ColumnMetadata;
-import com.danhaywood.sqlcomparer.model.ColumnRef;
-import com.danhaywood.sqlcomparer.request.ComparisonOptions;
-import com.danhaywood.sqlcomparer.exception.MetadataException;
-import com.danhaywood.sqlcomparer.request.TableComparisonRequest;
-import com.danhaywood.sqlcomparer.model.TableMetadata;
-import com.danhaywood.sqlcomparer.spi.TableMetadataReader;
-import com.danhaywood.sqlcomparer.model.TableRef;
+import com.danhaywood.cfct.model.BusinessKey;
+import com.danhaywood.cfct.model.ColumnMetadata;
+import com.danhaywood.cfct.model.ColumnRef;
+import com.danhaywood.cfct.request.ComparisonOptions;
+import com.danhaywood.cfct.exception.MetadataException;
+import com.danhaywood.cfct.request.TableComparisonRequest;
+import com.danhaywood.cfct.model.TableMetadata;
+import com.danhaywood.cfct.spi.TableMetadataReader;
+import com.danhaywood.cfct.model.TableRef;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

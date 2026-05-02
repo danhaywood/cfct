@@ -1,10 +1,10 @@
-package com.danhaywood.sqlcomparer.report;
+package com.danhaywood.cfct.report;
 
-import com.danhaywood.sqlcomparer.model.ColumnDifference;
-import com.danhaywood.sqlcomparer.model.ColumnRef;
-import com.danhaywood.sqlcomparer.model.RowDifference;
-import com.danhaywood.sqlcomparer.model.RowKey;
-import com.danhaywood.sqlcomparer.model.TableComparisonResult;
+import com.danhaywood.cfct.model.ColumnDifference;
+import com.danhaywood.cfct.model.ColumnRef;
+import com.danhaywood.cfct.model.RowDifference;
+import com.danhaywood.cfct.model.RowKey;
+import com.danhaywood.cfct.model.TableComparisonResult;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

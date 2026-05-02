@@ -1,15 +1,15 @@
-package com.danhaywood.sqlcomparer.comparison;
+package com.danhaywood.cfct.comparison;
 
-import com.danhaywood.sqlcomparer.model.ColumnDifference;
-import com.danhaywood.sqlcomparer.model.ColumnRef;
-import com.danhaywood.sqlcomparer.model.RowDifference;
-import com.danhaywood.sqlcomparer.model.RowKey;
-import com.danhaywood.sqlcomparer.model.TableComparisonResult;
-import com.danhaywood.sqlcomparer.model.TableMetadata;
-import com.danhaywood.sqlcomparer.request.TableComparisonRequest;
-import com.danhaywood.sqlcomparer.service.TableComparisonService;
-import com.danhaywood.sqlcomparer.spi.TableMetadataReader;
-import com.danhaywood.sqlcomparer.spi.TableRowReader;
+import com.danhaywood.cfct.model.ColumnDifference;
+import com.danhaywood.cfct.model.ColumnRef;
+import com.danhaywood.cfct.model.RowDifference;
+import com.danhaywood.cfct.model.RowKey;
+import com.danhaywood.cfct.model.TableComparisonResult;
+import com.danhaywood.cfct.model.TableMetadata;
+import com.danhaywood.cfct.request.TableComparisonRequest;
+import com.danhaywood.cfct.service.TableComparisonService;
+import com.danhaywood.cfct.spi.TableMetadataReader;
+import com.danhaywood.cfct.spi.TableRowReader;
 
 import java.sql.Connection;
 import java.util.ArrayList;

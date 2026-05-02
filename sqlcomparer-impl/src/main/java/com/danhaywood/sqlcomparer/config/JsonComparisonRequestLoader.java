@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.config;
+package com.danhaywood.cfct.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.harness;
+package com.danhaywood.cfct.harness;
 
 public enum DatabaseSide {
     LEFT("left_db"),

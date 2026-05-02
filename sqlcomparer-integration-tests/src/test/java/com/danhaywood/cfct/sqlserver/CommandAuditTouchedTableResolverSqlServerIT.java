@@ -1,7 +1,7 @@
-package com.danhaywood.sqlcomparer.sqlserver;
+package com.danhaywood.cfct.sqlserver;
 
-import com.danhaywood.sqlcomparer.harness.DatabaseSide;
-import com.danhaywood.sqlcomparer.harness.SqlServerTestHarness;
+import com.danhaywood.cfct.harness.DatabaseSide;
+import com.danhaywood.cfct.harness.SqlServerTestHarness;
 import org.approvaltests.Approvals;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

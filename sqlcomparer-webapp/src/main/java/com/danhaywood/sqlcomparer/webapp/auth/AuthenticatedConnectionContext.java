@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.webapp.auth;
+package com.danhaywood.cfct.webapp.auth;
 
 public record AuthenticatedConnectionContext(
         String server,

@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.cli;
+package com.danhaywood.cfct.cli;
 
 import org.springframework.stereotype.Component;
 

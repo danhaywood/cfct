@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.webapp.e2e;
+package com.danhaywood.cfct.webapp.e2e;
 
 import org.testcontainers.containers.MSSQLServerContainer;
 import org.testcontainers.utility.DockerImageName;

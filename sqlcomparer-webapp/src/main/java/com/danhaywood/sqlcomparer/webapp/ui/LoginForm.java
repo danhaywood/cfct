@@ -1,7 +1,7 @@
-package com.danhaywood.sqlcomparer.webapp.ui;
+package com.danhaywood.cfct.webapp.ui;
 
-import com.danhaywood.sqlcomparer.webapp.auth.ConnectionLoginRequest;
-import com.danhaywood.sqlcomparer.webapp.auth.WebappAuthenticationService;
+import com.danhaywood.cfct.webapp.auth.ConnectionLoginRequest;
+import com.danhaywood.cfct.webapp.auth.WebappAuthenticationService;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H2;

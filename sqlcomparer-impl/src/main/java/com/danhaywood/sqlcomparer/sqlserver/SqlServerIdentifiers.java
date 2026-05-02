@@ -1,7 +1,7 @@
-package com.danhaywood.sqlcomparer.sqlserver;
+package com.danhaywood.cfct.sqlserver;
 
-import com.danhaywood.sqlcomparer.model.ColumnRef;
-import com.danhaywood.sqlcomparer.model.TableRef;
+import com.danhaywood.cfct.model.ColumnRef;
+import com.danhaywood.cfct.model.TableRef;
 
 final class SqlServerIdentifiers {
 

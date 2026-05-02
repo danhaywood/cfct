@@ -1,7 +1,7 @@
-package com.danhaywood.sqlcomparer.config;
+package com.danhaywood.cfct.config;
 
-import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
-import com.danhaywood.sqlcomparer.model.TableRef;
+import com.danhaywood.cfct.request.MultiTableComparisonRequest;
+import com.danhaywood.cfct.model.TableRef;
 
 import java.util.List;
 

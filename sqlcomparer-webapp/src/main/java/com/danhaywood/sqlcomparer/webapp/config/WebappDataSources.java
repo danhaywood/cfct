@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.webapp.config;
+package com.danhaywood.cfct.webapp.config;
 
 import javax.sql.DataSource;
 

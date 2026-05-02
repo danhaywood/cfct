@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.webapp.e2e;
+package com.danhaywood.cfct.webapp.e2e;
 
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
@@ -17,8 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
-                "sqlcomparer.webapp.comparison.validation.enabled=true",
-                "sqlcomparer.webapp.comparison.validation.fail-fast=false"
+                "cfct.webapp.comparison.validation.enabled=true",
+                "cfct.webapp.comparison.validation.fail-fast=false"
         })
 @EnabledIfSystemProperty(named = "playwright", matches = "true")
 class HomePageConnectionStatusPlaywrightFailureTest {
@@ -33,11 +33,11 @@ class HomePageConnectionStatusPlaywrightFailureTest {
     static void registerProperties(final DynamicPropertyRegistry registry) {
         PlaywrightSqlServerFixture.createDatabaseIfMissing(LEFT_DB);
         PlaywrightSqlServerFixture.prepareManualSelectionTables(LEFT_DB);
-        registry.add("sqlcomparer.webapp.comparison.connection.server", PlaywrightSqlServerFixture::server);
-        registry.add("sqlcomparer.webapp.comparison.connection.username", PlaywrightSqlServerFixture::username);
-        registry.add("sqlcomparer.webapp.comparison.connection.password", PlaywrightSqlServerFixture::password);
-        registry.add("sqlcomparer.webapp.comparison.connection.left-database", () -> LEFT_DB);
-        registry.add("sqlcomparer.webapp.comparison.connection.right-database", () -> MISSING_DB);
+        registry.add("cfct.webapp.comparison.connection.server", PlaywrightSqlServerFixture::server);
+        registry.add("cfct.webapp.comparison.connection.username", PlaywrightSqlServerFixture::username);
+        registry.add("cfct.webapp.comparison.connection.password", PlaywrightSqlServerFixture::password);
+        registry.add("cfct.webapp.comparison.connection.left-database", () -> LEFT_DB);
+        registry.add("cfct.webapp.comparison.connection.right-database", () -> MISSING_DB);
     }
 
     @Test

@@ -11,10 +11,10 @@
     </parent>
 
     <groupId>com.danhaywood</groupId>
-    <artifactId>sqlcomparer</artifactId>
+    <artifactId>cfct</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>sqlcomparer</name>
+    <name>cfct</name>
     <description>Scaffolding for SQL Server comparison regression testing.</description>
 
     <modules>
@@ -38,22 +38,22 @@
         <dependencies>
             <dependency>
                 <groupId>com.danhaywood</groupId>
-                <artifactId>sqlcomparer-api</artifactId>
+                <artifactId>cfct-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.danhaywood</groupId>
-                <artifactId>sqlcomparer-impl</artifactId>
+                <artifactId>cfct-impl</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.danhaywood</groupId>
-                <artifactId>sqlcomparer-cli</artifactId>
+                <artifactId>cfct-cli</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.danhaywood</groupId>
-                <artifactId>sqlcomparer-webapp</artifactId>
+                <artifactId>cfct-webapp</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

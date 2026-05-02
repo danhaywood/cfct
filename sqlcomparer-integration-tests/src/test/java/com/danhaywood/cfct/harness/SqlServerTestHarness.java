@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.harness;
+package com.danhaywood.cfct.harness;
 
 import org.testcontainers.containers.MSSQLServerContainer;
 import org.testcontainers.containers.wait.strategy.Wait;

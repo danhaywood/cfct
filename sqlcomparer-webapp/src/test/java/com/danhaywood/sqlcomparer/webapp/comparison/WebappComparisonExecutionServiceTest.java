@@ -1,13 +1,13 @@
-package com.danhaywood.sqlcomparer.webapp.comparison;
+package com.danhaywood.cfct.webapp.comparison;
 
-import com.danhaywood.sqlcomparer.model.MultiTableComparisonResult;
-import com.danhaywood.sqlcomparer.model.TableRef;
-import com.danhaywood.sqlcomparer.request.MultiTableComparisonRequest;
-import com.danhaywood.sqlcomparer.service.MultiTableComparisonReportFormatter;
-import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
-import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContext;
-import com.danhaywood.sqlcomparer.webapp.auth.AuthenticatedConnectionContextHolder;
-import com.danhaywood.sqlcomparer.webapp.config.WebappDataSourceConfiguration;
+import com.danhaywood.cfct.model.MultiTableComparisonResult;
+import com.danhaywood.cfct.model.TableRef;
+import com.danhaywood.cfct.request.MultiTableComparisonRequest;
+import com.danhaywood.cfct.service.MultiTableComparisonReportFormatter;
+import com.danhaywood.cfct.service.MultiTableComparisonService;
+import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
+import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContextHolder;
+import com.danhaywood.cfct.webapp.config.WebappDataSourceConfiguration;
 
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +34,7 @@ class WebappComparisonExecutionServiceTest {
         when(rightDataSource.getConnection()).thenReturn(rightConnection);
 
         final WebappDataSourceConfiguration dataSourceConfiguration = mock(WebappDataSourceConfiguration.class);
-        when(dataSourceConfiguration.dataSourcesFor(mockContext())).thenReturn(new com.danhaywood.sqlcomparer.webapp.config.WebappDataSources(mock(DataSource.class), leftDataSource, rightDataSource));
+        when(dataSourceConfiguration.dataSourcesFor(mockContext())).thenReturn(new com.danhaywood.cfct.webapp.config.WebappDataSources(mock(DataSource.class), leftDataSource, rightDataSource));
 
         final AuthenticatedConnectionContextHolder contextHolder = mock(AuthenticatedConnectionContextHolder.class);
         when(contextHolder.required()).thenReturn(mockContext());

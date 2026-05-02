@@ -1,4 +1,4 @@
-package com.danhaywood.sqlcomparer.config;
+package com.danhaywood.cfct.config;
 
 public enum ComparisonOutputType {
     JSON("json"),

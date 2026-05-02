@@ -1,8 +1,8 @@
-package com.danhaywood.sqlcomparer.spi;
+package com.danhaywood.cfct.spi;
 
-import com.danhaywood.sqlcomparer.model.ColumnRef;
-import com.danhaywood.sqlcomparer.model.RowKey;
-import com.danhaywood.sqlcomparer.model.TableMetadata;
+import com.danhaywood.cfct.model.ColumnRef;
+import com.danhaywood.cfct.model.RowKey;
+import com.danhaywood.cfct.model.TableMetadata;
 
 import java.sql.Connection;
 import java.util.Map;

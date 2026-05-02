@@ -1,14 +1,14 @@
-package com.danhaywood.sqlcomparer.core;
+package com.danhaywood.cfct.core;
 
-import com.danhaywood.sqlcomparer.SqlComparerApplication;
-import com.danhaywood.sqlcomparer.cli.CliArgumentsParser;
-import com.danhaywood.sqlcomparer.cli.CliCommandRunner;
-import com.danhaywood.sqlcomparer.cli.CliComparisonExecutor;
-import com.danhaywood.sqlcomparer.service.MultiTableComparisonReportFormatter;
-import com.danhaywood.sqlcomparer.service.MultiTableComparisonService;
-import com.danhaywood.sqlcomparer.service.TableComparisonService;
-import com.danhaywood.sqlcomparer.spi.TableMetadataReader;
-import com.danhaywood.sqlcomparer.spi.TableRowReader;
+import com.danhaywood.cfct.SqlComparerApplication;
+import com.danhaywood.cfct.cli.CliArgumentsParser;
+import com.danhaywood.cfct.cli.CliCommandRunner;
+import com.danhaywood.cfct.cli.CliComparisonExecutor;
+import com.danhaywood.cfct.service.MultiTableComparisonReportFormatter;
+import com.danhaywood.cfct.service.MultiTableComparisonService;
+import com.danhaywood.cfct.service.TableComparisonService;
+import com.danhaywood.cfct.spi.TableMetadataReader;
+import com.danhaywood.cfct.spi.TableRowReader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.Test;
