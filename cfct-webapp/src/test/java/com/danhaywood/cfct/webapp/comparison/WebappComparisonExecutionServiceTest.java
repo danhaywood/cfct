@@ -42,6 +42,7 @@ class WebappComparisonExecutionServiceTest {
         final RecordingComparisonService delegate = new RecordingComparisonService(expectedRaw);
         final MultiTableComparisonReportFormatter formatter = mock(MultiTableComparisonReportFormatter.class);
         when(formatter.renderJson(expectedRaw)).thenReturn("{}");
+        when(formatter.renderYaml(expectedRaw)).thenReturn("a: b\n");
         when(formatter.renderExcel(expectedRaw)).thenReturn(new byte[]{1, 2, 3});
 
         final WebappComparisonExecutionService service = new WebappComparisonExecutionService(
@@ -55,6 +56,7 @@ class WebappComparisonExecutionServiceTest {
         assertThat(outcome.rawResult()).isSameAs(expectedRaw);
         assertThat(outcome.viewResult().tableResults()).isEmpty();
         assertThat(outcome.json()).isEqualTo("{}");
+        assertThat(outcome.yaml()).isEqualTo("a: b\n");
         assertThat(outcome.excel()).containsExactly(1, 2, 3);
         assertThat(delegate.leftConnection).isSameAs(leftConnection);
         assertThat(delegate.rightConnection).isSameAs(rightConnection);

@@ -51,14 +51,16 @@ public class WebappComparisonExecutionService {
                 new MultiTableComparisonRequest(request.tables(), options));
         final MultiTableComparisonViewResult viewResult = ComparisonViewModelMapper.toViewResult(rawResult);
         final String json = reportFormatter.renderJson(rawResult);
+        final String yaml = reportFormatter.renderYaml(rawResult);
         final byte[] excel = reportFormatter.renderExcel(rawResult);
-        return new ComparisonExecutionOutcome(rawResult, viewResult, json, excel);
+        return new ComparisonExecutionOutcome(rawResult, viewResult, json, yaml, excel);
     }
 
     public record ComparisonExecutionOutcome(
             MultiTableComparisonResult rawResult,
             MultiTableComparisonViewResult viewResult,
             String json,
+            String yaml,
             byte[] excel) {
     }
 }

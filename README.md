@@ -130,7 +130,8 @@ Webapp usage is now a three-stage workflow.
 Comparison grids use Excel-like visual cues.
 Cells with differing values are highlighted, and side-only rows highlight missing-side values for faster scanning.
 When result grids are wider or taller than the visible comparison area, horizontal and vertical scrollbars keep all rows and columns navigable.
-In the results stage, JSON/Excel downloads are grouped as right-aligned global actions on the same row as the table filter, with the downloads on the right.
+In the results stage, downloads are provided through one unified `Download` action with a format selector for `json`, `yaml`, or `excel`.
+The selector defaults to `json`.
 Compare action spacing in the navigation drawer and results-stage action grouping evidence:
 
 ![Compare and results actions alignment evidence](docs/images/compare-actions-alignment-evidence-v2-2026-04-28T16-41-37-634Z.png)
@@ -175,7 +176,7 @@ The initial table-selection view looks like this.
 
 After selecting eligible tables and clicking `Compare`, the right-side stage renders per-table result tabs with compact value columns.
 Equal values are shown once, while differing values are shown inline as `L: ... | R: ...`.
-Excel-like status coloring and JSON/Excel download controls are preserved.
+Excel-like status coloring and unified JSON/YAML/Excel download controls are preserved.
 
 ![Webapp table comparison results in tabs](docs/images/webapp-selected.png)
 

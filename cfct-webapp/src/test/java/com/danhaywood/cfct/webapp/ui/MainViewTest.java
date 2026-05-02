@@ -28,6 +28,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.router.BeforeEnterEvent;
 
 import org.junit.jupiter.api.Test;
@@ -266,10 +267,12 @@ class MainViewTest {
         assertThat(findByTestId(view, "comparison-result-export-actions")).isPresent();
         assertThat(findByTestId(view, "comparison-result-actions")).isPresent();
         assertThat(findByTestId(view, "comparison-table-filter")).isPresent();
-        assertThat(findByTestId(view, "download-json")).isPresent();
-        assertThat(findByTestId(view, "download-excel")).isPresent();
+        assertThat(findByTestId(view, "download-format-select")).isPresent();
+        assertThat(findByTestId(view, "download-action")).isPresent();
         assertThat(findByTestId(view, "comparison-stage-error")).isPresent();
         assertThat(findByTestId(view, "comparison-stage-state")).isEmpty();
+        final Select<?> formatSelect = (Select<?>) findByTestId(view, "download-format-select").orElseThrow();
+        assertThat(formatSelect.getValue().toString().toLowerCase()).contains("json");
         final Span progress = (Span) findByTestId(view, "comparison-progress-summary").orElseThrow();
         assertThat(progress.getText()).isNotBlank();
     }
@@ -633,6 +636,6 @@ class MainViewTest {
                 List.of(row));
         final MultiTableComparisonViewResult viewResult = new MultiTableComparisonViewResult(List.of(supplier));
         final MultiTableComparisonResult rawResult = new MultiTableComparisonResult(List.of());
-        return new WebappComparisonExecutionService.ComparisonExecutionOutcome(rawResult, viewResult, "{}", new byte[]{1, 2});
+        return new WebappComparisonExecutionService.ComparisonExecutionOutcome(rawResult, viewResult, "{}", "a: b\n", new byte[]{1, 2});
     }
 }

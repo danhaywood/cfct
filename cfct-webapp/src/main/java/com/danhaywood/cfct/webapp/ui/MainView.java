@@ -47,6 +47,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -97,8 +98,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Span comparisonError = new Span();
     private final Div comparisonResultsContainer = new Div();
     private final TextField comparedTableFilter = new TextField();
-    private final Anchor downloadJson = new Anchor();
-    private final Anchor downloadExcel = new Anchor();
+    private final Anchor downloadAction = new Anchor();
+    private final Select<DownloadFormat> downloadFormatSelect = new Select<>();
     private final HorizontalLayout resultActions = new HorizontalLayout();
     private final HorizontalLayout resultExportActions = new HorizontalLayout();
 
@@ -194,11 +195,16 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         branding.setSpacing(true);
         branding.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
 
+        final Image logo = new Image("/images/cfct-logo.png", "CFCT logo");
+        logo.getElement().setAttribute("data-testid", "navbar-branding-logo");
+        logo.setWidth("24px");
+        logo.setHeight("24px");
+
         final Span name = new Span("CFCT");
         name.getElement().setAttribute("data-testid", "navbar-branding-name");
         name.getStyle().set("font-weight", "800");
 
-        branding.add( name);
+        branding.add(logo, name);
         return branding;
     }
 
@@ -237,7 +243,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         panel.getElement().setAttribute("data-testid", "comparison-stage-placeholder");
         panel.addClassName("comparison-stage-panel");
         panel.getStyle()
-//                .set("padding", "var(--lumo-space-l)")
+                .setPadding("var(--lumo-space-l. 1em)")
                 .set("border", "1px solid var(--lumo-contrast-10pct)")
                 .set("border-radius", "var(--lumo-border-radius-m)")
                 .set("display", "flex")
@@ -254,29 +260,20 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         comparedTableFilter.setMaxWidth("24rem");
         comparedTableFilter.addValueChangeListener(event -> renderComparisonTabs());
 
-        downloadJson.getElement().setAttribute("data-testid", "download-json");
-        downloadExcel.getElement().setAttribute("data-testid", "download-excel");
-        downloadJson.add(new Button("Download JSON"));
-        downloadExcel.add(new Button("Download Excel"));
-        downloadJson.getElement().setAttribute("download", true);
-        downloadExcel.getElement().setAttribute("download", true);
+        downloadFormatSelect.setItems(DownloadFormat.JSON, DownloadFormat.YAML, DownloadFormat.EXCEL);
+        downloadFormatSelect.setItemLabelGenerator(DownloadFormat::label);
+        downloadFormatSelect.setValue(DownloadFormat.JSON);
+        downloadFormatSelect.getElement().setAttribute("data-testid", "download-format-select");
+        downloadFormatSelect.addValueChangeListener(event -> refreshDownloadLinks());
 
-        resultActions.setWidthFull();
-        resultActions.setPadding(true);
-        resultActions.setSpacing(true);
-        resultActions.setAlignItems(FlexComponent.Alignment.END);
-        resultActions.addClassName("comparison-result-actions");
-        resultActions.getElement().setAttribute("data-testid", "comparison-result-actions");
+        downloadAction.getElement().setAttribute("data-testid", "download-action");
+        downloadAction.add(new Button("Download"));
+        downloadAction.getElement().setAttribute("download", true);
 
-        resultExportActions.setPadding(true);
-        resultExportActions.setSpacing(true);
-        resultExportActions.addClassName("comparison-result-export-actions");
-        resultExportActions.getElement().setAttribute("data-testid", "comparison-result-export-actions");
-        resultExportActions.add(downloadJson, downloadExcel);
-
-        resultActions.add(comparedTableFilter, resultExportActions);
+        resultActions.add(comparedTableFilter, downloadFormatSelect, downloadAction);
         resultActions.expand(comparedTableFilter);
         resultActions.setVisible(false);
+        resultActions.setPadding(true);
 
         comparisonError.getElement().setAttribute("data-testid", "comparison-stage-error");
         comparisonError.getStyle().set("color", "var(--lumo-error-text-color)");
@@ -600,6 +597,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                     MultiTableComparisonRequest.forTables(selectedTables),
                     this::onComparisonProgress);
             comparisonProgressSummary.setText("Comparison complete.");
+            downloadFormatSelect.setValue(DownloadFormat.JSON);
             resultActions.setVisible(true);
             refreshDownloadLinks();
             renderComparisonTabs();
@@ -616,11 +614,23 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     }
 
     private void refreshDownloadLinks() {
+        if (latestOutcome == null) {
+            return;
+        }
         final String ts = LocalDateTime.now().format(FILE_TS);
-        downloadJson.setHref(new StreamResource("comparison-" + ts + ".json",
-                () -> new ByteArrayInputStream(latestOutcome.json().getBytes(StandardCharsets.UTF_8))));
-        downloadExcel.setHref(new StreamResource("comparison-" + ts + ".xlsx",
-                () -> new ByteArrayInputStream(latestOutcome.excel())));
+        final DownloadFormat selectedFormat = downloadFormatSelect.getValue() == null
+                ? DownloadFormat.JSON
+                : downloadFormatSelect.getValue();
+
+        final StreamResource resource = switch (selectedFormat) {
+            case JSON -> new StreamResource("comparison-" + ts + ".json",
+                    () -> new ByteArrayInputStream(latestOutcome.json().getBytes(StandardCharsets.UTF_8)));
+            case YAML -> new StreamResource("comparison-" + ts + ".yml",
+                    () -> new ByteArrayInputStream(latestOutcome.yaml().getBytes(StandardCharsets.UTF_8)));
+            case EXCEL -> new StreamResource("comparison-" + ts + ".xlsx",
+                    () -> new ByteArrayInputStream(latestOutcome.excel()));
+        };
+        downloadAction.setHref(resource);
     }
 
     private void renderComparisonTabs() {
@@ -926,6 +936,22 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             }
         } else if (getUI().isPresent()) {
             loginDialog.close();
+        }
+    }
+
+    private enum DownloadFormat {
+        JSON("json"),
+        YAML("yaml"),
+        EXCEL("excel");
+
+        private final String label;
+
+        DownloadFormat(final String label) {
+            this.label = label;
+        }
+
+        String label() {
+            return label;
         }
     }
 }
