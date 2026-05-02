@@ -12,7 +12,7 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 - /opsx-propose: perform checks that the target database has all required system tables.
 
-- /opsx-propose: provide summary panel for all selected tables; this should be above the tabs.
+- /opsx-propose: change the colour of the tabs of those tables that have differences.  Extend the fixture with one new business-like table, say CustomerAddress, that doesn't have any differences, so that this can be demonstrated.  Add a new filter checkbox only for tables that do have differences. 
 
 - /opsx-propose: add a 'download' button underneath the business tables grid, to the left of 'compare'; when clicked should download a file suitable to feed into CLI's --tables-file param.  Disable this if there are no rows selected.
 
@@ -27,6 +27,8 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 ### Cosmetic
 
+- /opsx-propose: select with space for business tables grid, same as command tables grid.
+  
 - /opsx-propose: cosmetic fix to webapp: make the status line the same colour as the menu bar, add appropriate spaces between the labels
   
 - /opsx-propose: cosmetic fix to webapp: provide a toggle on the status bar to switch to dark mode.
