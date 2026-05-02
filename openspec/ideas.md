@@ -22,7 +22,6 @@ Until then, ideas here are notes only and do not represent current system behavi
 ### New features
 
 
-/opsx-propose: as the two tables contain more data, they both need to fit reasonably onto the page.  Add scrollbars where required, ensure is responsive to different page sizes.
 
 - /opsx-propose: add a 'clear' button below the command selection grid.  All the selections in both tables should be removed.   Disable this if there are no rows selected.
 
