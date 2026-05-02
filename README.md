@@ -148,6 +148,7 @@ All default to `true`.
 
 For extended-property based ignores, set a column-level SQL Server extended property named `cfct.ignored`.
 Truthy values are interpreted case-insensitively and include: `true`, `1`, `yes`, `y`, `on`.
+The local `customer-address` fixture now demonstrates this by marking `dbo.CustomerAddress.postcode` as `cfct.ignored` via `sp_addextendedproperty`.
 
 ## Webapp Usage
 

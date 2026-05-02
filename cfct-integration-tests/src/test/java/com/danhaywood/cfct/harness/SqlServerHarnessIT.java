@@ -62,6 +62,16 @@ class SqlServerHarnessIT {
     }
 
     @Test
+    void customerAddressFixtureSeedsCfctIgnoredExtendedProperty() {
+        initializeFixture("customer-address");
+
+        assertThat(harness.queryForInt(DatabaseSide.LEFT, cfctIgnoredExtendedPropertyCountSql("CustomerAddress", "postcode")))
+                .isEqualTo(1);
+        assertThat(harness.queryForInt(DatabaseSide.RIGHT, cfctIgnoredExtendedPropertyCountSql("CustomerAddress", "postcode")))
+                .isEqualTo(1);
+    }
+
+    @Test
     void purchaseOrderWithoutBusinessKeyFixtureHasNoBusinessKeyIndex() {
         initializeFixture("purchase-order-without-business-key");
 
@@ -399,6 +409,21 @@ class SqlServerHarnessIT {
                 SELECT COUNT(*)
                 FROM dbo.%s
                 """.formatted(tableName);
+    }
+
+    private static String cfctIgnoredExtendedPropertyCountSql(final String tableName, final String columnName) {
+        return """
+                SELECT COUNT(*)
+                FROM sys.extended_properties ep
+                JOIN sys.tables t ON ep.major_id = t.object_id
+                JOIN sys.columns c ON c.object_id = t.object_id AND c.column_id = ep.minor_id
+                JOIN sys.schemas s ON s.schema_id = t.schema_id
+                WHERE ep.class = 1
+                  AND ep.name = 'cfct.ignored'
+                  AND s.name = 'dbo'
+                  AND t.name = '%s'
+                  AND c.name = '%s'
+                """.formatted(tableName, columnName);
     }
 
     private static String purchaseOrderRowversionColumnCountSql() {

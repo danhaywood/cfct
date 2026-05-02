@@ -14,6 +14,11 @@ import com.danhaywood.cfct.request.TableComparisonRequest;
 import com.danhaywood.cfct.harness.DatabaseSide;
 import com.danhaywood.cfct.harness.SqlServerTestHarness;
 import com.danhaywood.cfct.report.TextTableComparisonReportRenderer;
+import com.danhaywood.cfct.spi.IgnoreColumnAdvisor;
+import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorForIdentityColumns;
+import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorForTimestamps;
+import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorForUuidColumns;
+import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorUsingExtendedProperties;
 import com.danhaywood.cfct.sqlserver.TableMetadataReaderSqlServer;
 import com.danhaywood.cfct.sqlserver.TableRowReaderSqlServer;
 import org.approvaltests.Approvals;
@@ -23,6 +28,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
+import java.sql.Statement;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -126,6 +133,42 @@ class CoreSingleTableComparisonIT {
     }
 
     @Test
+    void ignoresColumnWhenCfctIgnoredExtendedPropertyIsTruthy() throws Exception {
+        initializeFixture("customer-address");
+
+        final TableComparisonResult result;
+        try (Connection left = harness.openConnection(DatabaseSide.LEFT);
+             Connection right = harness.openConnection(DatabaseSide.RIGHT)) {
+            result = comparer.compare(left, right, new TableComparisonRequest(new TableRef("dbo", "CustomerAddress"), ComparisonOptions.defaults()));
+        }
+
+        assertThat(result.ignoredColumns()).contains(new ColumnRef("postcode"));
+        assertThat(result.comparedColumns()).doesNotContain(new ColumnRef("postcode"));
+        assertThat(result.differingRows()).isEmpty();
+    }
+
+    @Test
+    void doesNotIgnoreCfctIgnoredColumnWhenExtendedPropertiesAdvisorDisabled() throws Exception {
+        initializeFixture("customer-address");
+
+        final TableComparisonServiceDefault withoutExtendedPropertiesAdvisor = new TableComparisonServiceDefault(
+                new TableMetadataReaderSqlServer(defaultAdvisors(false)),
+                new TableRowReaderSqlServer());
+
+        final TableComparisonResult result;
+        try (Connection left = harness.openConnection(DatabaseSide.LEFT);
+             Connection right = harness.openConnection(DatabaseSide.RIGHT)) {
+            result = withoutExtendedPropertiesAdvisor.compare(left, right,
+                    new TableComparisonRequest(new TableRef("dbo", "CustomerAddress"), ComparisonOptions.defaults()));
+        }
+
+        assertThat(result.ignoredColumns()).doesNotContain(new ColumnRef("postcode"));
+        assertThat(result.comparedColumns()).contains(new ColumnRef("postcode"));
+        assertThat(result.differingRows()).extracting(RowDifference::key)
+                .containsExactly(new RowKey(java.util.List.of("ADDR-002")));
+    }
+
+    @Test
     void failsClearlyWhenBusinessKeyIndexIsAmbiguous() {
         initializeSchema("ambiguous-business-key");
 
@@ -193,5 +236,13 @@ class CoreSingleTableComparisonIT {
 
     private static void initializeSchema(final DatabaseSide side, final String fixtureName) {
         harness.initializeFromResource(side, "/sql/fixtures/%s/schema.sql".formatted(fixtureName));
+    }
+
+    private static List<IgnoreColumnAdvisor> defaultAdvisors(final boolean extendedPropertiesEnabled) {
+        return List.of(
+                new IgnoreColumnAdvisorForIdentityColumns(true),
+                new IgnoreColumnAdvisorForUuidColumns(true),
+                new IgnoreColumnAdvisorForTimestamps(true),
+                new IgnoreColumnAdvisorUsingExtendedProperties(extendedPropertiesEnabled));
     }
 }

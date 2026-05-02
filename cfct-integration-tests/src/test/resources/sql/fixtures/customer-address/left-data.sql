@@ -14,3 +14,11 @@ INSERT INTO dbo.CustomerAddress (
 GO
 SET IDENTITY_INSERT dbo.CustomerAddress OFF;
 GO
+
+EXEC sys.sp_addextendedproperty
+    @name = N'cfct.ignored',
+    @value = N'true',
+    @level0type = N'SCHEMA', @level0name = N'dbo',
+    @level1type = N'TABLE',  @level1name = N'CustomerAddress',
+    @level2type = N'COLUMN', @level2name = N'postcode';
+GO
