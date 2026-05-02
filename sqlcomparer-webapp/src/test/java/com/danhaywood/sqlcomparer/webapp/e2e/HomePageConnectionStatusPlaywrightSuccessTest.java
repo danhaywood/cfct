@@ -80,7 +80,7 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             final double compareTop = positionOf(page, "[data-testid='navigation-compare-action-bar']")[1];
             final double tableGridTop = positionOf(page, "[data-testid='table-selection-grid']")[1];
             assertThat(commandGridTop).isLessThan(tableGridTop);
-            assertThat(compareTop).isLessThan(tableGridTop);
+            assertThat(compareTop).isGreaterThan(tableGridTop);
 
             final String commandGridText = page.locator("[data-testid='command-selection-grid']").innerText();
             assertThat(commandGridText).contains(
@@ -109,6 +109,11 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
             page.click("[data-testid='hamburger-menu']");
             page.waitForTimeout(200);
+
+            page.setViewportSize(900, 560);
+            page.waitForTimeout(200);
+            final Object compareVisibleAfterResize = page.evaluate("() => { const bar = document.querySelector('[data-testid=\"navigation-compare-action-bar\"]'); if (!bar) return false; const r = bar.getBoundingClientRect(); return r.top >= 0 && r.bottom <= window.innerHeight; }");
+            assertThat(compareVisibleAfterResize).isEqualTo(Boolean.TRUE);
 
             setCommandInteractionFilter(page, PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.substring(0, 8));
             page.waitForFunction("() => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('11111111-1111-1111-1111-111111111111')");

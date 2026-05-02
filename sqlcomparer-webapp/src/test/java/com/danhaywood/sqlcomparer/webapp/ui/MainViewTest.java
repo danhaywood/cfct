@@ -109,7 +109,7 @@ class MainViewTest {
     }
 
     @Test
-    void rendersCommandGridAboveTableGridWithSpacer() {
+    void rendersCommandGridAboveTableGridWithSpacerAndCompareBelowGrid() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithDefaults(),
@@ -131,6 +131,8 @@ class MainViewTest {
 
         assertThat(testIdsInOrder.indexOf("command-selection-grid"))
                 .isLessThan(testIdsInOrder.indexOf("table-selection-grid"));
+        assertThat(testIdsInOrder.indexOf("table-selection-grid"))
+                .isLessThan(testIdsInOrder.indexOf("navigation-compare-action-bar"));
     }
 
     @Test

@@ -332,17 +332,22 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         panel.getStyle()
                 .set("width", "32rem")
                 .set("max-width", "100%")
-                .set("padding", "var(--lumo-space-m)");
+                .set("padding", "var(--lumo-space-m)")
+                .set("box-sizing", "border-box")
+                .set("height", "100%");
 
         final VerticalLayout layout = new VerticalLayout();
         layout.setPadding(true);
         layout.setSpacing(true);
-        layout.getStyle().set("gap", "var(--lumo-space-m)");
+        layout.getStyle()
+                .set("gap", "var(--lumo-space-m)")
+                .set("height", "100%")
+                .set("overflow", "auto");
 
         final Div commandSpacer = new Div();
         commandSpacer.getElement().setAttribute("data-testid", "command-selection-spacer");
         commandSpacer.getStyle()
-                .set("height", "  calc(var(--lumo-size-xl, 2.0rem) + var(--lumo-space-xl, 1rem))")
+                .set("height", "calc(var(--lumo-size-s, 0.5rem) + var(--lumo-space-m, 0.5rem))")
                 .set("width", "100%");
 
         final TextField commandInteractionFilter = new TextField();
@@ -364,8 +369,13 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("display", "flex")
                 .set("justify-content", "flex-end")
                 .set("width", "100%")
-                .set("margin-top", "var(--lumo-space-xs)")
-                .set("margin-bottom", "var(--lumo-space-xs)");
+                .set("position", "sticky")
+                .set("bottom", "0")
+                .set("z-index", "2")
+                .set("background", "var(--lumo-base-color)")
+                .set("padding-top", "var(--lumo-space-xs)")
+                .set("padding-bottom", "var(--lumo-space-xs)")
+                .set("margin-top", "var(--lumo-space-xs)");
 
         compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
         compareButton.getElement().setAttribute("data-testid", "compare-button");
@@ -376,7 +386,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         tableFilter.setWidthFull();
         final Grid<TableCatalogEntry> tableGrid = buildSelectionGrid();
 
-        layout.add(commandSpacer, commandInteractionFilter, commandGrid, actionBar, tableFilter, tableGrid);
+        layout.add(commandInteractionFilter, commandGrid, commandSpacer, tableFilter, tableGrid, actionBar);
         panel.add(layout);
         return panel;
     }
