@@ -10,7 +10,7 @@ HOST_PORT="${SQLCOMPARER_FIXTURE_PORT:-14333}"
 SA_PASSWORD="${SQLCOMPARER_FIXTURE_PASSWORD:-Str0ng_password!123}"
 LEFT_DATABASE="${SQLCOMPARER_LEFT_DATABASE:-left_db}"
 RIGHT_DATABASE="${SQLCOMPARER_RIGHT_DATABASE:-right_db}"
-FIXTURE_ROOT="${REPO_ROOT}/sqlcomparer-integration-tests/src/test/resources/sql/fixtures"
+FIXTURE_ROOT="${REPO_ROOT}/cfct-integration-tests/src/test/resources/sql/fixtures"
 
 usage() {
   cat <<USAGE

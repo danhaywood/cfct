@@ -5,8 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${SCRIPT_DIR}"
 ENV_FILE="${COMPAREDB_ENV_FILE:-${PWD}/.env}"
 TABLES_FILE="${COMPAREDB_TABLES_FILE:-}"
-CLI_JAR="${COMPAREDB_CLI_JAR:-${REPO_ROOT}/sqlcomparer-cli/target/sqlcomparer-cli-0.0.1-SNAPSHOT.jar}"
-BUILD_COMMAND="mvn -pl sqlcomparer-cli -am package"
+CLI_JAR="${COMPAREDB_CLI_JAR:-${REPO_ROOT}/cfct-cli/target/cfct-cli-0.0.1-SNAPSHOT.jar}"
+BUILD_COMMAND="mvn -pl cfct-cli -am package"
 
 usage() {
   cat <<USAGE

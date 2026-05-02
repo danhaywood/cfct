@@ -4,14 +4,14 @@
 TBD - created by archiving change add-vaadin-webapp-config-scaffold. Update Purpose after archive.
 ## Requirements
 ### Requirement: Repository provides a Vaadin webapp module scaffold
-The repository SHALL provide a Maven module named `sqlcomparer-webapp`.
+The repository SHALL provide a Maven module named `cfct-webapp`.
 The webapp module SHALL package a Spring Boot application with Vaadin Flow integration.
 The webapp module SHALL start successfully with a minimal bootstrap route suitable for future UI development.
 The webapp module SHALL use a stable Vaadin Flow release line, selecting the latest stable line identified during proposal work.
 
 #### Scenario: Webapp module is present in source tree
 - **WHEN** the project modules are inspected
-- **THEN** a `sqlcomparer-webapp` module exists with its own `pom.xml` and Spring Boot application entry point
+- **THEN** a `cfct-webapp` module exists with its own `pom.xml` and Spring Boot application entry point
 
 #### Scenario: Webapp application starts with minimal route
 - **WHEN** the webapp module is started in a local development environment
@@ -108,10 +108,10 @@ The webapp SHALL disable checkbox interaction for ineligible tables.
 - **THEN** the table row is shown in greyed or disabled styling and its checkbox cannot be selected
 
 ### Requirement: Webapp invokes comparison orchestration through API contracts
-The webapp SHALL invoke comparison orchestration through interfaces defined in `sqlcomparer-api`.
-The webapp SHALL obtain implementations of those interfaces via imported Spring configuration from `sqlcomparer-impl`.
+The webapp SHALL invoke comparison orchestration through interfaces defined in `cfct-api`.
+The webapp SHALL obtain implementations of those interfaces via imported Spring configuration from `cfct-impl`.
 The webapp SHALL use DataSource-managed connection acquisition in its execution path rather than retaining externally-managed Connection state in web components.
-The webapp SHALL NOT directly reference non-configuration implementation classes from `sqlcomparer-impl`.
+The webapp SHALL NOT directly reference non-configuration implementation classes from `cfct-impl`.
 
 #### Scenario: Webapp startup wiring resolves API comparison services
 - **WHEN** the webapp application context starts with imported implementation wiring configuration
@@ -119,7 +119,7 @@ The webapp SHALL NOT directly reference non-configuration implementation classes
 
 #### Scenario: Webapp source avoids direct implementation-type coupling
 - **WHEN** webapp source imports are inspected
-- **THEN** no non-configuration type from `sqlcomparer-impl` is referenced by webapp code
+- **THEN** no non-configuration type from `cfct-impl` is referenced by webapp code
 
 ### Requirement: Home page footer surfaces configured connection context
 The webapp home page SHALL display authenticated connection context and SQL connectivity status in a fixed footer or status bar after login succeeds.

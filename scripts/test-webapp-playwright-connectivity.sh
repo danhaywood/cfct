@@ -12,7 +12,7 @@ fi
 cd "${REPO_ROOT}"
 
 echo "Running headless Playwright connectivity-status tests..."
-mvn -pl sqlcomparer-webapp -am \
+mvn -pl cfct-webapp -am \
   -Dplaywright=true \
   -Dtest=HomePageConnectionStatusPlaywrightSuccessTest,HomePageConnectionStatusPlaywrightFailureTest \
   -Dsurefire.failIfNoSpecifiedTests=false \

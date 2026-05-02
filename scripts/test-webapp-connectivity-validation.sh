@@ -12,7 +12,7 @@ fi
 cd "${REPO_ROOT}"
 
 echo "Running webapp connectivity-validation tests (Testcontainers)..."
-mvn -pl sqlcomparer-webapp -am \
+mvn -pl cfct-webapp -am \
   -Dtest=SqlServerConnectivityValidationServiceContainerTest \
   -Dsurefire.failIfNoSpecifiedTests=false \
   test

@@ -18,11 +18,11 @@
     <description>Scaffolding for SQL Server comparison regression testing.</description>
 
     <modules>
-        <module>sqlcomparer-api</module>
-        <module>sqlcomparer-impl</module>
-        <module>sqlcomparer-cli</module>
-        <module>sqlcomparer-webapp</module>
-        <module>sqlcomparer-integration-tests</module>
+        <module>cfct-api</module>
+        <module>cfct-impl</module>
+        <module>cfct-cli</module>
+        <module>cfct-webapp</module>
+        <module>cfct-integration-tests</module>
     </modules>
 
     <properties>

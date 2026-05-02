@@ -7,19 +7,19 @@ It provides a reusable comparison API, an implementation module, a Spring Boot C
 
 - `cfct.sh`: root comparison wrapper script for running the CLI with env-file and table-selection inputs.
 - `.env.TEMPLATE`: template for user-managed connection configuration.
-- `sqlcomparer-api`: public comparison contracts, result models, exceptions, and service interfaces.
-- `sqlcomparer-impl`: comparison services, SQL Server readers, JSON request loading, and report renderers.
-- `sqlcomparer-cli`: Spring Boot CLI application and executable jar packaging.
-- `sqlcomparer-webapp`: Spring Boot + Vaadin Flow web application scaffold with typed configuration properties.
-- `sqlcomparer-integration-tests`: SQL Server Testcontainers harness, fixture SQL, approval files, and integration tests.
+- `cfct-api`: public comparison contracts, result models, exceptions, and service interfaces.
+- `cfct-impl`: comparison services, SQL Server readers, JSON request loading, and report renderers.
+- `cfct-cli`: Spring Boot CLI application and executable jar packaging.
+- `cfct-webapp`: Spring Boot + Vaadin Flow web application scaffold with typed configuration properties.
+- `cfct-integration-tests`: SQL Server Testcontainers harness, fixture SQL, approval files, and integration tests.
 - `demo/`: committed fixture example files for local comparison runs.
 - `scripts/`: local helper scripts for the fixture SQL Server.
 
 ## Module boundaries and naming conventions
 
-`sqlcomparer-cli` and `sqlcomparer-webapp` consume comparison orchestration through API interfaces from `sqlcomparer-api`.
-These entry-point modules only reference `sqlcomparer-impl` for explicit Spring wiring import (`ComparisonImplementationConfiguration`).
-Direct references to non-configuration classes in `sqlcomparer-impl` are intentionally disallowed and covered by architecture tests.
+`cfct-cli` and `cfct-webapp` consume comparison orchestration through API interfaces from `cfct-api`.
+These entry-point modules only reference `cfct-impl` for explicit Spring wiring import (`ComparisonImplementationConfiguration`).
+Direct references to non-configuration classes in `cfct-impl` are intentionally disallowed and covered by architecture tests.
 
 The webapp uses Spring-managed `DataSource` beans for SQL Server access at its service boundaries.
 Connectivity validation, table discovery, and webapp comparison execution acquire short-lived JDBC connections from these DataSources and close them within the service method.
@@ -55,7 +55,7 @@ mvn verify
 Build the CLI jar and its required reactor modules before using `cfct.sh`:
 
 ```bash
-mvn -pl sqlcomparer-cli -am package
+mvn -pl cfct-cli -am package
 ```
 
 `cfct.sh` does not build or rebuild jars automatically.
@@ -64,7 +64,7 @@ If the CLI jar is missing, it prints the build command and exits.
 Run the webapp scaffold locally from the repository root:
 
 ```bash
-mvn -pl sqlcomparer-webapp -am spring-boot:run
+mvn -pl cfct-webapp -am spring-boot:run
 ```
 
 The webapp now uses a login-first flow.
@@ -82,7 +82,7 @@ scripts/fixture-sqlserver.sh start
 2. Start the webapp with fixture credentials and fixture databases.
 
 ```bash
-mvn -pl sqlcomparer-webapp -am spring-boot:run \
+mvn -pl cfct-webapp -am spring-boot:run \
   -Dspring-boot.run.arguments="--sqlcomparer.webapp.comparison.connection.server=localhost:14333 --sqlcomparer.webapp.comparison.connection.username=sa --sqlcomparer.webapp.comparison.connection.password=Str0ng_password!123 --sqlcomparer.webapp.comparison.connection.left-database=left_db --sqlcomparer.webapp.comparison.connection.right-database=right_db"
 ```
 
@@ -108,7 +108,7 @@ Started SqlComparerWebApplication
 scripts/fixture-sqlserver.sh stop
 ```
 
-The webapp reads login defaults and shared execution defaults from `sqlcomparer-webapp/src/main/resources/application.yml` using `sqlcomparer.webapp.comparison.*` keys.
+The webapp reads login defaults and shared execution defaults from `cfct-webapp/src/main/resources/application.yml` using `sqlcomparer.webapp.comparison.*` keys.
 These keys map to CLI concepts as follows:
 
 - `connection.server` ↔ `-S` / `--server`
@@ -293,7 +293,7 @@ The wrapper supports these environment overrides:
 
 - `COMPAREDB_ENV_FILE`: env file path, defaulting to `.env` in the current directory.
 - `COMPAREDB_TABLES_FILE`: optional table list file path, with no default.
-- `COMPAREDB_CLI_JAR`: CLI jar path, defaulting to `sqlcomparer-cli/target/sqlcomparer-cli-0.0.1-SNAPSHOT.jar`.
+- `COMPAREDB_CLI_JAR`: CLI jar path, defaulting to `cfct-cli/target/cfct-cli-0.0.1-SNAPSHOT.jar`.
 
 ## Env files and table files
 
@@ -327,7 +327,7 @@ Do not put production credentials in committed demo files.
 You can run the CLI jar directly after building it:
 
 ```bash
-java -jar sqlcomparer-cli/target/sqlcomparer-cli-0.0.1-SNAPSHOT.jar \
+java -jar cfct-cli/target/cfct-cli-0.0.1-SNAPSHOT.jar \
   -S localhost:14333 \
   -U sa \
   -P 'Str0ng_password!123' \

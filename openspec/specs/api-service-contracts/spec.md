@@ -12,11 +12,11 @@ The contracts SHALL expose in-memory comparison result structures suitable for d
 
 #### Scenario: CLI compiles against API service contracts
 - **WHEN** the CLI module is compiled
-- **THEN** it can invoke comparison orchestration through API interfaces without importing non-configuration classes from `sqlcomparer-impl`
+- **THEN** it can invoke comparison orchestration through API interfaces without importing non-configuration classes from `cfct-impl`
 
 #### Scenario: Webapp compiles against API service contracts
 - **WHEN** the webapp module is compiled
-- **THEN** it can invoke comparison orchestration through API interfaces without importing non-configuration classes from `sqlcomparer-impl`
+- **THEN** it can invoke comparison orchestration through API interfaces without importing non-configuration classes from `cfct-impl`
 
 #### Scenario: API contract returns in-memory table results for UI consumers
 - **WHEN** a webapp consumer invokes multi-table comparison orchestration
@@ -37,10 +37,10 @@ Application modules SHALL NOT construct implementation classes directly for comp
 
 ### Requirement: Entry-point modules enforce no direct implementation-type coupling
 The CLI and webapp modules SHALL enforce that source code references API contracts for comparison orchestration.
-The only allowed compile-time references from CLI and webapp to `sqlcomparer-impl` SHALL be explicit Spring wiring configuration imports.
+The only allowed compile-time references from CLI and webapp to `cfct-impl` SHALL be explicit Spring wiring configuration imports.
 The project SHALL include automated tests or architecture rules that fail when forbidden direct implementation references are introduced.
 
 #### Scenario: Forbidden implementation import fails architecture rule
-- **WHEN** a non-configuration class from `sqlcomparer-impl` is imported by CLI or webapp source code
+- **WHEN** a non-configuration class from `cfct-impl` is imported by CLI or webapp source code
 - **THEN** module architecture verification fails with a clear boundary error
 
