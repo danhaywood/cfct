@@ -139,6 +139,12 @@ These keys map to CLI concepts as follows:
 - `output.format` ↔ `-f` / `--output-format`
 - `output.file` ↔ `-o` / `--output-file`
 
+Ignore-column advisor toggles are also typesafe configuration properties.
+All default to `true`.
+- `cfct.comparison.ignore-column-advisors.identity-enabled`
+- `cfct.comparison.ignore-column-advisors.uuid-enabled`
+- `cfct.comparison.ignore-column-advisors.timestamps-enabled`
+
 ## Webapp Usage
 
 Webapp usage is now a three-stage workflow.

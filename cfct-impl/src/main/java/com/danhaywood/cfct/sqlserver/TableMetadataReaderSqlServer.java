@@ -7,6 +7,7 @@ import com.danhaywood.cfct.request.ComparisonOptions;
 import com.danhaywood.cfct.exception.MetadataException;
 import com.danhaywood.cfct.request.TableComparisonRequest;
 import com.danhaywood.cfct.model.TableMetadata;
+import com.danhaywood.cfct.spi.IgnoreColumnAdvisor;
 import com.danhaywood.cfct.spi.TableMetadataReader;
 import com.danhaywood.cfct.model.TableRef;
 
@@ -24,6 +25,19 @@ import java.util.Set;
 
 public final class TableMetadataReaderSqlServer implements TableMetadataReader {
 
+    private final List<IgnoreColumnAdvisor> ignoreColumnAdvisors;
+
+    public TableMetadataReaderSqlServer() {
+        this(List.of(
+                new IgnoreColumnAdvisorForIdentityColumns(true),
+                new IgnoreColumnAdvisorForUuidColumns(true),
+                new IgnoreColumnAdvisorForTimestamps(true)));
+    }
+
+    public TableMetadataReaderSqlServer(final List<IgnoreColumnAdvisor> ignoreColumnAdvisors) {
+        this.ignoreColumnAdvisors = List.copyOf(ignoreColumnAdvisors);
+    }
+
     @Override
     public TableMetadata read(final Connection connection, final TableComparisonRequest request) {
         final TableRef table = request.table();
@@ -40,7 +54,7 @@ public final class TableMetadataReaderSqlServer implements TableMetadataReader {
             if (keyColumnNames.contains(columnName.toLowerCase(Locale.ROOT))) {
                 continue;
             }
-            if (builtInIgnore(column) || request.options().ignores(columnName)) {
+            if (isIgnoredByAdvisor(column) || request.options().ignores(columnName)) {
                 ignoredColumns.add(column.column());
                 continue;
             }
@@ -133,12 +147,13 @@ public final class TableMetadataReaderSqlServer implements TableMetadataReader {
         return normalizedName.endsWith(normalizedSuffix);
     }
 
-    private boolean builtInIgnore(final ColumnMetadata column) {
-        final String normalized = column.column().name().toLowerCase(Locale.ROOT);
-        return column.identity()
-                || "guid".equals(normalized)
-                || "uuid".equals(normalized)
-                || column.uniqueIdentifierType();
+    private boolean isIgnoredByAdvisor(final ColumnMetadata column) {
+        for (IgnoreColumnAdvisor advisor : ignoreColumnAdvisors) {
+            if (advisor.shouldIgnore(column)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Set<String> lowerCaseColumnNames(final List<ColumnRef> columns) {

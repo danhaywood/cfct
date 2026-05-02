@@ -261,7 +261,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         comparedTableFilter.addValueChangeListener(event -> renderComparisonTabs());
 
         differencesOnlyFilter.getElement().setAttribute("data-testid", "comparison-differences-only-filter");
-        differencesOnlyFilter.setValue(true);
+        differencesOnlyFilter.setValue(false);
         differencesOnlyFilter.getStyle().setPaddingLeft(".3em");
         differencesOnlyFilter.getStyle().setPaddingRight(".3em");
         differencesOnlyFilter.getStyle().setAlignSelf(Style.AlignSelf.CENTER);

@@ -14,17 +14,25 @@ import com.danhaywood.cfct.service.MultiTableComparisonService;
 import com.danhaywood.cfct.service.MultiTableComparisonViewService;
 import com.danhaywood.cfct.service.TableComparisonService;
 import com.danhaywood.cfct.spi.CommandAuditTouchedTableResolver;
+import com.danhaywood.cfct.spi.IgnoreColumnAdvisor;
 import com.danhaywood.cfct.spi.TableMetadataReader;
 import com.danhaywood.cfct.spi.TableRowReader;
 import com.danhaywood.cfct.sqlserver.CommandAuditTouchedTableResolverSqlServer;
+import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorForIdentityColumns;
+import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorForTimestamps;
+import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorForUuidColumns;
 import com.danhaywood.cfct.sqlserver.TableMetadataReaderSqlServer;
 import com.danhaywood.cfct.sqlserver.TableRowReaderSqlServer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
+
 @Configuration
+@EnableConfigurationProperties(IgnoreColumnAdvisorsProperties.class)
 public class ComparisonImplementationConfiguration {
 
     @Bean
@@ -33,8 +41,26 @@ public class ComparisonImplementationConfiguration {
     }
 
     @Bean
-    public TableMetadataReader tableMetadataReader() {
-        return new TableMetadataReaderSqlServer();
+    public TableMetadataReader tableMetadataReader(final List<IgnoreColumnAdvisor> ignoreColumnAdvisors) {
+        return new TableMetadataReaderSqlServer(ignoreColumnAdvisors);
+    }
+
+    @Bean
+    public IgnoreColumnAdvisor ignoreColumnAdvisorForIdentityColumns(
+            final IgnoreColumnAdvisorsProperties properties) {
+        return new IgnoreColumnAdvisorForIdentityColumns(properties.isIdentityEnabled());
+    }
+
+    @Bean
+    public IgnoreColumnAdvisor ignoreColumnAdvisorForUuidColumns(
+            final IgnoreColumnAdvisorsProperties properties) {
+        return new IgnoreColumnAdvisorForUuidColumns(properties.isUuidEnabled());
+    }
+
+    @Bean
+    public IgnoreColumnAdvisor ignoreColumnAdvisorForTimestamps(
+            final IgnoreColumnAdvisorsProperties properties) {
+        return new IgnoreColumnAdvisorForTimestamps(properties.isTimestampsEnabled());
     }
 
     @Bean
