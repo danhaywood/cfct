@@ -23,7 +23,7 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 
 
-- /opsx-propose: allow filtering on memberId; filter button before the interactionId
+- /opsx-propose: rename from sqlcomparer to cfct.  comparedb.sh also rename to cfct.sh
 
 - /opsx-propose: provide summary panel for all selected tables; this should be above the tabs.
 
