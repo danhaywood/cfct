@@ -1,11 +1,11 @@
-# sqlcomparer
+# cfct
 
-`sqlcomparer` is a Maven multi-module project for comparing selected SQL Server tables between two databases.
+`cfct` (Command Footprint Comparison Tool) is a Maven multi-module project for comparing selected SQL Server tables between two databases.
 It provides a reusable comparison API, an implementation module, a Spring Boot CLI, a Vaadin webapp scaffold, a root comparison wrapper script, and a Docker-backed integration-test fixture.
 
 ## Project layout
 
-- `comparedb.sh`: root comparison wrapper script for running the CLI with env-file and table-selection inputs.
+- `cfct.sh`: root comparison wrapper script for running the CLI with env-file and table-selection inputs.
 - `.env.TEMPLATE`: template for user-managed connection configuration.
 - `sqlcomparer-api`: public comparison contracts, result models, exceptions, and service interfaces.
 - `sqlcomparer-impl`: comparison services, SQL Server readers, JSON request loading, and report renderers.
@@ -52,13 +52,13 @@ Run the full build, including SQL Server integration tests, from a Docker-enable
 mvn verify
 ```
 
-Build the CLI jar and its required reactor modules before using `comparedb.sh`:
+Build the CLI jar and its required reactor modules before using `cfct.sh`:
 
 ```bash
 mvn -pl sqlcomparer-cli -am package
 ```
 
-`comparedb.sh` does not build or rebuild jars automatically.
+`cfct.sh` does not build or rebuild jars automatically.
 If the CLI jar is missing, it prints the build command and exits.
 
 Run the webapp scaffold locally from the repository root:
@@ -233,7 +233,7 @@ If you change the port, also update the env file used by the comparison wrapper 
 
 ## Comparison wrapper
 
-`comparedb.sh` is the root comparison wrapper script.
+`cfct.sh` is the root comparison wrapper script.
 It expects the CLI jar to already exist and then invokes the Java CLI with an env file.
 By default, the env file is `.env` in the current directory.
 The wrapper has no default tables file; provide table selection by passing `--tables-file`, passing `-t`, or setting `COMPAREDB_TABLES_FILE`.
@@ -242,7 +242,7 @@ The wrapper has no default tables file; provide table selection by passing `--ta
 For the fixture example, build the CLI jar, start the fixture, then run:
 
 ```bash
-./comparedb.sh --env-file demo/.env --tables-file demo/tables.txt
+./cfct.sh --env-file demo/.env --tables-file demo/tables.txt
 ```
 
 Equivalent usage with environment overrides:
@@ -250,43 +250,43 @@ Equivalent usage with environment overrides:
 ```bash
 COMPAREDB_ENV_FILE=demo/.env \
 COMPAREDB_TABLES_FILE=demo/tables.txt \
-./comparedb.sh
+./cfct.sh
 ```
 
 This overrides the server value from the env file:
 
 ```bash
-./comparedb.sh --env-file demo/.env --tables-file demo/tables.txt -S localhost:14334
+./cfct.sh --env-file demo/.env --tables-file demo/tables.txt -S localhost:14334
 ```
 
 This writes JSON output instead of the default text output:
 
 ```bash
-./comparedb.sh --env-file demo/.env --tables-file demo/tables.txt --output-format json
+./cfct.sh --env-file demo/.env --tables-file demo/tables.txt --output-format json
 ```
 
 Equivalent short-flag example (passed through by the wrapper):
 
 ```bash
-./comparedb.sh --env-file demo/.env --tables-file demo/tables.txt -f json
+./cfct.sh --env-file demo/.env --tables-file demo/tables.txt -f json
 ```
 
 This writes JSON output to a file:
 
 ```bash
-./comparedb.sh --env-file demo/.env --tables-file demo/tables.txt --output-format json -o comparison.json
+./cfct.sh --env-file demo/.env --tables-file demo/tables.txt --output-format json -o comparison.json
 ```
 
 This writes YAML output instead of the default text output:
 
 ```bash
-./comparedb.sh --env-file demo/.env --tables-file demo/tables.txt --output-format yaml
+./cfct.sh --env-file demo/.env --tables-file demo/tables.txt --output-format yaml
 ```
 
 This writes Excel output to a workbook file:
 
 ```bash
-./comparedb.sh --env-file demo/.env --tables-file demo/tables.txt --output-format excel -o comparison.xlsx
+./cfct.sh --env-file demo/.env --tables-file demo/tables.txt --output-format excel -o comparison.xlsx
 ```
 
 The wrapper supports these environment overrides:
@@ -298,7 +298,7 @@ The wrapper supports these environment overrides:
 ## Env files and table files
 
 Use `.env.TEMPLATE` as the starting point for a user-managed env file.
-Copy it to `.env` in the directory from which you run `comparedb.sh`, or store it elsewhere and set `COMPAREDB_ENV_FILE`.
+Copy it to `.env` in the directory from which you run `cfct.sh`, or store it elsewhere and set `COMPAREDB_ENV_FILE`.
 Do not commit real production credentials.
 
 `demo/.env` contains fixture-only connection values using the CLI-supported dotenv keys:

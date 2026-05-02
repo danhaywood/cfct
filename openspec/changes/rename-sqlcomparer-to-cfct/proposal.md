@@ -8,7 +8,7 @@ The shell entrypoint should align with the new name.
 ## What Changes
 
 Rename project-facing naming from `sqlcomparer` to `cfct` across user-visible surfaces.
-Rename `scripts/comparedb.sh` to `scripts/cfct.sh`.
+Rename `comparedb.sh` to `cfct.sh`.
 Update references and usage examples that point to the old script name.
 Maintain existing behavior and arguments after the rename.
 

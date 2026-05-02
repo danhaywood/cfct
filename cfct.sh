@@ -12,7 +12,7 @@ usage() {
   cat <<USAGE
 Usage: $(basename "$0") [--env-file <path>] [additional CLI arguments]
 
-Runs the SQL comparer CLI with:
+Runs the CFCT (Command Footprint Comparison Tool) CLI with:
   --env-file <path>
 
 Env-file precedence (highest to lowest):

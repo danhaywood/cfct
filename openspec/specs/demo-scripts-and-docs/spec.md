@@ -4,7 +4,7 @@
 TBD - created by archiving change add-demo-scripts-and-docs. Update Purpose after archive.
 ## Requirements
 ### Requirement: Repository provides a CLI demo wrapper script
-The repository SHALL provide a root-level shell script named `comparedb.sh` that invokes the SQL comparer CLI using configurable env-file and table-file inputs.
+The repository SHALL provide a root-level shell script named `cfct.sh` that invokes the CFCT CLI using configurable env-file and table-file inputs.
 The wrapper SHALL verify that the CLI executable artifact is present before invoking it.
 The wrapper SHALL fail with a clear build instruction when required jar artifacts are missing.
 The wrapper SHALL not automatically build or rebuild jar artifacts.
@@ -18,27 +18,27 @@ The wrapper SHALL support env-file selection via `COMPAREDB_ENV_FILE`.
 The wrapper SHALL prioritize `--env-file <path>` over `COMPAREDB_ENV_FILE` when both are provided.
 
 #### Scenario: Comparison wrapper runs with explicit fixture example inputs
-- **WHEN** the fixture SQL Server is running, required jars are built, and the user runs `./comparedb.sh` with `COMPAREDB_ENV_FILE=demo/.env` and `--tables-file demo/tables.txt`
+- **WHEN** the fixture SQL Server is running, required jars are built, and the user runs `./cfct.sh` with `COMPAREDB_ENV_FILE=demo/.env` and `--tables-file demo/tables.txt`
 - **THEN** the wrapper invokes the CLI with `demo/.env` and `demo/tables.txt`
 
 #### Scenario: Comparison wrapper accepts additional arguments
-- **WHEN** the user runs `./comparedb.sh` with additional CLI arguments
+- **WHEN** the user runs `./cfct.sh` with additional CLI arguments
 - **THEN** the wrapper passes those arguments through to the CLI invocation
 
 #### Scenario: Comparison wrapper supports tables file environment override
-- **WHEN** the user runs `./comparedb.sh` with `COMPAREDB_TABLES_FILE` set
+- **WHEN** the user runs `./cfct.sh` with `COMPAREDB_TABLES_FILE` set
 - **THEN** the wrapper passes that file path to the CLI table-file option
 
 #### Scenario: Comparison wrapper supports env-file argument override
-- **WHEN** the user runs `./comparedb.sh --env-file custom.env --tables-file demo/tables.txt`
+- **WHEN** the user runs `./cfct.sh --env-file custom.env --tables-file demo/tables.txt`
 - **THEN** the wrapper invokes the CLI using `custom.env` as the env file input
 
 #### Scenario: Comparison wrapper prioritizes explicit env-file argument
-- **WHEN** the user runs `./comparedb.sh --env-file custom.env` with `COMPAREDB_ENV_FILE=demo/.env`
+- **WHEN** the user runs `./cfct.sh --env-file custom.env` with `COMPAREDB_ENV_FILE=demo/.env`
 - **THEN** the wrapper invokes the CLI using `custom.env` instead of `demo/.env`
 
 #### Scenario: Comparison wrapper reports missing jar artifacts
-- **WHEN** the user runs `./comparedb.sh` before required jar artifacts have been built
+- **WHEN** the user runs `./cfct.sh` before required jar artifacts have been built
 - **THEN** the wrapper exits with a non-zero status and reports the Maven build command needed before retrying
 
 ### Requirement: Repository provides a fixture SQL Server lifecycle script
@@ -81,8 +81,8 @@ The demo files SHALL be safe examples and SHALL not contain production credentia
 ### Requirement: README documents current build, fixture, and CLI usage
 The README SHALL document the current Maven module layout and build commands.
 The README SHALL document how to start, check, and stop the fixture SQL Server using the fixture script.
-The README SHALL document how to run the root `comparedb.sh` comparison wrapper.
-The README SHALL document that `comparedb.sh` defaults to `.env` in the current directory and has no default tables file.
+The README SHALL document how to run the root `cfct.sh` comparison wrapper.
+The README SHALL document that `cfct.sh` defaults to `.env` in the current directory and has no default tables file.
 The README SHALL document fixture examples that pass `demo/.env` and `demo/tables.txt` explicitly.
 The README SHALL document the direct CLI argument options, including `.env`, table-file, output-format, and output-file usage.
 The README SHALL document `demo/.env` as the fixture example and `.env.TEMPLATE` as the user configuration template.
@@ -90,7 +90,7 @@ The README SHALL remove or correct information that no longer matches current pr
 
 #### Scenario: README explains the comparison wrapper path
 - **WHEN** a user reads the README from a clean checkout
-- **THEN** the README gives an ordered path for building the CLI jar, starting the fixture, and running `./comparedb.sh` with explicit fixture env and tables files
+- **THEN** the README gives an ordered path for building the CLI jar, starting the fixture, and running `./cfct.sh` with explicit fixture env and tables files
 
 #### Scenario: README documents direct CLI invocation
 - **WHEN** a user wants to bypass the wrapper script

@@ -9,7 +9,7 @@ The script entrypoint also needs to reflect the new name for discoverability and
 **Goals:**
 - Establish `cfct` as the canonical short name.
 - Ensure user-facing references expand `cfct` as `Command Footprint Comparison Tool` where helpful.
-- Rename `scripts/comparedb.sh` to `scripts/cfct.sh`.
+- Rename `comparedb.sh` to `cfct.sh`.
 - Preserve script behavior and invocation options.
 
 **Non-Goals:**
@@ -21,7 +21,7 @@ The script entrypoint also needs to reflect the new name for discoverability and
 
 Use `cfct` as the default name in user-facing docs, examples, and script references.
 Treat `Command Footprint Comparison Tool` as the canonical long-form expansion in documentation.
-Rename `scripts/comparedb.sh` to `scripts/cfct.sh` and update all repository references.
+Rename `comparedb.sh` to `cfct.sh` and update all repository references.
 Keep script contents functionally equivalent apart from naming-related usage/help text updates.
 
 ## Risks / Trade-offs
@@ -32,12 +32,12 @@ Keep script contents functionally equivalent apart from naming-related usage/hel
 
 ## Migration Plan
 
-Rename the script file to `scripts/cfct.sh`.
+Rename the script file to `cfct.sh`.
 Update references in README, docs, tests, and scripts to use the new path.
 Update user-facing name strings from `sqlcomparer` to `cfct` where in scope.
 Run tests and script checks that cover startup or invocation paths.
 
 ## Open Questions
 
-Whether to keep a temporary `scripts/comparedb.sh` shim that forwards to `scripts/cfct.sh`.
+Whether to keep a temporary `comparedb.sh` shim that forwards to `cfct.sh`.
 Whether Maven artifact or module names should be renamed in a dedicated follow-up change.

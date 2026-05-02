@@ -10,11 +10,11 @@ Documentation SHALL treat `cfct` as `Command Footprint Comparison Tool`.
 - **AND** long-form expansion is `Command Footprint Comparison Tool` in relevant introduction contexts
 
 ### Requirement: Launcher script is renamed to cfct.sh
-The repository SHALL provide `scripts/cfct.sh` as the command launcher script.
-References to `scripts/comparedb.sh` in maintained docs and scripts SHALL be updated to `scripts/cfct.sh`.
+The repository SHALL provide `cfct.sh` as the command launcher script.
+References to `comparedb.sh` in maintained docs and scripts SHALL be updated to `cfct.sh`.
 The renamed launcher SHALL preserve existing behavior and arguments.
 
 #### Scenario: Renamed launcher path is documented and usable
 - **WHEN** users follow project script usage documentation
-- **THEN** they invoke `scripts/cfct.sh`
-- **AND** command behavior matches prior `scripts/comparedb.sh` behavior
+- **THEN** they invoke `cfct.sh`
+- **AND** command behavior matches prior `comparedb.sh` behavior
