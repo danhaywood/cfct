@@ -84,6 +84,10 @@ class MainViewTest {
 
         assertThat(view.getElement().getAttribute("data-testid")).isEqualTo("main-app-layout");
         assertThat(findByTestId(view, "hamburger-menu")).isPresent();
+        assertThat(findByTestId(view, "navbar-branding")).isPresent();
+        assertThat(findByTestId(view, "navbar-branding-logo")).isPresent();
+        final Span navbarBrand = (Span) findByTestId(view, "navbar-branding-name").orElseThrow();
+        assertThat(navbarBrand.getText()).isEqualTo("CFCT");
         assertThat(findByTestId(view, "account-menu")).isPresent();
         assertThat(findByTestId(view, "logout-button")).isEmpty();
 

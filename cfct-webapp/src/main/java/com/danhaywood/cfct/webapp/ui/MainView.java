@@ -39,6 +39,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Footer;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -51,6 +52,7 @@ import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -159,7 +161,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         setPrimarySection(Section.DRAWER);
         getElement().setAttribute("data-testid", "main-app-layout");
-        addToNavbar(buildDrawerToggle(), buildNavbarSpacer(), buildAccountMenu());
+        addToNavbar(buildDrawerToggle(), buildNavbarBranding(), buildNavbarSpacer(), buildAccountMenu());
         addToDrawer(buildSelectionPanel());
         setContent(buildMainContent());
 
@@ -183,6 +185,21 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         toggle.getElement().setAttribute("data-testid", "hamburger-menu");
         toggle.getElement().setAttribute("title", "Open navigation menu");
         return toggle;
+    }
+
+    private Component buildNavbarBranding() {
+        final HorizontalLayout branding = new HorizontalLayout();
+        branding.getElement().setAttribute("data-testid", "navbar-branding");
+        branding.setPadding(false);
+        branding.setSpacing(true);
+        branding.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
+
+        final Span name = new Span("CFCT");
+        name.getElement().setAttribute("data-testid", "navbar-branding-name");
+        name.getStyle().set("font-weight", "800");
+
+        branding.add( name);
+        return branding;
     }
 
     private Component buildNavbarSpacer() {
@@ -220,7 +237,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         panel.getElement().setAttribute("data-testid", "comparison-stage-placeholder");
         panel.addClassName("comparison-stage-panel");
         panel.getStyle()
-                .set("padding", "var(--lumo-space-l)")
+//                .set("padding", "var(--lumo-space-l)")
                 .set("border", "1px solid var(--lumo-contrast-10pct)")
                 .set("border-radius", "var(--lumo-border-radius-m)")
                 .set("display", "flex")
@@ -245,13 +262,13 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         downloadExcel.getElement().setAttribute("download", true);
 
         resultActions.setWidthFull();
-        resultActions.setPadding(false);
+        resultActions.setPadding(true);
         resultActions.setSpacing(true);
         resultActions.setAlignItems(FlexComponent.Alignment.END);
         resultActions.addClassName("comparison-result-actions");
         resultActions.getElement().setAttribute("data-testid", "comparison-result-actions");
 
-        resultExportActions.setPadding(false);
+        resultExportActions.setPadding(true);
         resultExportActions.setSpacing(true);
         resultExportActions.addClassName("comparison-result-export-actions");
         resultExportActions.getElement().setAttribute("data-testid", "comparison-result-export-actions");
@@ -295,7 +312,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("flex-wrap", "wrap")
                 .set("align-items", "center")
                 .set("gap", "var(--lumo-space-xl)")
-                .set("padding", "var(--lumo-space-m) var(--lumo-space-l)")
+                //.set("padding", "var(--lumo-space-m) var(--lumo-space-l)")
                 .set("background", "var(--lumo-base-color)")
                 .set("border-top", "1px solid var(--lumo-contrast-10pct)")
                 .set("font-size", "var(--lumo-font-size-s)");
@@ -337,7 +354,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         panel.getStyle()
                 .set("width", "32rem")
                 .set("max-width", "100%")
-                .set("padding", "var(--lumo-space-m)")
+                //.set("padding", "var(--lumo-space-m)")
                 .set("box-sizing", "border-box")
                 .set("height", "100%");
 
@@ -352,7 +369,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         final Div topSpacer = new Div();
         topSpacer.getElement().setAttribute("data-testid", "command-selection-spacer");
         topSpacer.getStyle()
-                .set("height", "calc(var(--lumo-size-s, 0.5rem) + var(--lumo-space-m, 0.5rem))")
+                .set("height", "calc(var(--lumo-size-s, .3rem) + var(--lumo-space-m, .3rem))")
                 .set("width", "100%");
 
         final TextField commandMemberFilter = new TextField();
@@ -378,7 +395,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         commandFilterRow.getElement().setAttribute("data-testid", "command-filter-row");
         commandFilterRow.setWidthFull();
         commandFilterRow.setSpacing(true);
-        commandFilterRow.setPadding(false);
+        commandFilterRow.setPadding(true);
         commandFilterRow.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.END);
         commandFilterRow.expand(commandMemberFilter, commandInteractionFilter);
 
@@ -388,14 +405,14 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         actionBar.getElement().setAttribute("data-testid", "navigation-compare-action-bar");
         actionBar.addClassName("navigation-compare-action-bar");
         actionBar.getStyle()
-                .set("display", "flex")
-                .set("justify-content", "flex-end")
-                .set("width", "100%")
+                .setDisplay(Style.Display.FLEX)
+                .setJustifyContent(Style.JustifyContent.FLEX_END)
+                .setWidth("100%")
                 .set("position", "sticky")
                 .set("bottom", "0")
-                .set("z-index", "2")
-                .set("background", "var(--lumo-base-color)")
-                .set("padding-top", "var(--lumo-space-xs)")
+                .setZIndex(2)
+                .setBackground("var(--lumo-base-color)")
+                .setPaddingTop("var(--lumo-space-m, .3em)")
                 .set("padding-bottom", "var(--lumo-space-xs)")
                 .set("margin-top", "var(--lumo-space-xs)");
 
@@ -411,6 +428,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         clearActionBar.getElement().setAttribute("data-testid", "command-clear-action-bar");
         clearActionBar.getStyle()
                 .set("display", "flex")
+                .setPaddingTop("var(--lumo-space-m, .3em)")
                 .set("justify-content", "flex-end")
                 .set("width", "100%");
 
@@ -418,7 +436,10 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         tableFilter.setWidthFull();
         final Grid<TableCatalogEntry> tableGrid = buildSelectionGrid();
 
-        layout.add(topSpacer, commandFilterRow, commandGrid, clearActionBar, tableFilter, tableGrid, actionBar);
+        final HorizontalLayout tableFilterRow = new HorizontalLayout(tableFilter);
+        tableFilterRow.setPadding(true);
+
+        layout.add(topSpacer, commandFilterRow, commandGrid, clearActionBar, tableFilterRow, tableGrid, actionBar);
         panel.add(layout);
         return panel;
     }
@@ -714,7 +735,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             final Div bottom = new Div(new Span(right));
             bottom.addClassNames("cmp-cell-diff", "cmp-cell-right-diff");
             bottom.getStyle()
-                    .set("padding", "0.1rem 0.35rem")
+//                    .set("padding", "0.1rem 0.35rem")
                     .set("border-top", "1px solid var(--lumo-contrast-20pct)");
 
             final Div stacked = new Div(top, bottom);
@@ -757,7 +778,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private Component statusBadge(final ComparisonRowView row) {
         final Span badge = new Span(row.status().name());
         badge.getStyle()
-                .set("padding", "0.15rem 0.45rem")
+//                .set("padding", "0.15rem 0.45rem")
                 .set("border-radius", "999px")
                 .set("font-size", "var(--lumo-font-size-xs)")
                 .set("font-weight", "600")
@@ -792,13 +813,12 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     }
 
     private void configureLoginDialog() {
-        loginDialog.setHeaderTitle("Login");
         loginDialog.setModal(true);
         loginDialog.setCloseOnEsc(false);
         loginDialog.setCloseOnOutsideClick(false);
         loginDialog.setDraggable(false);
         loginDialog.setResizable(false);
-        loginDialog.setWidth("36rem");
+        loginDialog.setWidth("35rem");
         loginDialog.getElement().setAttribute("data-testid", "login-modal");
     }
 

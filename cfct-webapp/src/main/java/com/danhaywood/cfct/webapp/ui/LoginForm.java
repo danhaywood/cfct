@@ -5,7 +5,10 @@ import com.danhaywood.cfct.webapp.auth.WebappAuthenticationService;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -16,10 +19,10 @@ public class LoginForm extends VerticalLayout {
     private final Runnable onSuccess;
 
     private final TextField server = new TextField("Server");
-    private final TextField leftDatabase = new TextField("Left database");
-    private final TextField rightDatabase = new TextField("Right database");
     private final TextField username = new TextField("Username");
     private final PasswordField password = new PasswordField("Password");
+    private final TextField leftDatabase = new TextField("Left database");
+    private final TextField rightDatabase = new TextField("Right database");
     private final Span error = new Span();
 
     public LoginForm(final WebappAuthenticationService authenticationService, final Runnable onSuccess) {
@@ -31,23 +34,29 @@ public class LoginForm extends VerticalLayout {
         setSpacing(true);
         getElement().setAttribute("data-testid", "login-form");
 
-        add(new H2("Login"));
+        final VerticalLayout fieldsColumn = new VerticalLayout();
+        fieldsColumn.setPadding(false);
+        fieldsColumn.setSpacing(true);
+        fieldsColumn.setWidthFull();
+        fieldsColumn.getStyle().set("min-width", "3rem");
+
+//        fieldsColumn.add(new H2("Login"));
 
         server.getElement().setAttribute("data-testid", "login-server");
-        leftDatabase.getElement().setAttribute("data-testid", "login-left-database");
-        rightDatabase.getElement().setAttribute("data-testid", "login-right-database");
         username.getElement().setAttribute("data-testid", "login-username");
         password.getElement().setAttribute("data-testid", "login-password");
+        leftDatabase.getElement().setAttribute("data-testid", "login-left-database");
+        rightDatabase.getElement().setAttribute("data-testid", "login-right-database");
 
         final ConnectionLoginRequest configuredDefaults = authenticationService.loginDefaults();
         final ConnectionLoginRequest defaults = configuredDefaults == null
                 ? new ConnectionLoginRequest(null, null, null, null, null)
                 : configuredDefaults;
         server.setValue(orEmpty(defaults.server()));
-        leftDatabase.setValue(orEmpty(defaults.leftDatabase()));
-        rightDatabase.setValue(orEmpty(defaults.rightDatabase()));
         username.setValue(orEmpty(defaults.username()));
         password.setValue(orEmpty(defaults.password()));
+        leftDatabase.setValue(orEmpty(defaults.leftDatabase()));
+        rightDatabase.setValue(orEmpty(defaults.rightDatabase()));
 
         final Button login = new Button("Login");
         login.getElement().setAttribute("data-testid", "login-submit");
@@ -56,7 +65,34 @@ public class LoginForm extends VerticalLayout {
         error.getElement().setAttribute("data-testid", "login-error");
         error.getStyle().set("color", "var(--lumo-error-text-color)");
 
-        add(server, leftDatabase, rightDatabase, username, password, login, error);
+        fieldsColumn.add(server, username, password, leftDatabase, rightDatabase, login, error);
+
+        final VerticalLayout brandingPanel = new VerticalLayout();
+        brandingPanel.getElement().setAttribute("data-testid", "login-branding-panel");
+        brandingPanel.setPadding(false);
+        brandingPanel.setSpacing(true);
+        brandingPanel.setAlignItems(FlexComponent.Alignment.CENTER);
+        brandingPanel.getStyle()
+                .set("min-width", "5rem")
+                .set("justify-content", "center");
+
+        final Image logo = new Image("/images/cfct-logo.png", "CFCT logo");
+        logo.getElement().setAttribute("data-testid", "login-branding-logo");
+        logo.setWidth("360px");
+
+        brandingPanel.add(logo);
+
+        final HorizontalLayout content = new HorizontalLayout(fieldsColumn, brandingPanel);
+        content.setWidthFull();
+        content.setPadding(false);
+        content.setSpacing(false);
+        content.setAlignItems(FlexComponent.Alignment.CENTER);
+        content.getStyle()
+                .set("flex-wrap", "nowrap")
+                .set("column-gap", "var(--lumo-space-m)");
+        content.getElement().setAttribute("data-testid", "login-form-content");
+
+        add(content);
     }
 
     private void authenticate() {

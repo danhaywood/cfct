@@ -147,6 +147,11 @@ During comparison execution, the footer/status bar also shows live table-by-tabl
 Logout is now in the top-right account menu.
 
 The login and logout flow now looks like this.
+The login experience now includes right-side CFCT branding with the product logo.
+The authenticated navbar now includes compact CFCT branding with logo and name.
+The branding asset is served from `cfct-webapp/src/main/resources/static/images/cfct-logo.png`.
+
+![CFCT logo asset](docs/images/cfct-logo.png)
 
 Unauthenticated startup opens the login modal dialog on the main route.
 
