@@ -166,11 +166,15 @@ class SqlServerHarnessIT {
                 .isEqualTo(1);
         assertThat(harness.queryForInt(side, logicalTypeMappingCountSql("product.Product")))
                 .isEqualTo(2);
+        assertThat(harness.queryForInt(side, logicalTypeMappingCountSql("customer.CustomerAddress")))
+                .isEqualTo(1);
 
         assertThat(harness.queryForString(side, logicalTypeQualifiedNamesSql("supplier.Supplier")))
                 .isEqualTo("dbo.Supplier");
         assertThat(harness.queryForString(side, logicalTypeQualifiedNamesSql("product.Product")))
                 .isEqualTo("dbo.Product,dbo.ProductInventory");
+        assertThat(harness.queryForString(side, logicalTypeQualifiedNamesSql("customer.CustomerAddress")))
+                .isEqualTo("dbo.CustomerAddress");
     }
 
     @ParameterizedTest
@@ -192,7 +196,7 @@ class SqlServerHarnessIT {
         assertThat(harness.queryForInt(side, tableRowCountSql("PurchaseOrderLine"))).isEqualTo(expectedPurchaseOrderLineCount);
 
         assertThat(harness.queryForInt(side, commandLogRowCountSql())).isEqualTo(5);
-        final int expectedAuditTrailRowCount = side == DatabaseSide.LEFT ? 9 : 5;
+        final int expectedAuditTrailRowCount = side == DatabaseSide.LEFT ? 10 : 6;
         assertThat(harness.queryForInt(side, auditTrailRowCountSql())).isEqualTo(expectedAuditTrailRowCount);
     }
 

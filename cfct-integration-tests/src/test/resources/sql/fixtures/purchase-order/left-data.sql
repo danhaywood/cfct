@@ -114,11 +114,12 @@ INSERT INTO causewayExtAuditTrail.AuditTrailEntry (
     ('55555555-5555-5555-5555-555555555555', 1, 'purchaseorder.PurchaseOrder:101', 'status'),
     ('55555555-5555-5555-5555-555555555555', 2, 'purchaseorder.PurchaseOrderLine:901', 'quantity'),
     ('66666666-6666-6666-6666-666666666666', 1, 'customer.Customer:501', 'tier'),
+    ('66666666-6666-6666-6666-666666666666', 2, 'customer.CustomerAddress:501', 'line1'),
     ('77777777-7777-7777-7777-777777777777', 1, 'product.Product:702', 'status');
 GO
 
 DELETE FROM util.LogicalTypeTableMapping
-WHERE logicalTypeName IN ('supplier.Supplier', 'product.Product', 'customer.Customer', 'purchaseorder.PurchaseOrder', 'purchaseorder.PurchaseOrderLine');
+WHERE logicalTypeName IN ('supplier.Supplier', 'product.Product', 'customer.Customer', 'customer.CustomerAddress', 'purchaseorder.PurchaseOrder', 'purchaseorder.PurchaseOrderLine');
 GO
 
 INSERT INTO util.LogicalTypeTableMapping (
@@ -129,6 +130,7 @@ INSERT INTO util.LogicalTypeTableMapping (
     ('product.Product', 'dbo.Product'),
     ('product.Product', 'dbo.ProductInventory'),
     ('customer.Customer', 'dbo.Customer'),
+    ('customer.CustomerAddress', 'dbo.CustomerAddress'),
     ('purchaseorder.PurchaseOrder', 'dbo.PurchaseOrder'),
     ('purchaseorder.PurchaseOrderLine', 'dbo.PurchaseOrderLine');
 GO
