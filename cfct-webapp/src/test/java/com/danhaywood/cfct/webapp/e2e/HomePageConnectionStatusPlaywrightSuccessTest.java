@@ -46,6 +46,40 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
     }
 
     @Test
+    void keyboardFocusStartsOnFirstCommandRowAndSpaceToggleFollowsArrowNavigation() {
+        try (Playwright playwright = Playwright.create();
+             Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+             Page page = browser.newPage()) {
+            page.setViewportSize(1440, 900);
+            page.navigate("http://localhost:" + serverPort + "/");
+            page.waitForSelector("[data-testid='login-modal']");
+            page.click("[data-testid='login-submit']");
+            page.waitForSelector("[data-testid='command-selection-grid']");
+
+            final String firstCommandCheckbox = "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.toLowerCase() + "']";
+            final String secondCommandCheckbox = "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.SECOND_COMMAND_INTERACTION_ID.toLowerCase() + "']";
+
+            page.waitForFunction("([first, second]) => !document.querySelector(first).checked && !document.querySelector(second).checked", List.of(firstCommandCheckbox, secondCommandCheckbox));
+
+            page.keyboard().press("Tab");
+            page.keyboard().press("Tab");
+            page.keyboard().press("Space");
+            page.waitForFunction("([first, second]) => document.querySelector(first).checked === true && document.querySelector(second).checked !== true", List.of(firstCommandCheckbox, secondCommandCheckbox));
+
+            page.keyboard().press("ArrowDown");
+            page.keyboard().press("Space");
+            page.waitForFunction("([first, second]) => document.querySelector(first).checked === true && document.querySelector(second).checked === true", List.of(firstCommandCheckbox, secondCommandCheckbox));
+
+            page.keyboard().press("Space");
+            page.waitForFunction("([first, second]) => document.querySelector(first).checked === true && document.querySelector(second).checked !== true", List.of(firstCommandCheckbox, secondCommandCheckbox));
+
+            page.keyboard().press("ArrowUp");
+            page.keyboard().press("Space");
+            page.waitForFunction("([first, second]) => document.querySelector(first).checked !== true && document.querySelector(second).checked !== true", List.of(firstCommandCheckbox, secondCommandCheckbox));
+        }
+    }
+
+    @Test
     void showsOkStatusAndMainUiHappyPathOnHomePage() {
         try (Playwright playwright = Playwright.create();
              Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));

@@ -101,7 +101,6 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Anchor downloadAction = new Anchor();
     private final Select<DownloadFormat> downloadFormatSelect = new Select<>();
     private final HorizontalLayout resultActions = new HorizontalLayout();
-    private final HorizontalLayout resultExportActions = new HorizontalLayout();
 
     private final Span connectionServer = new Span();
     private final Span connectionDatabases = new Span();
@@ -109,6 +108,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Span connectionStatusSummary = new Span();
     private final Span comparisonProgressSummary = new Span();
     private final MenuBar accountMenu = new MenuBar();
+    private Grid<CommandCatalogEntry> commandSelectionGrid;
+    private String focusedCommandInteractionId;
 
     private WebappComparisonExecutionService.ComparisonExecutionOutcome latestOutcome;
 
@@ -256,8 +257,6 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         comparedTableFilter.setClearButtonVisible(true);
         comparedTableFilter.setValueChangeMode(ValueChangeMode.EAGER);
         comparedTableFilter.getElement().setAttribute("data-testid", "comparison-table-filter");
-        comparedTableFilter.setWidthFull();
-        comparedTableFilter.setMaxWidth("24rem");
         comparedTableFilter.addValueChangeListener(event -> renderComparisonTabs());
 
         downloadFormatSelect.setItems(DownloadFormat.JSON, DownloadFormat.YAML, DownloadFormat.EXCEL);
@@ -270,6 +269,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         downloadAction.add(new Button("Download"));
         downloadAction.getElement().setAttribute("download", true);
 
+        resultActions.getElement().setAttribute("data-testid", "comparison-result-actions");
         resultActions.add(comparedTableFilter, downloadFormatSelect, downloadAction);
         resultActions.expand(comparedTableFilter);
         resultActions.setVisible(false);
@@ -492,7 +492,10 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
     private Grid<CommandCatalogEntry> buildCommandSelectionGrid() {
         final Grid<CommandCatalogEntry> grid = new Grid<>();
+        this.commandSelectionGrid = grid;
         grid.getElement().setAttribute("data-testid", "command-selection-grid");
+        grid.getElement().setAttribute("data-testid-focus-target", "command-selection-grid");
+        grid.getElement().setAttribute("tabindex", "0");
         grid.setAllRowsVisible(true);
         grid.setWidthFull();
         grid.setDataProvider(commandSelectionDataProvider);
@@ -503,6 +506,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             checkbox.setValue(commandSelectionState.isSelected(entry.interactionId()));
             checkbox.getElement().setAttribute("data-testid", "command-checkbox-" + entry.interactionId().toLowerCase(Locale.ROOT));
             checkbox.addValueChangeListener(event -> {
+                focusedCommandInteractionId = entry.interactionId();
                 commandSelectionState.updateSelection(entry.interactionId(), event.getValue());
                 applyCommandDrivenSelection();
             });
@@ -527,6 +531,13 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .setComparator(Comparator.comparing(CommandCatalogEntry::interactionId, String.CASE_INSENSITIVE_ORDER))
                 .setAutoWidth(true)
                 .setKey("interaction");
+
+        grid.addItemClickListener(event -> focusedCommandInteractionId = event.getItem().interactionId());
+        grid.addCellFocusListener(event -> event.getItem().ifPresent(item -> focusedCommandInteractionId = item.interactionId()));
+        grid.getElement()
+                .addEventListener("keydown", event -> toggleFocusedCommandSelection())
+                .setFilter("event.code === 'Space' || event.key === ' '")
+                .addEventData("event.code");
 
         return grid;
     }
@@ -565,8 +576,22 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     }
 
     private void clearAllSelections() {
+        focusedCommandInteractionId = null;
         commandSelectionState.clearSelections();
         selectionState.clearSelections();
+        commandSelectionDataProvider.refreshAll();
+        applyCommandDrivenSelection();
+    }
+
+    private void toggleFocusedCommandSelection() {
+        final String interactionId = focusedCommandInteractionId != null
+                ? focusedCommandInteractionId
+                : commandCatalogEntries.stream().findFirst().map(CommandCatalogEntry::interactionId).orElse(null);
+        if (interactionId == null || interactionId.isBlank()) {
+            return;
+        }
+        final boolean nextSelected = !commandSelectionState.isSelected(interactionId);
+        commandSelectionState.updateSelection(interactionId, nextSelected);
         commandSelectionDataProvider.refreshAll();
         applyCommandDrivenSelection();
     }
@@ -842,6 +867,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         refreshConnectionFooter();
         refreshAuthUiState();
         loginDialog.close();
+        focusCommandSelectionGrid();
     }
 
     private void handleLogout() {
@@ -853,6 +879,19 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         clearTableCatalog();
         refreshConnectionFooter();
         refreshAuthUiState();
+    }
+
+    private void focusCommandSelectionGrid() {
+        if (commandSelectionGrid == null || !authenticatedContextHolder.isAuthenticated()) {
+            return;
+        }
+        focusedCommandInteractionId = commandCatalogEntries.stream()
+                .findFirst()
+                .map(CommandCatalogEntry::interactionId)
+                .orElse(null);
+        commandSelectionGrid.focus();
+        commandSelectionGrid.getElement().setAttribute("data-focused", "true");
+        commandSelectionGrid.getElement().executeJs("this.focus()");
     }
 
     private void reloadTableCatalog() {

@@ -292,6 +292,42 @@ class MainViewTest {
         holder.set(new AuthenticatedConnectionContext("localhost:1433", "sa", "super-secret-password", "left_db", "right_db"));
 
         assertThatCode(() -> invokeOnAuthenticationSuccess(view)).doesNotThrowAnyException();
+        final Component commandGrid = findByTestId(view, "command-selection-grid").orElseThrow();
+        assertThat(commandGrid.getElement().getAttribute("data-focused")).isEqualTo("true");
+    }
+
+    @Test
+    void commandGridIncludesDeterministicFocusTargetHook() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        final Component commandGrid = findByTestId(view, "command-selection-grid").orElseThrow();
+        assertThat(commandGrid.getElement().getAttribute("data-testid-focus-target")).isEqualTo("command-selection-grid");
+        assertThat(commandGrid.getElement().getAttribute("tabindex")).isEqualTo("0");
+    }
+
+    @Test
+    void toggleFocusedCommandSelectionUsesExistingStatePath() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        assertThat(view.selectedCommandInteractionIdsForStageOne()).isEmpty();
+        invokeToggleFocusedCommandSelection(view);
+        assertThat(view.selectedCommandInteractionIdsForStageOne()).containsExactly("11111111-1111-1111-1111-111111111111");
+        invokeToggleFocusedCommandSelection(view);
+        assertThat(view.selectedCommandInteractionIdsForStageOne()).isEmpty();
     }
 
     @Test
@@ -519,6 +555,16 @@ class MainViewTest {
             final var method = MainView.class.getDeclaredMethod("valueCell", ComparisonRowView.class, ColumnRef.class);
             method.setAccessible(true);
             return (Component) method.invoke(view, row, column);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void invokeToggleFocusedCommandSelection(final MainView view) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("toggleFocusedCommandSelection");
+            method.setAccessible(true);
+            method.invoke(view);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
