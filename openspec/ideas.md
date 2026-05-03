@@ -8,8 +8,6 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 ## Candidate ideas
 
-- /opsx-propose: select with space for business tables grid, same as command tables grid.
-
 - /opsx-propose: diff only checkbox should default to true.
 
 - /opsx-propose: extend the CLI to accept a time range for commands and perform the comparison based on the derived business tables.
