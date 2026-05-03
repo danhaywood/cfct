@@ -111,6 +111,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final MenuBar accountMenu = new MenuBar();
     private Grid<CommandCatalogEntry> commandSelectionGrid;
     private String focusedCommandInteractionId;
+    private TableRef focusedBusinessTable;
 
     private WebappComparisonExecutionService.ComparisonExecutionOutcome latestOutcome;
 
@@ -261,7 +262,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         comparedTableFilter.addValueChangeListener(event -> renderComparisonTabs());
 
         differencesOnlyFilter.getElement().setAttribute("data-testid", "comparison-differences-only-filter");
-        differencesOnlyFilter.setValue(true);
+        differencesOnlyFilter.setValue(false);
         differencesOnlyFilter.getStyle().setPaddingLeft(".3em");
         differencesOnlyFilter.getStyle().setPaddingRight(".3em");
         differencesOnlyFilter.getStyle().setAlignSelf(Style.AlignSelf.CENTER);
@@ -461,6 +462,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private Grid<TableCatalogEntry> buildSelectionGrid() {
         final Grid<TableCatalogEntry> grid = new Grid<>();
         grid.getElement().setAttribute("data-testid", "table-selection-grid");
+        grid.getElement().setAttribute("tabindex", "0");
         grid.setAllRowsVisible(true);
         grid.setWidthFull();
         grid.setPartNameGenerator(entry -> entry.eligible() ? "eligible-table-row" : "ineligible-table-row");
@@ -478,6 +480,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 }
             }
             checkbox.addValueChangeListener(event -> {
+                focusedBusinessTable = entry.table();
                 selectionState.updateSelection(entry.table(), event.getValue());
                 refreshActionButtons();
             });
@@ -503,6 +506,13 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .setSortable(true)
                 .setComparator(Comparator.comparing(entry -> entry.table().tableName(), String.CASE_INSENSITIVE_ORDER))
                 .setKey("table");
+
+        grid.addItemClickListener(event -> focusedBusinessTable = event.getItem().table());
+        grid.addCellFocusListener(event -> event.getItem().ifPresent(item -> focusedBusinessTable = item.table()));
+        grid.getElement()
+                .addEventListener("keydown", event -> toggleFocusedBusinessTableSelection())
+                .setFilter("event.code === 'Space' || event.key === ' '")
+                .addEventData("event.code");
 
         return grid;
     }
@@ -594,6 +604,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
     private void clearAllSelections() {
         focusedCommandInteractionId = null;
+        focusedBusinessTable = null;
         commandSelectionState.clearSelections();
         selectionState.clearSelections();
         commandSelectionDataProvider.refreshAll();
@@ -611,6 +622,20 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         commandSelectionState.updateSelection(interactionId, nextSelected);
         commandSelectionDataProvider.refreshAll();
         applyCommandDrivenSelection();
+    }
+
+    private void toggleFocusedBusinessTableSelection() {
+        final TableCatalogEntry focusedEntry = focusedBusinessTable != null
+                ? tableCatalogEntries.stream().filter(entry -> entry.table().equals(focusedBusinessTable)).findFirst().orElse(null)
+                : tableCatalogEntries.stream().findFirst().orElse(null);
+        if (focusedEntry == null || !focusedEntry.eligible()) {
+            return;
+        }
+        final TableRef tableRef = focusedEntry.table();
+        final boolean nextSelected = !selectionState.isSelected(tableRef);
+        selectionState.updateSelection(tableRef, nextSelected);
+        selectionDataProvider.refreshAll();
+        refreshActionButtons();
     }
 
     private void refreshActionButtons() {

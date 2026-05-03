@@ -404,6 +404,40 @@ class MainViewTest {
     }
 
     @Test
+    void toggleFocusedBusinessTableSelectionUsesExistingStatePath() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        assertThat(view.selectedTablesForStageTwo()).isEmpty();
+        invokeToggleFocusedBusinessTableSelection(view);
+        assertThat(view.selectedTablesForStageTwo()).containsExactly(new TableRef("dbo", "Supplier"));
+        invokeToggleFocusedBusinessTableSelection(view);
+        assertThat(view.selectedTablesForStageTwo()).isEmpty();
+    }
+
+    @Test
+    void toggleFocusedBusinessTableSelectionSkipsIneligibleRows() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        setFocusedBusinessTable(view, new TableRef("dbo", "PurchaseOrderWithoutBusinessKey"));
+        invokeToggleFocusedBusinessTableSelection(view);
+        assertThat(view.selectedTablesForStageTwo()).isEmpty();
+    }
+
+    @Test
     void rendersSingleComparedColumnWhenLeftAndRightValuesAreEqual() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
@@ -678,6 +712,26 @@ class MainViewTest {
             final var method = MainView.class.getDeclaredMethod("toggleFocusedCommandSelection");
             method.setAccessible(true);
             method.invoke(view);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void invokeToggleFocusedBusinessTableSelection(final MainView view) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("toggleFocusedBusinessTableSelection");
+            method.setAccessible(true);
+            method.invoke(view);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void setFocusedBusinessTable(final MainView view, final TableRef tableRef) {
+        try {
+            final var field = MainView.class.getDeclaredField("focusedBusinessTable");
+            field.setAccessible(true);
+            field.set(view, tableRef);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
