@@ -458,6 +458,31 @@ docker run --rm -p 8080:8080 cfct-webapp:local
 This container build requires Docker and uses Spring Boot layertools layer metadata from the packaged webapp jar.
 The webapp is reachable at http://localhost:8080 when the container is running.
 
+=== Docker Hub publishing with GitHub Actions
+
+The repository includes `.github/workflows/dockerhub-publish.yml` to build and push `cfct-webapp` images to Docker Hub.
+The workflow runs on pushes to `main`, pushes of tags matching `v*`, and manual `workflow_dispatch` runs.
+Image tags are generated from branch or tag refs and include an immutable `sha-<commit>` tag for traceability.
+
+Configure the following required GitHub repository secrets before enabling publish runs.
+
+* `DOCKERHUB_USERNAME`: Docker Hub account or organization robot username with permission to push to the target repository.
+* `DOCKERHUB_TOKEN`: Docker Hub access token with read and write scope for the target repository.
+
+Optional workflow_dispatch inputs allow maintainers to tune publication behavior.
+
+* `image_repository`: Docker Hub repository in `namespace/name` form.
+If omitted, the workflow defaults to `${github.repository_owner}/cfct-webapp`.
+* `extra_tags`: newline-separated extra `docker/metadata-action` tag directives.
+If omitted, only the default branch, release-tag, `latest` (default branch), and `sha-*` tags are pushed.
+
+Maintainer setup checklist:
+
+. Create or choose a Docker Hub repository for the image.
+. Add `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` in GitHub repository settings under Secrets and variables → Actions.
+. Run the workflow manually once from the Actions tab and optionally provide `image_repository`.
+. Confirm the expected tags are present in Docker Hub after the run completes.
+
 The webapp uses a login-first flow.
 SQL connectivity, database existence, and required target-system object presence are validated when the user submits the login form.
 Required target-system objects may be either tables or views.
