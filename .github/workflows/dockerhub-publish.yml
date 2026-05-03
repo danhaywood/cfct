@@ -48,6 +48,17 @@ jobs:
           fi
           echo "repository=${image_repo}" >> "$GITHUB_OUTPUT"
 
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Run full Maven build
+        shell: bash
+        run: mvn -B verify
+
       - name: Validate Docker Hub credentials
         shell: bash
         env:
