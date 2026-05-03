@@ -94,10 +94,8 @@ The README SHALL document fixture examples that pass `demo/.env` and `demo/table
 The README SHALL document the direct CLI argument options, including `.env`, table-file, output-format, and output-file usage.
 The README SHALL document `demo/.env` as the fixture example and `.env.TEMPLATE` as the user configuration template.
 The README SHALL document how to run fixture invalid-target mode for manual negative-path login testing.
+The README SHALL document only executable commands for webapp Playwright connectivity testing and SHALL remove or replace stale script references.
 The README SHALL remove or correct information that no longer matches current project behavior.
-The README SHALL be organized by audience with separate developer and user sections.
-The README user section SHALL provide separate workflow guidance for webapp usage and CLI usage.
-The README SHALL reference only current screenshots that support workflows and SHALL not require a branding-logo screenshot.
 
 #### Scenario: README explains the comparison wrapper path
 - **WHEN** a user reads the README from a clean checkout
@@ -111,11 +109,7 @@ The README SHALL reference only current screenshots that support workflows and S
 - **WHEN** a user needs to manually verify target-database validation failures
 - **THEN** the README shows the fixture-script invalid-target flag and how to use its reported target database name in webapp login inputs
 
-#### Scenario: README provides audience-oriented navigation
-- **WHEN** a developer or an end user opens the README
-- **THEN** they can navigate directly to content tailored for developer setup or for user operation
-
-#### Scenario: README user guidance separates webapp and CLI flows
-- **WHEN** an end user reads operational guidance
-- **THEN** webapp workflow steps and CLI workflow steps are presented as separate sections with independent examples
+#### Scenario: README webapp Playwright command is runnable
+- **WHEN** a user follows the README command for webapp Playwright connectivity testing
+- **THEN** the command resolves and starts execution without referencing a missing or broken script path
 
