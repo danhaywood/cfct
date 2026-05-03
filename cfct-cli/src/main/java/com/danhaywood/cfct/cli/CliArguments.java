@@ -3,6 +3,7 @@ package com.danhaywood.cfct.cli;
 import com.danhaywood.cfct.model.TableRef;
 
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record CliArguments(
@@ -13,13 +14,31 @@ public record CliArguments(
         String rightDatabase,
         List<TableRef> tables,
         CliOutputFormat outputFormat,
-        Path outputFile
+        Path outputFile,
+        LocalDateTime commandsFrom,
+        LocalDateTime commandsTo
 ) {
 
+    public CliArguments(
+            final String server,
+            final String username,
+            final String password,
+            final String leftDatabase,
+            final String rightDatabase,
+            final List<TableRef> tables,
+            final CliOutputFormat outputFormat,
+            final Path outputFile) {
+        this(server, username, password, leftDatabase, rightDatabase, tables, outputFormat, outputFile, null, null);
+    }
+
     public CliArguments {
-        tables = List.copyOf(tables);
+        tables = tables == null ? List.of() : List.copyOf(tables);
         if (outputFormat == null) {
             outputFormat = CliOutputFormat.TEXT;
         }
+    }
+
+    public boolean usesCommandTimeRangeSelection() {
+        return commandsFrom != null || commandsTo != null;
     }
 }

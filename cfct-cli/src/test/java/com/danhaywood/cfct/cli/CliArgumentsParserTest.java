@@ -281,7 +281,7 @@ class CliArgumentsParserTest {
                 "--tables-file", tablesFile.toString()
         }))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Only one table source is allowed");
+                .hasMessageContaining("Only one explicit table source is allowed");
     }
 
     @Test
@@ -389,6 +389,84 @@ class CliArgumentsParserTest {
         }))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("-r");
+    }
+
+    @Test
+    void parsesCommandTimeRangeSelectionMode() {
+        final CliArguments arguments = parser.parse(new String[]{
+                "-S", "server-host",
+                "-U", "sa",
+                "-P", "secret",
+                "-l", "left_db",
+                "-r", "right_db",
+                "--commands-from", "2026-05-01T10:00:00",
+                "--commands-to", "2026-05-01T11:00:00"
+        });
+
+        assertThat(arguments.usesCommandTimeRangeSelection()).isTrue();
+        assertThat(arguments.commandsFrom()).isEqualTo(java.time.LocalDateTime.parse("2026-05-01T10:00:00"));
+        assertThat(arguments.commandsTo()).isEqualTo(java.time.LocalDateTime.parse("2026-05-01T11:00:00"));
+        assertThat(arguments.tables()).isEmpty();
+    }
+
+    @Test
+    void rejectsMixedExplicitTableAndCommandTimeRangeModes() {
+        assertThatThrownBy(() -> parser.parse(new String[]{
+                "-S", "server-host",
+                "-U", "sa",
+                "-P", "secret",
+                "-l", "left_db",
+                "-r", "right_db",
+                "-t", "dbo.Supplier",
+                "--commands-from", "2026-05-01T10:00:00",
+                "--commands-to", "2026-05-01T11:00:00"
+        }))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Only one table-selection mode is allowed");
+    }
+
+    @Test
+    void rejectsIncompleteCommandTimeRangeMode() {
+        assertThatThrownBy(() -> parser.parse(new String[]{
+                "-S", "server-host",
+                "-U", "sa",
+                "-P", "secret",
+                "-l", "left_db",
+                "-r", "right_db",
+                "--commands-from", "2026-05-01T10:00:00"
+        }))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Both --commands-from and --commands-to are required");
+    }
+
+    @Test
+    void rejectsInvalidCommandTimeRangeTimestamp() {
+        assertThatThrownBy(() -> parser.parse(new String[]{
+                "-S", "server-host",
+                "-U", "sa",
+                "-P", "secret",
+                "-l", "left_db",
+                "-r", "right_db",
+                "--commands-from", "not-a-time",
+                "--commands-to", "2026-05-01T11:00:00"
+        }))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid timestamp for --commands-from");
+    }
+
+    @Test
+    void rejectsCommandTimeRangeWhenEndBeforeStart() {
+        assertThatThrownBy(() -> parser.parse(new String[]{
+                "-S", "server-host",
+                "-U", "sa",
+                "-P", "secret",
+                "-l", "left_db",
+                "-r", "right_db",
+                "--commands-from", "2026-05-01T11:00:00",
+                "--commands-to", "2026-05-01T10:00:00"
+        }))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("--commands-to must be greater than or equal to --commands-from");
     }
 
     private Path writeEnvFile(final Path directory, final String contents) throws IOException {

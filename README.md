@@ -408,6 +408,8 @@ The CLI supports these table-selection options:
 
 - `-t` / `--tables`: comma-separated `schema.table` list.
 - `-F` / `--tables-file`: path to a flat file with one `schema.table` reference per line.
+- `--commands-from`: inclusive command timestamp range start (ISO-8601 local date-time, for example `2026-05-01T10:00:00`).
+- `--commands-to`: inclusive command timestamp range end (ISO-8601 local date-time, for example `2026-05-01T11:00:00`).
 
 The CLI supports these dotenv options:
 
@@ -429,7 +431,21 @@ CLI comparison progress is emitted to stderr as per-table progress lines so stdo
 Excel output requires `-o`, for example `--output-format excel -o comparison.xlsx`.
 
 Explicit CLI values override values loaded from `--env-file`.
-Use either `-t` or `--tables-file`, not both.
+Use exactly one selection mode.
+Use explicit table mode (`-t` or `--tables-file`) or command-time-range mode (`--commands-from` and `--commands-to`).
+Do not mix explicit table and command-time-range options in the same invocation.
+
+Example command-time-range invocation:
+
+```bash
+java -jar cfct-cli/target/cfct-cli-0.0.1-SNAPSHOT.jar \
+  --env-file demo/.env \
+  --commands-from 2026-05-01T10:00:00 \
+  --commands-to 2026-05-01T11:00:00 \
+  --output-format json
+```
+
+In command-time-range mode, the CLI selects commands inclusively at both range boundaries and infers business tables for comparison from those commands.
 
 ## Testing conventions
 

@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,15 +46,18 @@ public final class CliArgumentsParser {
         final Path outputFile = parseOutputFile(options.outputFile);
         validateOutputDestination(outputFormat, outputFile);
 
+        final SelectionMode selectionMode = parseSelectionMode(options);
         return new CliArguments(
                 resolvedValues.get(SERVER).trim(),
                 resolvedValues.get(USER).trim(),
                 resolvedValues.get(PASSWORD),
                 resolvedValues.get(LEFT_DATABASE).trim(),
                 resolvedValues.get(RIGHT_DATABASE).trim(),
-                parseSelectedTables(options),
+                selectionMode.tables(),
                 outputFormat,
-                outputFile);
+                outputFile,
+                selectionMode.commandsFrom(),
+                selectionMode.commandsTo());
     }
 
     private CliParseOptions parseOptions(final String[] args) {
@@ -155,17 +160,51 @@ public final class CliArgumentsParser {
         }
     }
 
-    private List<TableRef> parseSelectedTables(final CliParseOptions options) {
-        if (options.tables != null && options.tablesFile != null) {
-            throw new IllegalArgumentException("Only one table source is allowed: use either -t or --tables-file");
+    private SelectionMode parseSelectionMode(final CliParseOptions options) {
+        final boolean hasInlineTables = options.tables != null;
+        final boolean hasTablesFile = options.tablesFile != null;
+        final boolean hasExplicitTableMode = hasInlineTables || hasTablesFile;
+        final boolean hasCommandsFrom = options.commandsFrom != null;
+        final boolean hasCommandsTo = options.commandsTo != null;
+        final boolean hasCommandRangeMode = hasCommandsFrom || hasCommandsTo;
+
+        if (hasInlineTables && hasTablesFile) {
+            throw new IllegalArgumentException("Only one explicit table source is allowed: use either -t or --tables-file");
         }
-        if (options.tables == null && options.tablesFile == null) {
-            throw new IllegalArgumentException("Missing required arguments: -t or --tables-file");
+        if (hasExplicitTableMode && hasCommandRangeMode) {
+            throw new IllegalArgumentException("Only one table-selection mode is allowed: use explicit table input (-t/--tables-file) or command-time-range (--commands-from/--commands-to)");
         }
-        if (options.tablesFile != null) {
-            return parseTablesFile(options.tablesFile);
+        if (!hasExplicitTableMode && !hasCommandRangeMode) {
+            throw new IllegalArgumentException("Missing required arguments: provide -t/--tables-file or --commands-from with --commands-to");
         }
-        return parseTables(options.tables);
+
+        if (hasExplicitTableMode) {
+            if (options.tablesFile != null) {
+                return new SelectionMode(parseTablesFile(options.tablesFile), null, null);
+            }
+            return new SelectionMode(parseTables(options.tables), null, null);
+        }
+
+        if (!hasCommandsFrom || !hasCommandsTo) {
+            throw new IllegalArgumentException("Both --commands-from and --commands-to are required for command-time-range selection");
+        }
+        final LocalDateTime commandsFrom = parseTimestamp(options.commandsFrom, "--commands-from");
+        final LocalDateTime commandsTo = parseTimestamp(options.commandsTo, "--commands-to");
+        if (commandsTo.isBefore(commandsFrom)) {
+            throw new IllegalArgumentException("Invalid command-time-range: --commands-to must be greater than or equal to --commands-from");
+        }
+        return new SelectionMode(List.of(), commandsFrom, commandsTo);
+    }
+
+    private LocalDateTime parseTimestamp(final String raw, final String argumentName) {
+        if (raw == null || raw.isBlank()) {
+            throw new IllegalArgumentException("Missing value for argument: " + argumentName);
+        }
+        try {
+            return LocalDateTime.parse(raw.trim());
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("Invalid timestamp for %s: '%s'. Expected ISO-8601 local date-time (e.g. 2026-05-01T12:30:00)".formatted(argumentName, raw), ex);
+        }
     }
 
     private List<TableRef> parseTables(final String tableList) {
@@ -259,10 +298,19 @@ public final class CliArgumentsParser {
         @Option(names = {"-e", "--env-file"})
         private String envFile;
 
+        @Option(names = {"--commands-from"})
+        private String commandsFrom;
+
+        @Option(names = {"--commands-to"})
+        private String commandsTo;
+
         @Option(names = {"-f", "--output-format"})
         private String outputFormat;
 
         @Option(names = {"-o", "--output-file"})
         private String outputFile;
+    }
+
+    private record SelectionMode(List<TableRef> tables, LocalDateTime commandsFrom, LocalDateTime commandsTo) {
     }
 }
