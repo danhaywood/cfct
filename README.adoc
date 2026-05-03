@@ -77,7 +77,11 @@ scripts/test-webapp-connectivity-validation.sh
 +
 [source,bash]
 ----
-scripts/test-webapp-playwright-connectivity.sh
+mvn -pl cfct-webapp -am \
+  -Dplaywright=true \
+  -Dtest=HomePageConnectionStatusPlaywrightSuccessTest,HomePageConnectionStatusPlaywrightFailureTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  test
 ----
 +
 Playwright tests are headless and use Testcontainers-backed SQL Server settings to keep runs reproducible in local and CI environments.

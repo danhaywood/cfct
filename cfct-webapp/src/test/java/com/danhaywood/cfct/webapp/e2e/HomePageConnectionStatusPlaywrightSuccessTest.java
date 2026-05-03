@@ -52,7 +52,8 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
              Page page = browser.newPage()) {
             page.setViewportSize(1440, 900);
             page.navigate("http://localhost:" + serverPort + "/");
-            page.waitForSelector("[data-testid='login-modal']");
+            page.waitForSelector("[data-testid='login-submit']");
+            fillLoginForm(page, LEFT_DB, RIGHT_DB);
             page.click("[data-testid='login-submit']");
             page.waitForSelector("[data-testid='command-selection-grid']");
 
@@ -86,7 +87,8 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
              Page page = browser.newPage()) {
             page.setViewportSize(1440, 900);
             page.navigate("http://localhost:" + serverPort + "/");
-            page.waitForSelector("[data-testid='login-modal']");
+            page.waitForSelector("[data-testid='login-submit']");
+            fillLoginForm(page, LEFT_DB, RIGHT_DB);
             page.click("[data-testid='login-submit']");
             page.waitForSelector("[data-testid='table-selection-grid']");
 
@@ -118,7 +120,8 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
              Page page = browser.newPage()) {
             page.setViewportSize(1440, 900);
             page.navigate("http://localhost:" + serverPort + "/");
-            page.waitForSelector("[data-testid='login-modal']");
+            page.waitForSelector("[data-testid='login-submit']");
+            fillLoginForm(page, LEFT_DB, RIGHT_DB);
             page.click("[data-testid='login-submit']");
             page.waitForSelector("[data-testid='command-selection-grid']");
 
@@ -138,8 +141,9 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
              Page page = browser.newPage()) {
             page.setViewportSize(1440, 900);
             page.navigate("http://localhost:" + serverPort + "/");
-            page.waitForSelector("[data-testid='login-modal']");
+            page.waitForSelector("[data-testid='login-submit']");
             assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isDisabled()).isTrue();
+            fillLoginForm(page, LEFT_DB, RIGHT_DB);
             page.click("[data-testid='login-submit']");
             page.waitForSelector("[data-testid='connection-status-state']");
             page.waitForSelector("[data-testid='command-selection-grid']");
@@ -269,6 +273,19 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
             page.screenshot(new Page.ScreenshotOptions().setPath(screenshotPath("webapp-selected.png")).setFullPage(true));
         }
+    }
+
+
+    private void fillLoginForm(final Page page, final String leftDb, final String rightDb) {
+        setLoginField(page, "login-server", PlaywrightSqlServerFixture.server());
+        setLoginField(page, "login-username", PlaywrightSqlServerFixture.username());
+        setLoginField(page, "login-password", PlaywrightSqlServerFixture.password());
+        setLoginField(page, "login-left-database", leftDb);
+        setLoginField(page, "login-right-database", rightDb);
+    }
+
+    private void setLoginField(final Page page, final String testId, final String value) {
+        page.evaluate("([id, val]) => { const host = document.querySelector(`[data-testid='${id}']`); if (!host) return; host.value = val; host.dispatchEvent(new Event('input', { bubbles: true, composed: true })); host.dispatchEvent(new Event('change', { bubbles: true, composed: true })); }", List.of(testId, value));
     }
 
     private void toggleCheckbox(final Page page, final String selector) {

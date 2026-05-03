@@ -12,6 +12,8 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
@@ -46,7 +48,8 @@ class HomePageConnectionStatusPlaywrightFailureTest {
              Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
              Page page = browser.newPage()) {
             page.navigate("http://localhost:" + serverPort + "/");
-            page.waitForSelector("[data-testid='login-modal']");
+            page.waitForSelector("[data-testid='login-submit']");
+            fillLoginForm(page);
             page.click("[data-testid='login-submit']");
             page.waitForSelector("[data-testid='login-error']");
 
@@ -54,4 +57,17 @@ class HomePageConnectionStatusPlaywrightFailureTest {
             assertThat(summary).contains("Configured database does not exist");
         }
     }
+
+    private void fillLoginForm(final Page page) {
+        setLoginField(page, "login-server", PlaywrightSqlServerFixture.server());
+        setLoginField(page, "login-username", PlaywrightSqlServerFixture.username());
+        setLoginField(page, "login-password", PlaywrightSqlServerFixture.password());
+        setLoginField(page, "login-left-database", LEFT_DB);
+        setLoginField(page, "login-right-database", MISSING_DB);
+    }
+
+    private void setLoginField(final Page page, final String testId, final String value) {
+        page.evaluate("([id, val]) => { const host = document.querySelector(`[data-testid='${id}']`); if (!host) return; host.value = val; host.dispatchEvent(new Event('input', { bubbles: true, composed: true })); host.dispatchEvent(new Event('change', { bubbles: true, composed: true })); }", List.of(testId, value));
+    }
+
 }
