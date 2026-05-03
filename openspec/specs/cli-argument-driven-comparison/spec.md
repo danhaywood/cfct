@@ -119,6 +119,7 @@ The CLI SHALL use explicit command-line values in preference to `.env` values fo
 The CLI SHALL not require a `.env` file when all connection values are supplied on the command line.
 The CLI SHALL fail with a clear validation error when any required connection value cannot be resolved from either the command line or `.env`.
 The CLI SHALL support an explicit `.env` file path option for callers that do not want to use the current working directory `.env` file.
+The supported dotenv keys SHALL use the `CFCT_` prefix for server, username, password, left database, and right database settings.
 
 #### Scenario: Missing connection arguments are read from dotenv file
 - **WHEN** the user omits `-S`, `-U`, `-P`, `-l`, and `-r` and a `.env` file supplies all corresponding values
@@ -139,6 +140,10 @@ The CLI SHALL support an explicit `.env` file path option for callers that do no
 #### Scenario: Explicit dotenv file path is loaded
 - **WHEN** the user supplies an explicit `.env` file path option and omits connection flags that are present in that file
 - **THEN** the CLI resolves the omitted connection settings from the specified `.env` file
+
+#### Scenario: CFCT-prefixed dotenv keys are recognized
+- **WHEN** a `.env` file contains `CFCT_SERVER`, `CFCT_USERNAME`, `CFCT_PASSWORD`, `CFCT_LEFT_DATABASE`, and `CFCT_RIGHT_DATABASE`
+- **THEN** the CLI resolves connection settings from those keys
 
 ### Requirement: CLI supports selectable comparison output formats
 The CLI SHALL accept an `--output-format` argument for selecting the comparison output format.

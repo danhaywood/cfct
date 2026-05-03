@@ -17,6 +17,7 @@ Playwright tests SHALL verify compared-table filtering and JSON/Excel download c
 Playwright tests SHALL verify deterministic tab distinction between changed and unchanged compared tables.
 Playwright tests SHALL verify a differences-only checkbox can hide unchanged compared-table tabs.
 Playwright tests SHALL run against Testcontainers-provisioned SQL Server scenarios to preserve reproducibility.
+Playwright screenshot outputs used in documentation SHALL remain current for user workflows and SHALL not require a branding-logo-only screenshot.
 
 #### Scenario: Playwright verifies OK status
 - **WHEN** a headless Playwright test opens the home page for a webapp instance with valid SQL connectivity configuration
@@ -53,6 +54,10 @@ Playwright tests SHALL run against Testcontainers-provisioned SQL Server scenari
 #### Scenario: Playwright captures collapsed navigation screenshot
 - **WHEN** a headless Playwright test collapses the navigation panel
 - **THEN** the test captures a baseline screenshot for the collapsed navigation state
+
+#### Scenario: Playwright screenshot set excludes branding-only image
+- **WHEN** screenshot outputs are reviewed for README workflow documentation
+- **THEN** no branding-logo-only screenshot is required in the maintained set
 
 ### Requirement: Playwright execution is scriptable for local and CI usage
 The project SHALL provide a documented command or helper script that runs the connectivity-status Playwright tests headlessly.

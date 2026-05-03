@@ -11,14 +11,14 @@ The wrapper SHALL not automatically build or rebuild jar artifacts.
 The wrapper SHALL use production-oriented variable names and environment overrides rather than `DEMO_`-prefixed names.
 The wrapper SHALL use `.env` in the current working directory as its default env file.
 The wrapper SHALL not define a default tables file.
-The wrapper SHALL support table selection by pass-through CLI arguments or by `COMPAREDB_TABLES_FILE`.
+The wrapper SHALL support table selection by pass-through CLI arguments or by `CFCT_TABLES_FILE`.
 The wrapper SHALL allow callers to pass additional CLI arguments without editing the script.
 The wrapper SHALL support env-file selection via `--env-file <path>`.
-The wrapper SHALL support env-file selection via `COMPAREDB_ENV_FILE`.
-The wrapper SHALL prioritize `--env-file <path>` over `COMPAREDB_ENV_FILE` when both are provided.
+The wrapper SHALL support env-file selection via `CFCT_ENV_FILE`.
+The wrapper SHALL prioritize `--env-file <path>` over `CFCT_ENV_FILE` when both are provided.
 
 #### Scenario: Comparison wrapper runs with explicit fixture example inputs
-- **WHEN** the fixture SQL Server is running, required jars are built, and the user runs `./cfct.sh` with `COMPAREDB_ENV_FILE=demo/.env` and `--tables-file demo/tables.txt`
+- **WHEN** the fixture SQL Server is running, required jars are built, and the user runs `./cfct.sh` with `CFCT_ENV_FILE=demo/.env` and `--tables-file demo/tables.txt`
 - **THEN** the wrapper invokes the CLI with `demo/.env` and `demo/tables.txt`
 
 #### Scenario: Comparison wrapper accepts additional arguments
@@ -26,7 +26,7 @@ The wrapper SHALL prioritize `--env-file <path>` over `COMPAREDB_ENV_FILE` when 
 - **THEN** the wrapper passes those arguments through to the CLI invocation
 
 #### Scenario: Comparison wrapper supports tables file environment override
-- **WHEN** the user runs `./cfct.sh` with `COMPAREDB_TABLES_FILE` set
+- **WHEN** the user runs `./cfct.sh` with `CFCT_TABLES_FILE` set
 - **THEN** the wrapper passes that file path to the CLI table-file option
 
 #### Scenario: Comparison wrapper supports env-file argument override
@@ -34,7 +34,7 @@ The wrapper SHALL prioritize `--env-file <path>` over `COMPAREDB_ENV_FILE` when 
 - **THEN** the wrapper invokes the CLI using `custom.env` as the env file input
 
 #### Scenario: Comparison wrapper prioritizes explicit env-file argument
-- **WHEN** the user runs `./cfct.sh --env-file custom.env` with `COMPAREDB_ENV_FILE=demo/.env`
+- **WHEN** the user runs `./cfct.sh --env-file custom.env` with `CFCT_ENV_FILE=demo/.env`
 - **THEN** the wrapper invokes the CLI using `custom.env` instead of `demo/.env`
 
 #### Scenario: Comparison wrapper reports missing jar artifacts
@@ -71,10 +71,11 @@ The repository SHALL provide a committed example environment file at `demo/.env`
 The repository SHALL provide a committed demo tables flat file with one `schema.table` reference per line.
 The repository SHALL provide a root `.env.TEMPLATE` that documents the supported dotenv keys for user-managed environments.
 The demo files SHALL be safe examples and SHALL not contain production credentials.
+The documented dotenv keys for CLI and wrapper usage SHALL use `CFCT_` prefixes.
 
 #### Scenario: Demo environment file maps to CLI dotenv keys
 - **WHEN** the demo environment file is inspected
-- **THEN** it contains the CLI-supported dotenv keys for server, username, password, left database, and right database
+- **THEN** it contains the CLI-supported dotenv keys for server, username, password, left database, and right database using `CFCT_` prefixes
 
 #### Scenario: Demo tables file contains one table per line
 - **WHEN** the demo tables file is inspected
@@ -94,6 +95,9 @@ The README SHALL document the direct CLI argument options, including `.env`, tab
 The README SHALL document `demo/.env` as the fixture example and `.env.TEMPLATE` as the user configuration template.
 The README SHALL document how to run fixture invalid-target mode for manual negative-path login testing.
 The README SHALL remove or correct information that no longer matches current project behavior.
+The README SHALL be organized by audience with separate developer and user sections.
+The README user section SHALL provide separate workflow guidance for webapp usage and CLI usage.
+The README SHALL reference only current screenshots that support workflows and SHALL not require a branding-logo screenshot.
 
 #### Scenario: README explains the comparison wrapper path
 - **WHEN** a user reads the README from a clean checkout
@@ -106,4 +110,12 @@ The README SHALL remove or correct information that no longer matches current pr
 #### Scenario: README documents invalid-target fixture mode
 - **WHEN** a user needs to manually verify target-database validation failures
 - **THEN** the README shows the fixture-script invalid-target flag and how to use its reported target database name in webapp login inputs
+
+#### Scenario: README provides audience-oriented navigation
+- **WHEN** a developer or an end user opens the README
+- **THEN** they can navigate directly to content tailored for developer setup or for user operation
+
+#### Scenario: README user guidance separates webapp and CLI flows
+- **WHEN** an end user reads operational guidance
+- **THEN** webapp workflow steps and CLI workflow steps are presented as separate sections with independent examples
 
