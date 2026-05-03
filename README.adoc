@@ -85,6 +85,15 @@ mvn -pl cfct-webapp -am \
 ----
 +
 Playwright tests are headless and use Testcontainers-backed SQL Server settings to keep runs reproducible in local and CI environments.
++
+* Run layered webapp Docker image smoke test (Docker required):
++
+[source,bash]
+----
+scripts/test-webapp-layered-image.sh
+----
++
+This smoke test builds the webapp jar, validates layertools metadata, builds the layered Docker image, and checks that the container becomes reachable.
 
 == User guide for Webapp
 
@@ -436,6 +445,18 @@ Run the webapp scaffold locally from the repository root:
 ----
 mvn -pl cfct-webapp -am spring-boot:run
 ----
+
+Build and run the layered webapp Docker image from the repository root:
+
+[source,bash]
+----
+mvn -pl cfct-webapp -am package -DskipTests
+docker build -f cfct-webapp/Dockerfile -t cfct-webapp:local .
+docker run --rm -p 8080:8080 cfct-webapp:local
+----
+
+This container build requires Docker and uses Spring Boot layertools layer metadata from the packaged webapp jar.
+The webapp is reachable at http://localhost:8080 when the container is running.
 
 The webapp uses a login-first flow.
 SQL connectivity, database existence, and required target-system object presence are validated when the user submits the login form.

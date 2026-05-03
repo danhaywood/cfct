@@ -48,7 +48,6 @@
         <dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-dev</artifactId>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -92,6 +91,9 @@
                 <configuration>
                     <skip>false</skip>
                     <mainClass>com.danhaywood.cfct.webapp.SqlComparerWebApplication</mainClass>
+                    <layers>
+                        <enabled>true</enabled>
+                    </layers>
                 </configuration>
             </plugin>
         </plugins>
