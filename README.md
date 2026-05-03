@@ -188,34 +188,34 @@ The login experience includes right-side CFCT branding and the authenticated nav
 
 Unauthenticated startup opens the login modal dialog on the main route.
 
-![Webapp startup login modal](docs/images/webapp-login-modal.png)
+![Webapp startup login modal (current walkthrough)](docs/images/webapp-login-modal.png)
 
 After successful login, the main shell shows the top-right account menu.
 
-![Webapp after login with account menu](docs/images/webapp-after-login-account-menu.png)
+![Webapp after login with account menu (current walkthrough)](docs/images/webapp-after-login-account-menu.png)
 
 Opening the account menu shows the logout action.
 
-![Webapp account menu with logout](docs/images/webapp-account-menu-open.png)
+![Webapp account menu with logout action (current walkthrough)](docs/images/webapp-account-menu-open.png)
 
 After logout, the app returns to the login modal dialog.
 
-![Webapp after logout returns to login modal](docs/images/webapp-after-logout-login-modal.png)
+![Webapp after logout returns to login modal (current walkthrough)](docs/images/webapp-after-logout-login-modal.png)
 
 The initial table-selection view looks like this.
 
-![Webapp table selection with footer status bar](docs/images/webapp-main.png)
+![Webapp table selection with footer status bar (current walkthrough)](docs/images/webapp-main.png)
 
 After selecting eligible tables and clicking `Compare`, the right-side stage renders per-table result tabs with compact value columns.
 Tabs for tables with differences are color-highlighted, and a `Differences only` checkbox can hide unchanged tables.
 Equal values are shown once, while differing values are shown inline as `L: ... | R: ...`.
 Excel-like status coloring and unified JSON/YAML/Excel download controls are preserved.
 
-![Webapp table comparison results in tabs](docs/images/webapp-selected.png)
+![Webapp table comparison results in tabs (current walkthrough)](docs/images/webapp-selected.png)
 
 When the navigation drawer is collapsed, the collapsed state is captured for visual regression coverage.
 
-![Webapp with collapsed navigation](docs/images/webapp-collapsed.png)
+![Webapp with collapsed navigation (current walkthrough)](docs/images/webapp-collapsed.png)
 
 Table selection remains strategy-driven via `SelectionPlan` and is intentionally decoupled from CLI table flags.
 This manual panel is the first user-facing stage and is designed to evolve toward auto-selection plus manual include/exclude overrides.
