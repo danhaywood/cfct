@@ -483,6 +483,58 @@ Maintainer setup checklist:
 . Run the workflow manually once from the Actions tab and optionally provide `image_repository`.
 . Confirm the expected tags are present in Docker Hub after the run completes.
 
+=== Running the published Docker Hub image
+
+After an image is published, pull and run it from Docker Hub.
+Replace `<namespace>` and `<tag>` with your repository namespace and desired tag (`latest`, `v*`, or `sha-*`).
+
+[source,bash]
+----
+docker pull <namespace>/cfct-webapp:<tag>
+docker run --rm -p 8080:8080 <namespace>/cfct-webapp:<tag>
+----
+
+The webapp is reachable at http://localhost:8080.
+
+=== Overriding defaults with a mounted `application.yml`
+
+The container can load an external Spring Boot config file mounted at `/config/application.yml`.
+Spring Boot automatically checks `/config` in the container config search locations.
+
+[source,bash]
+----
+docker run --rm -p 8080:8080 \
+  -v "$(pwd)/application.yml:/config/application.yml:ro" \
+  <namespace>/cfct-webapp:<tag>
+----
+
+You can also make the config location explicit with `SPRING_CONFIG_ADDITIONAL_LOCATION`.
+
+[source,bash]
+----
+docker run --rm -p 8080:8080 \
+  -e SPRING_CONFIG_ADDITIONAL_LOCATION=file:/config/ \
+  -v "$(pwd)/application.yml:/config/application.yml:ro" \
+  <namespace>/cfct-webapp:<tag>
+----
+
+This is useful for overriding default values:
+
+[source,yaml]
+.application.yml
+----
+sqlcomparer:
+  webapp:
+    comparison:
+      connection:
+        server: xxx
+        username: xxx
+        password: xxx
+        left-database: xxx
+        right-database: xxx
+----
+
+
 The webapp uses a login-first flow.
 SQL connectivity, database existence, and required target-system object presence are validated when the user submits the login form.
 Required target-system objects may be either tables or views.
