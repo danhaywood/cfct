@@ -12,6 +12,8 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 === Cosmetic
 
+* /opsx-propose: replace any mention of sqlcomparer with cfct.  This includes SqlComparerXxx, eg in the names of main classes and test classes.
+
 * /opsx-propose: cosmetic fix to webapp: make the status line the same colour as the menu bar, add appropriate spaces between the labels
 
 * /opsx-propose: cosmetic fix to webapp: provide a toggle on the status bar to switch to dark mode.
