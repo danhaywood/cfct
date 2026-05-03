@@ -438,6 +438,32 @@ class MainViewTest {
     }
 
     @Test
+    void togglingAcrossFocusedBusinessRowsKeepsNavigationSelectionStable() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        setFocusedBusinessTable(view, new TableRef("dbo", "Supplier"));
+        invokeToggleFocusedBusinessTableSelection(view);
+        assertThat(view.selectedTablesForStageTwo()).containsExactly(new TableRef("dbo", "Supplier"));
+
+        setFocusedBusinessTable(view, new TableRef("dbo", "Product"));
+        invokeToggleFocusedBusinessTableSelection(view);
+        assertThat(view.selectedTablesForStageTwo()).containsExactlyInAnyOrder(
+                new TableRef("dbo", "Supplier"),
+                new TableRef("dbo", "Product"));
+
+        setFocusedBusinessTable(view, new TableRef("dbo", "Supplier"));
+        invokeToggleFocusedBusinessTableSelection(view);
+        assertThat(view.selectedTablesForStageTwo()).containsExactly(new TableRef("dbo", "Product"));
+    }
+
+    @Test
     void rendersSingleComparedColumnWhenLeftAndRightValuesAreEqual() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),

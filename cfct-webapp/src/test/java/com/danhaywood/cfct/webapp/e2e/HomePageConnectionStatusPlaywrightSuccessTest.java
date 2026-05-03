@@ -80,6 +80,38 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
     }
 
     @Test
+    void pressingSpaceTogglesFocusedBusinessRowsAndArrowNavigationKeepsFlowStable() {
+        try (Playwright playwright = Playwright.create();
+             Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+             Page page = browser.newPage()) {
+            page.setViewportSize(1440, 900);
+            page.navigate("http://localhost:" + serverPort + "/");
+            page.waitForSelector("[data-testid='login-modal']");
+            page.click("[data-testid='login-submit']");
+            page.waitForSelector("[data-testid='table-selection-grid']");
+
+            final String supplierCheckbox = "[data-testid='table-checkbox-dbo-supplier']";
+            final String productCheckbox = "[data-testid='table-checkbox-dbo-product']";
+
+            page.waitForFunction("([first, second]) => !document.querySelector(first).checked && !document.querySelector(second).checked", List.of(supplierCheckbox, productCheckbox));
+
+            page.locator(supplierCheckbox).click();
+            page.keyboard().press("Space");
+            page.waitForFunction("([first, second]) => document.querySelector(first).checked === true && document.querySelector(second).checked !== true", List.of(supplierCheckbox, productCheckbox));
+
+            page.keyboard().press("ArrowDown");
+            page.keyboard().press("Space");
+            page.waitForFunction("([first, second]) => document.querySelector(first).checked === true && document.querySelector(second).checked === true", List.of(supplierCheckbox, productCheckbox));
+
+            page.keyboard().press("ArrowUp");
+            page.keyboard().press("Space");
+            page.waitForFunction("([first, second]) => document.querySelector(first).checked !== true && document.querySelector(second).checked === true", List.of(supplierCheckbox, productCheckbox));
+
+            assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isEnabled()).isTrue();
+        }
+    }
+
+    @Test
     void pressingEnterRunsCompareAfterCommandDrivenSelectionEnablesCompare() {
         try (Playwright playwright = Playwright.create();
              Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
