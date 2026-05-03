@@ -22,6 +22,6 @@ We need a command selection grid so users can pick one or more interactions and 
 
 ## Impact
 
-This change affects Vaadin webapp UI composition and selection-state orchestration in `sqlcomparer-webapp`.
-It may add service calls in `sqlcomparer-impl` to load command-grid rows.
+This change affects Vaadin webapp UI composition and selection-state orchestration in `cfct-webapp`.
+It may add service calls in `cfct-impl` to load command-grid rows.
 It does not introduce breaking API changes.

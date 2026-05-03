@@ -1,6 +1,6 @@
 ## 1. Naming updates
 
-- [x] 1.1 Update user-facing project naming from `sqlcomparer` to `cfct` in scoped docs and usage text.
+- [x] 1.1 Update user-facing project naming from `cfct` to `cfct` in scoped docs and usage text.
 - [x] 1.2 Introduce or update first-mention expansion to `Command Footprint Comparison Tool` where appropriate.
 
 ## 2. Script rename

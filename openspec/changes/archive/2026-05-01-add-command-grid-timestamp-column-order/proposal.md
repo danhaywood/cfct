@@ -19,5 +19,5 @@ We need timestamp-first ordering so users can quickly scan recent command activi
 
 ## Impact
 
-This change affects command-grid UI rendering and related webapp tests in `sqlcomparer-webapp`.
+This change affects command-grid UI rendering and related webapp tests in `cfct-webapp`.
 No backend schema changes or API contract changes are required.

@@ -48,7 +48,7 @@ Alternative considered was no scripts, relying purely on Maven commands, but scr
 
 ## Migration Plan
 
-Add connectivity validation service(s) in `sqlcomparer-webapp` and wire startup checks.
+Add connectivity validation service(s) in `cfct-webapp` and wire startup checks.
 Implement clear exception/error mapping for common connectivity failures.
 Add Testcontainers-backed validation tests in the appropriate module scope.
 Add/update helper scripts and README notes for running validation checks locally.

@@ -10,7 +10,7 @@ It also makes it harder to consume comparison APIs without pulling in CLI/Spring
 
 **Goals:**
 - Convert the root project to a Maven parent/aggregator build.
-- Introduce four modules: `sqlcomparer-api`, `sqlcomparer-impl`, `sqlcomparer-cli`, and `sqlcomparer-integration-tests`.
+- Introduce four modules: `cfct-api`, `cfct-impl`, `cfct-cli`, and `cfct-integration-tests`.
 - Keep package names stable unless a package move is needed to maintain a clean module boundary.
 - Move public API/model contracts into the API module.
 - Move comparison implementations, SQL Server readers, config request loading, and report renderers into the implementation module.
@@ -39,13 +39,13 @@ That would not enforce dependency direction or allow integration tests and CLI p
 
 ### Create an API module for stable comparison contracts
 
-`sqlcomparer-api` should contain public contract types and interfaces that consumers need in order to request comparisons or consume structured results.
+`cfct-api` should contain public contract types and interfaces that consumers need in order to request comparisons or consume structured results.
 This includes table/column/key/value result records, comparison request records, exceptions that are part of the API surface, and service interfaces such as metadata and row readers where they are part of the comparison abstraction.
 The API module should avoid Spring Boot, SQL Server JDBC, POI, Jackson, Picocli, Testcontainers, and ApprovalTests dependencies unless a type explicitly requires a small general-purpose library.
 
 ### Create an implementation module for comparison behavior and renderers
 
-`sqlcomparer-impl` should depend on `sqlcomparer-api`.
+`cfct-impl` should depend on `cfct-api`.
 It should contain the core comparison services, SQL Server-specific readers, JSON request loading, configured comparison service, and report renderers.
 Its dependencies should include the implementation libraries needed for those responsibilities, such as Spring context/stereotypes, Jackson, POI, and SQL Server JDBC if compile-time SQL Server support is needed.
 Tests for pure implementation behavior should stay in this module.
@@ -54,21 +54,21 @@ This module keeps the implementation usable without requiring the Spring Boot ex
 
 ### Create a CLI module for the Spring Boot application
 
-`sqlcomparer-cli` should depend on `sqlcomparer-impl` and contain `SqlComparerApplication`.
+`cfct-cli` should depend on `cfct-impl` and contain `CfctApplication`.
 The Spring Boot Maven plugin should move to this module because it is the executable application module.
 Picocli should also be owned by this module if or when command-line wiring is added.
 This keeps executable application concerns out of API and implementation modules.
 
 ### Create an integration-test module for Docker-backed verification
 
-`sqlcomparer-integration-tests` should depend on `sqlcomparer-impl` and possibly `sqlcomparer-cli` only if it explicitly tests application startup.
+`cfct-integration-tests` should depend on `cfct-impl` and possibly `cfct-cli` only if it explicitly tests application startup.
 It should contain `SqlServerTestHarness`, `DatabaseSide`, integration tests, SQL fixture resources, approval files, logging properties, and generated workbook test outputs.
 Failsafe configuration should live in this module so `mvn verify` from the root runs integration tests there.
 Surefire should continue to run unit tests in normal modules.
 
 ### Keep module names explicit and stable
 
-Use artifact IDs that include the project prefix: `sqlcomparer-api`, `sqlcomparer-impl`, `sqlcomparer-cli`, and `sqlcomparer-integration-tests`.
+Use artifact IDs that include the project prefix: `cfct-api`, `cfct-impl`, `cfct-cli`, and `cfct-integration-tests`.
 This avoids ambiguity in local Maven repositories and IDE module lists.
 Directories should match artifact IDs for predictability.
 
@@ -88,7 +88,7 @@ The integration-test module should be skipped or fail clearly only when Docker i
 - [Risk] Module boundaries may reveal hidden dependencies between API and implementation types.
   → Mitigation: Move contracts first, then adjust dependencies or introduce small interfaces rather than adding implementation dependencies to the API module.
 - [Risk] Spring Boot plugin behavior can change when moved from root to CLI module.
-  → Mitigation: Configure the plugin only in `sqlcomparer-cli` and verify root `mvn package` or `mvn verify` still builds all modules.
+  → Mitigation: Configure the plugin only in `cfct-cli` and verify root `mvn package` or `mvn verify` still builds all modules.
 - [Risk] Integration tests may lose access to resources after being moved.
   → Mitigation: Move SQL fixtures, approval files, and logging properties with the integration-test source tree and verify classpath resource loading.
 - [Risk] IDE run configurations may point at old source paths.

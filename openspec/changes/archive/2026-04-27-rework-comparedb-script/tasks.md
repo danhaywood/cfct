@@ -8,7 +8,7 @@
 
 ## 2. Env File Layout
 
-- [x] 2.1 Rename `demo/sqlcomparer.env` to `demo/.env`.
+- [x] 2.1 Rename `demo/cfct.env` to `demo/.env`.
 - [x] 2.2 Add root `.env.TEMPLATE` with all supported SQL comparer dotenv keys and safe placeholder values.
 - [x] 2.3 Update wrapper env default to `.env` in the current directory and require explicit table selection.
 - [x] 2.4 Keep fixture credentials clearly labelled as fixture-only in the demo env file or docs.
@@ -17,17 +17,17 @@
 
 - [x] 3.1 Remove the `jar_needs_build` function and automatic Maven invocation from the wrapper.
 - [x] 3.2 Check that required CLI jar artifacts are present before invoking Java.
-- [x] 3.3 Print a clear build command such as `mvn -pl sqlcomparer-cli -am package` when jars are missing.
+- [x] 3.3 Print a clear build command such as `mvn -pl cfct-cli -am package` when jars are missing.
 - [x] 3.4 Preserve `SQLCOMPARER_CLI_JAR` override support for non-default jar locations.
 
 ## 4. Documentation Updates
 
 - [x] 4.1 Update README script references from `scripts/run-demo.sh` to `./comparedb.sh`.
-- [x] 4.2 Update README env-file references from `demo/sqlcomparer.env` to `demo/.env`.
+- [x] 4.2 Update README env-file references from `demo/cfct.env` to `demo/.env`.
 - [x] 4.3 Document `.env.TEMPLATE` as the starting point for user-managed configuration.
 - [x] 4.4 Update README wording from demo wrapper to comparison wrapper or production script where appropriate.
 - [x] 4.5 Update OpenSpec docs/specs or archived references that should point to current script names.
-- [x] 4.6 Search for and remove stale references to `run-demo.sh`, `DEMO_ENV`, `DEMO_TABLES`, and `demo/sqlcomparer.env` in active docs and scripts.
+- [x] 4.6 Search for and remove stale references to `run-demo.sh`, `DEMO_ENV`, `DEMO_TABLES`, and `demo/cfct.env` in active docs and scripts.
 
 ## 5. Validation
 

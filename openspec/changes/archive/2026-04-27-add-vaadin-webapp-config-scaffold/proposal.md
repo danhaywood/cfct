@@ -5,7 +5,7 @@ We should scaffold the Vaadin application and configuration binding now so futur
 
 ## What Changes
 
-- Add a new `sqlcomparer-webapp` Maven module with Spring Boot and Vaadin scaffolding.
+- Add a new `cfct-webapp` Maven module with Spring Boot and Vaadin scaffolding.
 - Use Vaadin Flow latest stable 25.x line for Spring Boot 4 compatibility and avoid pre-release versions.
 - Add baseline `application.yml` configuration keys that mirror the CLI connection and output options.
 - Add typed Spring configuration properties classes for server, username, password, left database, right database, tables/tables-file, env-file, output-format, and output-file.
@@ -22,5 +22,5 @@ We should scaffold the Vaadin application and configuration binding now so futur
 
 ## Impact
 
-This change affects root Maven module declarations, a new `sqlcomparer-webapp` module, Spring Boot configuration files, and documentation for running the webapp.
+This change affects root Maven module declarations, a new `cfct-webapp` module, Spring Boot configuration files, and documentation for running the webapp.
 This change introduces Vaadin dependencies and application configuration surface area but does not change comparison engine behavior.

@@ -28,7 +28,7 @@
 
 ## 5. Validation and documentation
 
-- [x] 5.1 Run module tests for `sqlcomparer-api`, `sqlcomparer-impl`, and `sqlcomparer-webapp` to verify cross-module behavior.
+- [x] 5.1 Run module tests for `cfct-api`, `cfct-impl`, and `cfct-webapp` to verify cross-module behavior.
 - [x] 5.2 Run headless Playwright connectivity and comparison-flow tests in Testcontainers-backed mode.
 - [x] 5.3 Update README and/or webapp notes to describe compare execution behavior and tabbed in-app result presentation.
 - [x] 5.4 Run OpenSpec validation for the new change artifacts and resolve any formatting or structural issues.

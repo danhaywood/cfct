@@ -21,5 +21,5 @@ We need to decouple web selection behavior now so the UI can evolve toward autom
 
 ## Impact
 
-This change affects webapp configuration contracts, execution wiring, and documentation in the `sqlcomparer-webapp` module.
+This change affects webapp configuration contracts, execution wiring, and documentation in the `cfct-webapp` module.
 This change does not alter the CLI parser contract or the comparison engine interfaces beyond introducing selection strategy composition in the webapp path.

@@ -24,6 +24,6 @@ The codebase also uses inconsistent implementation naming (`XxxFoo implements Fo
 
 ## Impact
 
-Affected modules include `sqlcomparer-api`, `sqlcomparer-impl`, `sqlcomparer-cli`, and `sqlcomparer-webapp`.
+Affected modules include `cfct-api`, `cfct-impl`, `cfct-cli`, and `cfct-webapp`.
 Spring configuration classes will be introduced or adjusted to bind API interfaces to implementation classes.
 Tests will be expanded to validate dependency boundaries and naming conventions.

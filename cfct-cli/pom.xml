@@ -45,7 +45,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <skip>false</skip>
-                    <mainClass>com.danhaywood.cfct.SqlComparerApplication</mainClass>
+                    <mainClass>com.danhaywood.cfct.CfctApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>

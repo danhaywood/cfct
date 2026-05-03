@@ -42,8 +42,8 @@ If recurring Connection plumbing appears across entry points, add DataSource-ori
 This staged approach minimizes breakage while still enabling clean DataSource-driven orchestration.
 
 ### Decision: Keep module-boundary rule intact.
-`sqlcomparer-webapp` must continue to depend on API contracts and explicit impl configuration import only.
-DataSource migration must not reintroduce direct type coupling to non-configuration classes in `sqlcomparer-impl`.
+`cfct-webapp` must continue to depend on API contracts and explicit impl configuration import only.
+DataSource migration must not reintroduce direct type coupling to non-configuration classes in `cfct-impl`.
 
 **Alternatives considered:**
 - Directly instantiate impl classes in webapp for convenience.

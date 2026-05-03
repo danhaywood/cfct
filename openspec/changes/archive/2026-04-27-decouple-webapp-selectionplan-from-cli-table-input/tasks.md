@@ -1,6 +1,6 @@
 ## 1. SelectionPlan abstraction
 
-- [x] 1.1 Add a `SelectionPlan` interface in `sqlcomparer-webapp` that resolves a deterministic `List<TableRef>`.
+- [x] 1.1 Add a `SelectionPlan` interface in `cfct-webapp` that resolves a deterministic `List<TableRef>`.
 - [x] 1.2 Add an explicit concrete selection-plan implementation that stores and returns concrete `TableRef` values.
 - [x] 1.3 Add unit tests for explicit selection-plan behavior, including deterministic output ordering.
 

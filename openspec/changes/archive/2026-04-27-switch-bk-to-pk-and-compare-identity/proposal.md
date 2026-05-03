@@ -25,6 +25,6 @@ Aligning metadata discovery and comparison behavior with `_PK` avoids false setu
 
 ## Impact
 
-This impacts metadata discovery in `sqlcomparer-impl`, default comparison options in API contracts, fixture SQL resources, and webapp table-catalog eligibility logic.
+This impacts metadata discovery in `cfct-impl`, default comparison options in API contracts, fixture SQL resources, and webapp table-catalog eligibility logic.
 It will update integration and browser tests that currently assume `_BK` eligibility and ignored identity differences.
 Documentation and examples will need to reflect the new `_PK` convention and changed default comparison behavior.

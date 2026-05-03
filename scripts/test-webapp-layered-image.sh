@@ -26,7 +26,7 @@ for _ in {1..45}; do
     exit 1
   fi
 
-  if docker logs "${CID}" 2>&1 | grep -q "Started SqlComparerWebApplication"; then
+  if docker logs "${CID}" 2>&1 | grep -q "Started CfctWebApplication"; then
     echo "Layered image smoke test passed"
     exit 0
   fi

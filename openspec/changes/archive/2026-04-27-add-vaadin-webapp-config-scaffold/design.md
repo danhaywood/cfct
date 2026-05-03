@@ -7,7 +7,7 @@ This change introduces a new module and dependency set, so architecture and laye
 ## Goals / Non-Goals
 
 **Goals:**
-- Add a `sqlcomparer-webapp` module scaffolded with Spring Boot and Vaadin Flow.
+- Add a `cfct-webapp` module scaffolded with Spring Boot and Vaadin Flow.
 - Model webapp configuration keys so they capture the same logical settings accepted by the CLI.
 - Define a stable configuration binding approach using `application.yml` and typed configuration properties.
 - Keep module boundaries aligned with existing API, implementation, and CLI layering.
@@ -19,7 +19,7 @@ This change introduces a new module and dependency set, so architecture and laye
 
 ## Decisions
 
-Use a dedicated `sqlcomparer-webapp` Maven module rather than extending `sqlcomparer-cli`.
+Use a dedicated `cfct-webapp` Maven module rather than extending `cfct-cli`.
 This keeps packaging concerns separate and avoids coupling a web runtime to the CLI executable artifact.
 Alternative considered was adding Vaadin to the CLI module, but that would blur responsibilities and increase startup complexity for CLI-only use.
 
@@ -55,5 +55,5 @@ Document startup and configuration behavior in README.
 
 ## Open Questions
 
-Should the webapp directly depend on `sqlcomparer-impl` for first implementation, or define an adapter service in the web module.
+Should the webapp directly depend on `cfct-impl` for first implementation, or define an adapter service in the web module.
 Should sensitive values like passwords be expected only from externalized environment variables in production profiles.

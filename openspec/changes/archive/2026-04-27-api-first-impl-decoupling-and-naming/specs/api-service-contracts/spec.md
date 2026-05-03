@@ -7,11 +7,11 @@ The contracts SHALL use API-owned request and result types so callers can execut
 
 #### Scenario: CLI compiles against API service contracts
 - **WHEN** the CLI module is compiled
-- **THEN** it can invoke comparison orchestration through API interfaces without importing non-configuration classes from `sqlcomparer-impl`
+- **THEN** it can invoke comparison orchestration through API interfaces without importing non-configuration classes from `cfct-impl`
 
 #### Scenario: Webapp compiles against API service contracts
 - **WHEN** the webapp module is compiled
-- **THEN** it can invoke comparison orchestration through API interfaces without importing non-configuration classes from `sqlcomparer-impl`
+- **THEN** it can invoke comparison orchestration through API interfaces without importing non-configuration classes from `cfct-impl`
 
 ### Requirement: Implementation module publishes API-contract beans through configuration
 The implementation module SHALL provide Spring configuration that binds API service interfaces to concrete implementation classes.
@@ -28,9 +28,9 @@ Application modules SHALL NOT construct implementation classes directly for comp
 
 ### Requirement: Entry-point modules enforce no direct implementation-type coupling
 The CLI and webapp modules SHALL enforce that source code references API contracts for comparison orchestration.
-The only allowed compile-time references from CLI and webapp to `sqlcomparer-impl` SHALL be explicit Spring wiring configuration imports.
+The only allowed compile-time references from CLI and webapp to `cfct-impl` SHALL be explicit Spring wiring configuration imports.
 The project SHALL include automated tests or architecture rules that fail when forbidden direct implementation references are introduced.
 
 #### Scenario: Forbidden implementation import fails architecture rule
-- **WHEN** a non-configuration class from `sqlcomparer-impl` is imported by CLI or webapp source code
+- **WHEN** a non-configuration class from `cfct-impl` is imported by CLI or webapp source code
 - **THEN** module architecture verification fails with a clear boundary error

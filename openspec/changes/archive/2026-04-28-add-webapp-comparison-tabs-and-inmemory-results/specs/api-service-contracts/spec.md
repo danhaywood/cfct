@@ -9,11 +9,11 @@ The contracts SHALL expose in-memory comparison result structures suitable for d
 
 #### Scenario: CLI compiles against API service contracts
 - **WHEN** the CLI module is compiled
-- **THEN** it can invoke comparison orchestration through API interfaces without importing non-configuration classes from `sqlcomparer-impl`
+- **THEN** it can invoke comparison orchestration through API interfaces without importing non-configuration classes from `cfct-impl`
 
 #### Scenario: Webapp compiles against API service contracts
 - **WHEN** the webapp module is compiled
-- **THEN** it can invoke comparison orchestration through API interfaces without importing non-configuration classes from `sqlcomparer-impl`
+- **THEN** it can invoke comparison orchestration through API interfaces without importing non-configuration classes from `cfct-impl`
 
 #### Scenario: API contract returns in-memory table results for UI consumers
 - **WHEN** a webapp consumer invokes multi-table comparison orchestration

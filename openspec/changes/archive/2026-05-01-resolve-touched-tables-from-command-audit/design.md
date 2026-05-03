@@ -19,7 +19,7 @@ We need a reusable repository service that resolves touched physical tables from
 
 ## Decisions
 
-Create a dedicated repository in `sqlcomparer-impl` that queries audit entries for provided command interaction identifiers.
+Create a dedicated repository in `cfct-impl` that queries audit entries for provided command interaction identifiers.
 Extract logical type names from target values by splitting on the first `:` and taking the prefix only when the format is valid.
 Resolve logical type names to qualified table names using `util.LogicalTypeTableMapping` and aggregate results into a sorted set.
 Ignore malformed targets, missing audit rows, and unmapped logical types while still returning valid results for the rest of the input.

@@ -30,7 +30,7 @@ scripts/fixture-sqlserver.sh status
 scripts/fixture-sqlserver.sh stop
 ----
 
-By default the fixture listens on `localhost:14333` and uses the container name `sqlcomparer-fixture-sqlserver`.
+By default the fixture listens on `localhost:14333` and uses the container name `cfct-fixture-sqlserver`.
 Override the host port if needed:
 
 [source,bash]
@@ -523,7 +523,7 @@ This is useful for overriding default values:
 [source,yaml]
 .application.yml
 ----
-sqlcomparer:
+cfct:
   webapp:
     comparison:
       connection:
@@ -538,7 +538,7 @@ sqlcomparer:
 The webapp uses a login-first flow.
 SQL connectivity, database existence, and required target-system object presence are validated when the user submits the login form.
 Required target-system objects may be either tables or views.
-The login form is pre-populated from `sqlcomparer.webapp.comparison.connection.*` configuration values, and every field remains editable.
+The login form is pre-populated from `cfct.webapp.comparison.connection.*` configuration values, and every field remains editable.
 
 Happy-path connectivity check with the demo fixture SQL Server:
 
@@ -554,7 +554,7 @@ scripts/fixture-sqlserver.sh start
 [source,bash]
 ----
 mvn -pl cfct-webapp -am spring-boot:run \
-  -Dspring-boot.run.arguments="--sqlcomparer.webapp.comparison.connection.server=localhost:14333 --sqlcomparer.webapp.comparison.connection.username=sa --sqlcomparer.webapp.comparison.connection.password=Str0ng_password!123 --sqlcomparer.webapp.comparison.connection.left-database=left_db --sqlcomparer.webapp.comparison.connection.right-database=right_db"
+  -Dspring-boot.run.arguments="--cfct.webapp.comparison.connection.server=localhost:14333 --cfct.webapp.comparison.connection.username=sa --cfct.webapp.comparison.connection.password=Str0ng_password!123 --cfct.webapp.comparison.connection.left-database=left_db --cfct.webapp.comparison.connection.right-database=right_db"
 ----
 +
 Or use the one-liner helper script that starts the fixture and runs the webapp with the same happy-path settings:
@@ -595,7 +595,7 @@ Login should fail with a clear missing-system-objects validation message.
 scripts/fixture-sqlserver.sh stop
 ----
 
-The webapp reads login defaults and shared execution defaults from `cfct-webapp/src/main/resources/application.yml` using `sqlcomparer.webapp.comparison.*` keys.
+The webapp reads login defaults and shared execution defaults from `cfct-webapp/src/main/resources/application.yml` using `cfct.webapp.comparison.*` keys.
 
 These keys map to CLI concepts as follows:
 

@@ -1,14 +1,14 @@
 ## ADDED Requirements
 
 ### Requirement: Repository provides a Vaadin webapp module scaffold
-The repository SHALL provide a Maven module named `sqlcomparer-webapp`.
+The repository SHALL provide a Maven module named `cfct-webapp`.
 The webapp module SHALL package a Spring Boot application with Vaadin Flow integration.
 The webapp module SHALL start successfully with a minimal bootstrap route suitable for future UI development.
 The webapp module SHALL use a stable Vaadin Flow release line, selecting the latest stable line identified during proposal work.
 
 #### Scenario: Webapp module is present in source tree
 - **WHEN** the project modules are inspected
-- **THEN** a `sqlcomparer-webapp` module exists with its own `pom.xml` and Spring Boot application entry point
+- **THEN** a `cfct-webapp` module exists with its own `pom.xml` and Spring Boot application entry point
 
 #### Scenario: Webapp application starts with minimal route
 - **WHEN** the webapp module is started in a local development environment

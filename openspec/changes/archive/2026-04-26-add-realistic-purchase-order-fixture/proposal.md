@@ -1,6 +1,6 @@
 ## Why
 
-The SQL Server harness currently uses a minimal `sample_items` fixture that proves database isolation but does not represent the shape of data that sqlcomparer will eventually compare.
+The SQL Server harness currently uses a minimal `sample_items` fixture that proves database isolation but does not represent the shape of data that cfct will eventually compare.
 A realistic `PurchaseOrder` fixture will capture the expected production-style conventions before comparison behavior is implemented.
 
 ## What Changes

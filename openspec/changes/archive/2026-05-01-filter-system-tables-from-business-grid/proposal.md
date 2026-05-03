@@ -19,5 +19,5 @@ These internal tables add noise for end users and can lead to accidental selecti
 
 ## Impact
 
-This change affects table-catalog discovery and filtering logic in `sqlcomparer-webapp`.
+This change affects table-catalog discovery and filtering logic in `cfct-webapp`.
 It may require updates to unit and browser tests that assert table-grid contents.

@@ -28,5 +28,5 @@ Users need immediate in-app comparison feedback per selected table without relyi
 ## Impact
 
 The webapp UI layer, comparison execution service wiring, and API contract model will be updated to support in-memory result consumption.
-Implementation and tests in `sqlcomparer-api`, `sqlcomparer-impl`, and `sqlcomparer-webapp` will be affected, including Playwright happy-path coverage.
+Implementation and tests in `cfct-api`, `cfct-impl`, and `cfct-webapp` will be affected, including Playwright happy-path coverage.
 Output rendering responsibilities will shift toward UI grids for interactive use while existing external report formats remain available for CLI workflows.

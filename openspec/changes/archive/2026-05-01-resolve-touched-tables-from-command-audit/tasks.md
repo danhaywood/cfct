@@ -1,6 +1,6 @@
 ## 1. Repository contract and query plumbing
 
-- [x] 1.1 Locate or introduce the repository/service contract in `sqlcomparer-impl` for resolving touched tables from command `interactionId` values.
+- [x] 1.1 Locate or introduce the repository/service contract in `cfct-impl` for resolving touched tables from command `interactionId` values.
 - [x] 1.2 Implement SQL access that joins command and audit data by `interactionId` and reads audit `target` values for provided interactions.
 - [x] 1.3 Add mapping-table lookup against `util.LogicalTypeTableMapping` and return a distinct deterministic set of qualified table names.
 

@@ -26,13 +26,13 @@ The integration-test SQL fixtures already define representative left and right d
 
 - Put scripts under a repository-level `scripts/` directory.
   This keeps developer automation discoverable without coupling it to one Maven module.
-  Alternative considered: put scripts under `sqlcomparer-cli/`, but the fixture lifecycle spans the CLI and integration-test fixture resources.
+  Alternative considered: put scripts under `cfct-cli/`, but the fixture lifecycle spans the CLI and integration-test fixture resources.
 
 - Put demo input files under a repository-level `demo/` directory.
   This separates committed sample configuration from generated files and avoids confusing the demo `.env` with a user's local `.env`.
   Alternative considered: store demo files under `scripts/`, but inputs are easier to reference and copy from a dedicated demo directory.
 
-- Use names such as `demo/sqlcomparer.env` and `demo/tables.txt` rather than committing a root `.env`.
+- Use names such as `demo/cfct.env` and `demo/tables.txt` rather than committing a root `.env`.
   This avoids accidentally making the repository root look configured for a real environment.
   Alternative considered: commit `.env.example`, but the CLI can consume an explicit `--env-file`, so a named demo env file is more direct.
 

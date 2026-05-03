@@ -50,7 +50,7 @@ Executable Spring Boot packaging SHALL be configured in the CLI module rather th
 
 #### Scenario: Spring application entry point lives in CLI module
 - **WHEN** the source tree is inspected
-- **THEN** `SqlComparerApplication` is located in the CLI module
+- **THEN** `CfctApplication` is located in the CLI module
 
 #### Scenario: CLI module can package executable application
 - **WHEN** the CLI module is packaged by Maven

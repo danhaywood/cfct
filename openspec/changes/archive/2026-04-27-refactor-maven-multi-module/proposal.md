@@ -10,7 +10,7 @@ Splitting the codebase into focused Maven modules will make dependencies clearer
 - Add an implementation module for comparison logic, SQL Server metadata/row readers, request loading, and report renderers.
 - Add an integration-test module for Docker/Testcontainers SQL Server harnesses and integration tests.
 - Add a CLI module for Spring Boot application wiring and the application entry point.
-- Move `SqlComparerApplication` into the CLI module.
+- Move `CfctApplication` into the CLI module.
 - Keep existing comparison behavior, JSON output, Excel output, approval tests, and integration test expectations unchanged.
 - Preserve `mvn test` for unit tests and `mvn verify` for integration-test execution from the repository root.
 

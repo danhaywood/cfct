@@ -21,6 +21,6 @@ This makes local troubleshooting slower and hides useful runtime diagnostics fro
 
 ## Impact
 
-This affects `sqlcomparer-webapp` UI composition, startup validation-to-UI state mapping, and test infrastructure.
+This affects `cfct-webapp` UI composition, startup validation-to-UI state mapping, and test infrastructure.
 It adds Playwright test dependencies, configuration, and CI-compatible headless execution commands.
 It keeps Testcontainers-based SQL Server provisioning as the authoritative test backend for connectivity scenarios.

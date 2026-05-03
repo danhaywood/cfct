@@ -1,6 +1,6 @@
 package com.danhaywood.cfct.core;
 
-import com.danhaywood.cfct.SqlComparerApplication;
+import com.danhaywood.cfct.CfctApplication;
 import com.danhaywood.cfct.cli.CliArgumentsParser;
 import com.danhaywood.cfct.cli.CliCommandRunner;
 import com.danhaywood.cfct.cli.CliComparisonExecutor;
@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CoreLibrarySpringContextTest {
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-            .withUserConfiguration(SqlComparerApplication.class);
+            .withUserConfiguration(CfctApplication.class);
 
     @Test
     void coreComparisonServicesCanBeSpringManaged() {

@@ -20,5 +20,5 @@ We need this mapping fixture now so upcoming comparison logic can resolve comman
 
 ## Impact
 
-This change affects SQL setup scripts and integration-test fixture initialization in `sqlcomparer-integration-tests`.
+This change affects SQL setup scripts and integration-test fixture initialization in `cfct-integration-tests`.
 It expands fixture data dependencies for tests that interpret command and audit logical identifiers, while keeping existing APIs and runtime configuration unchanged.

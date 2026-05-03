@@ -22,5 +22,5 @@ Before UI workflows are added, we need infrastructure that proves connectivity a
 
 ## Impact
 
-This change affects `sqlcomparer-webapp` infrastructure services, error handling, and integration tests using SQL Server Testcontainers.
+This change affects `cfct-webapp` infrastructure services, error handling, and integration tests using SQL Server Testcontainers.
 This change may introduce new test support classes or scripts for webapp-focused containerized validation but does not add Playwright or UI automation.

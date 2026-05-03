@@ -8,7 +8,7 @@ The naming, environment variables, file layout, and build behavior should reflec
 - Rename the CLI wrapper from `scripts/run-demo.sh` to a repository-root script named `comparedb.sh`.
 - Rename wrapper variables and environment overrides so they no longer use the `DEMO_` prefix.
 - Move the production wrapper script to the repository root.
-- Rename `demo/sqlcomparer.env` to `demo/.env` for the fixture example.
+- Rename `demo/cfct.env` to `demo/.env` for the fixture example.
 - Add a root `.env.TEMPLATE` file for users to copy and customize.
 - Default `comparedb.sh` to `.env` in the current directory.
 - Require callers to provide table selection explicitly through `--tables-file`, `-t`, or `SQLCOMPARER_TABLES_FILE`.

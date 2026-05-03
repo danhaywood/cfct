@@ -1,6 +1,6 @@
 ## Context
 
-The project currently has `scripts/run-demo.sh`, a wrapper that is described as a demo script and defaults to `demo/sqlcomparer.env` and `demo/tables.txt`.
+The project currently has `scripts/run-demo.sh`, a wrapper that is described as a demo script and defaults to `demo/cfct.env` and `demo/tables.txt`.
 The wrapper also contains `jar_needs_build` logic that can invoke Maven automatically when it thinks the CLI jar is stale or missing.
 The user wants this wrapper to be production-oriented, repository-root visible, and explicit about requiring built jar artifacts before it runs.
 
@@ -10,7 +10,7 @@ The user wants this wrapper to be production-oriented, repository-root visible, 
 
 - Replace `scripts/run-demo.sh` with a root-level `comparedb.sh` script.
 - Rename script variables and environment overrides to production-oriented names such as `SQLCOMPARER_ENV_FILE`, `SQLCOMPARER_TABLES_FILE`, and `SQLCOMPARER_CLI_JAR`.
-- Rename `demo/sqlcomparer.env` to `demo/.env` for the fixture example.
+- Rename `demo/cfct.env` to `demo/.env` for the fixture example.
 - Add a root `.env.TEMPLATE` that documents required dotenv keys without implying fixture-only usage.
 - Remove automatic Maven build and stale-jar detection from the wrapper.
 - Fail clearly when the CLI jar is not present and instruct the user to build it.
@@ -48,7 +48,7 @@ The user wants this wrapper to be production-oriented, repository-root visible, 
 ## Risks / Trade-offs
 
 - Users may expect the wrapper to build automatically because `run-demo.sh` did → Print an explicit build command when the jar is missing.
-- Moving the script can leave stale references behind → Search README, scripts, OpenSpec docs, and shell examples for `run-demo.sh`, `DEMO_ENV`, `DEMO_TABLES`, and `demo/sqlcomparer.env`.
+- Moving the script can leave stale references behind → Search README, scripts, OpenSpec docs, and shell examples for `run-demo.sh`, `DEMO_ENV`, `DEMO_TABLES`, and `demo/cfct.env`.
 - Root `.env.TEMPLATE` could be confused with active config → Use template comments and keep active fixture config in `demo/.env`.
 - Dotfiles under `demo/` can be overlooked by basic directory listings → README must mention the exact `demo/.env` path in example commands.
 - Users may run `comparedb.sh` without table selection → The wrapper help and README must explain that `--tables-file`, `-t`, or `SQLCOMPARER_TABLES_FILE` is required.

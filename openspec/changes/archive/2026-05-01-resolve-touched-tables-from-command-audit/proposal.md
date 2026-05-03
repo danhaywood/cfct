@@ -20,5 +20,5 @@ We need this capability now so selection and comparison workflows can derive tab
 
 ## Impact
 
-This change affects repository and service logic in `sqlcomparer-impl` and integration tests in `sqlcomparer-integration-tests`.
+This change affects repository and service logic in `cfct-impl` and integration tests in `cfct-integration-tests`.
 It uses existing fixture schemas and adds no new external dependencies or breaking API changes.

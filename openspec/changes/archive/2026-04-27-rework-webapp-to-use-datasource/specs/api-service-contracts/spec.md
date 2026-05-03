@@ -8,8 +8,8 @@ The contracts SHALL support entry-point implementations that acquire connections
 
 #### Scenario: CLI compiles against API service contracts
 - **WHEN** the CLI module is compiled
-- **THEN** it can invoke comparison orchestration through API interfaces without importing non-configuration classes from `sqlcomparer-impl`
+- **THEN** it can invoke comparison orchestration through API interfaces without importing non-configuration classes from `cfct-impl`
 
 #### Scenario: Webapp compiles against API service contracts
 - **WHEN** the webapp module is compiled
-- **THEN** it can invoke comparison orchestration through API interfaces without importing non-configuration classes from `sqlcomparer-impl`
+- **THEN** it can invoke comparison orchestration through API interfaces without importing non-configuration classes from `cfct-impl`

@@ -22,5 +22,5 @@ Moving the webapp to `DataSource` reduces connection-lifecycle risk and creates 
 
 ## Impact
 
-Affected modules are expected to include `sqlcomparer-webapp`, `sqlcomparer-api`, `sqlcomparer-impl`, and potentially `sqlcomparer-cli` if shared service signatures are adjusted.
+Affected modules are expected to include `cfct-webapp`, `cfct-api`, `cfct-impl`, and potentially `cfct-cli` if shared service signatures are adjusted.
 Spring bean wiring and tests will be updated to keep module boundaries intact while introducing DataSource-based execution paths.

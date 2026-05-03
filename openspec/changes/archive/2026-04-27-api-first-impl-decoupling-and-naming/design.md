@@ -1,6 +1,6 @@
 ## Context
 
-`sqlcomparer-cli` and `sqlcomparer-webapp` currently reference concrete service and executor classes from `sqlcomparer-impl`.
+`cfct-cli` and `cfct-webapp` currently reference concrete service and executor classes from `cfct-impl`.
 This creates compile-time coupling to implementation details and makes refactoring in `-impl` risky for application entry-point modules.
 At the same time, implementation naming is inconsistent, with patterns like `CliComparisonExecutorSqlServer implements CliComparisonExecutor` instead of a consistent interface-first naming style.
 The requested architecture is that `-cli` and `-webapp` depend on API contracts, while Spring wiring in `-impl` binds those contracts to implementations.
@@ -22,9 +22,9 @@ The requested architecture is that `-cli` and `-webapp` depend on API contracts,
 ## Decisions
 
 ### Decision: Introduce API service contracts for application-facing orchestration.
-Create new interfaces in `sqlcomparer-api` for the service entry points currently instantiated from `sqlcomparer-impl`.
+Create new interfaces in `cfct-api` for the service entry points currently instantiated from `cfct-impl`.
 These interfaces will represent stable use-case boundaries for single-table and multi-table comparison orchestration.
-`sqlcomparer-cli` and `sqlcomparer-webapp` will depend only on these interfaces.
+`cfct-cli` and `cfct-webapp` will depend only on these interfaces.
 
 **Alternatives considered:**
 - Keep direct `-impl` type usage and rely on discipline.
@@ -34,9 +34,9 @@ These interfaces will represent stable use-case boundaries for single-table and 
 Explicit interfaces provide compile-time clarity and preserve refactor freedom in implementations.
 Reflection would reduce type safety and increase startup/runtime complexity.
 
-### Decision: Keep implementation bean creation in `sqlcomparer-impl` configuration and import only configuration from applications.
-`sqlcomparer-impl` will expose Spring `@Configuration` classes that publish API contract beans.
-`sqlcomparer-cli` and `sqlcomparer-webapp` will import those configuration classes via `@Import` or equivalent module wiring.
+### Decision: Keep implementation bean creation in `cfct-impl` configuration and import only configuration from applications.
+`cfct-impl` will expose Spring `@Configuration` classes that publish API contract beans.
+`cfct-cli` and `cfct-webapp` will import those configuration classes via `@Import` or equivalent module wiring.
 No other non-configuration `-impl` types will be referenced by application modules.
 
 **Alternatives considered:**

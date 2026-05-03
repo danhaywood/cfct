@@ -1,6 +1,6 @@
 ## Context
 
-The repository and user-facing assets currently use the name `sqlcomparer`.
+The repository and user-facing assets currently use the name `cfct`.
 The target name is `cfct`, meaning `Command Footprint Comparison Tool`.
 The script entrypoint also needs to reflect the new name for discoverability and consistency.
 
@@ -34,7 +34,7 @@ Keep script contents functionally equivalent apart from naming-related usage/hel
 
 Rename the script file to `cfct.sh`.
 Update references in README, docs, tests, and scripts to use the new path.
-Update user-facing name strings from `sqlcomparer` to `cfct` where in scope.
+Update user-facing name strings from `cfct` to `cfct` where in scope.
 Run tests and script checks that cover startup or invocation paths.
 
 ## Open Questions

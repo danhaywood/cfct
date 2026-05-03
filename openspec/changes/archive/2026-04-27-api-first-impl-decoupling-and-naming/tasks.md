@@ -1,15 +1,15 @@
 ## 1. API service contract extraction
 
-- [x] 1.1 Identify comparison orchestration entry points in `sqlcomparer-impl` that are currently called from `sqlcomparer-cli` and `sqlcomparer-webapp`.
-- [x] 1.2 Add API interfaces in `sqlcomparer-api` for single-table and multi-table orchestration use cases.
-- [x] 1.3 Update implementation classes in `sqlcomparer-impl` to implement the new API interfaces without changing comparison behavior.
+- [x] 1.1 Identify comparison orchestration entry points in `cfct-impl` that are currently called from `cfct-cli` and `cfct-webapp`.
+- [x] 1.2 Add API interfaces in `cfct-api` for single-table and multi-table orchestration use cases.
+- [x] 1.3 Update implementation classes in `cfct-impl` to implement the new API interfaces without changing comparison behavior.
 
 ## 2. Spring wiring and module boundary enforcement
 
-- [x] 2.1 Add or update `sqlcomparer-impl` Spring configuration classes that expose API interface beans.
-- [x] 2.2 Refactor `sqlcomparer-cli` to consume API interfaces and only import implementation wiring configuration.
-- [x] 2.3 Refactor `sqlcomparer-webapp` to consume API interfaces and only import implementation wiring configuration.
-- [x] 2.4 Add architecture tests in CLI and webapp modules that fail on direct non-configuration type references to `sqlcomparer-impl`.
+- [x] 2.1 Add or update `cfct-impl` Spring configuration classes that expose API interface beans.
+- [x] 2.2 Refactor `cfct-cli` to consume API interfaces and only import implementation wiring configuration.
+- [x] 2.3 Refactor `cfct-webapp` to consume API interfaces and only import implementation wiring configuration.
+- [x] 2.4 Add architecture tests in CLI and webapp modules that fail on direct non-configuration type references to `cfct-impl`.
 
 ## 3. Interface-first implementation naming migration
 

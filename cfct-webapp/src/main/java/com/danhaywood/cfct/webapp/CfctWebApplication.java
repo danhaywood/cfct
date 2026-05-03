@@ -10,9 +10,9 @@ import org.springframework.context.annotation.Import;
 @SpringBootApplication
 @ConfigurationPropertiesScan
 @Import(ComparisonImplementationConfiguration.class)
-public class SqlComparerWebApplication {
+public class CfctWebApplication {
 
     public static void main(final String[] args) {
-        SpringApplication.run(SqlComparerWebApplication.class, args);
+        SpringApplication.run(CfctWebApplication.class, args);
     }
 }

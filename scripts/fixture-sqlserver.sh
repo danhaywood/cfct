@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-CONTAINER_NAME="${CFCT_FIXTURE_CONTAINER:-sqlcomparer-fixture-sqlserver}"
+CONTAINER_NAME="${CFCT_FIXTURE_CONTAINER:-cfct-fixture-sqlserver}"
 SQLSERVER_IMAGE="${CFCT_FIXTURE_IMAGE:-mcr.microsoft.com/mssql/server:2022-latest}"
 HOST_PORT="${CFCT_FIXTURE_PORT:-14333}"
 SA_PASSWORD="${CFCT_FIXTURE_PASSWORD:-Str0ng_password!123}"

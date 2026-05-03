@@ -5,7 +5,7 @@ A first-pass CLI with explicit arguments for server, credentials, databases, and
 
 ## What Changes
 
-- Add a runnable CLI command path in `sqlcomparer-cli` that invokes the comparison library using command-line arguments.
+- Add a runnable CLI command path in `cfct-cli` that invokes the comparison library using command-line arguments.
 - Support first-pass connection and scope flags:
   - `-S <server>`
   - `-U <username>`
@@ -27,7 +27,7 @@ A first-pass CLI with explicit arguments for server, credentials, databases, and
 
 ## Impact
 
-- Affects `sqlcomparer-cli` application startup and argument handling.
+- Affects `cfct-cli` application startup and argument handling.
 - Likely introduces JDBC connection creation and SQL Server driver usage in CLI runtime path.
 - Adds new CLI tests and may add test seams/mocks for comparison service invocation.
 - No changes to existing comparison library request/result semantics.

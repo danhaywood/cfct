@@ -26,7 +26,7 @@ This change improves the UI structure and makes table selection easier to scan, 
 
 ## Impact
 
-- Affects the `sqlcomparer-webapp` Vaadin views, components, styling, and test support.
+- Affects the `cfct-webapp` Vaadin views, components, styling, and test support.
 - May add or update webapp unit tests for selection state, footer content, and button enablement.
 - Extends Playwright tests and related helper selectors for deterministic happy-path UI assertions.
 - Does not change comparison execution behavior, API contracts, database comparison logic, or CLI behavior.

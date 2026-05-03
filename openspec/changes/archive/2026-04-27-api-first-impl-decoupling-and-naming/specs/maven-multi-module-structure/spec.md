@@ -6,8 +6,8 @@ The API module SHALL be the lowest layer.
 The implementation module SHALL NOT depend on CLI, webapp, or integration-test modules.
 The CLI module SHALL NOT depend on the webapp or integration-test module.
 The webapp module SHALL NOT depend on the CLI or integration-test module.
-The CLI and webapp modules MAY depend on `sqlcomparer-impl` only for importing explicit Spring wiring configuration classes.
-The CLI and webapp modules SHALL NOT reference non-configuration implementation types from `sqlcomparer-impl`.
+The CLI and webapp modules MAY depend on `cfct-impl` only for importing explicit Spring wiring configuration classes.
+The CLI and webapp modules SHALL NOT reference non-configuration implementation types from `cfct-impl`.
 
 #### Scenario: API remains lowest layer
 - **WHEN** module dependencies are inspected
