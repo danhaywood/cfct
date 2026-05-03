@@ -8,8 +8,6 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 ## Candidate ideas
 
-- /opsx-propose: diff only checkbox should default to true.
-
 - /opsx-propose: extend the CLI to accept a time range for commands and perform the comparison based on the derived business tables.
 
 - /opsx-propose: add a 'download' button underneath the business tables grid, to the left of 'compare'; when clicked should download a file suitable to feed into CLI's --tables-file param.  Disable this if there are no rows selected.

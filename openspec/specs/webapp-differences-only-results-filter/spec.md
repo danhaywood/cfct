@@ -9,10 +9,10 @@ When unchecked, the results stage SHALL show all compared tables that satisfy ex
 When checked, the results stage SHALL show only compared tables whose result contains at least one differing row or side-only row.
 The differences-only filter SHALL compose with the existing compared-table text filter.
 
-#### Scenario: Differences-only filter is off by default
+#### Scenario: Differences-only filter is on by default
 - **WHEN** comparison results are first rendered after a successful run
-- **THEN** the `Differences only` checkbox is unchecked
-- **AND** tabs for both changed and unchanged compared tables are visible
+- **THEN** the `Differences only` checkbox is checked
+- **AND** only tabs for compared tables with differences are visible
 
 #### Scenario: Differences-only filter hides unchanged tables
 - **WHEN** the user checks `Differences only`
