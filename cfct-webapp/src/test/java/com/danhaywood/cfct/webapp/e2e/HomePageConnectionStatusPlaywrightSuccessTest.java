@@ -248,14 +248,15 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
             page.click("[data-testid='compare-button']");
             page.waitForSelector("[data-testid='comparison-results-tabs']");
-            assertThat(page.locator("[data-testid^='comparison-result-tab-']").count()).isEqualTo(3);
+            assertThat(page.locator("[data-testid='comparison-differences-only-filter']").isChecked()).isTrue();
+            assertThat(page.locator("[data-testid^='comparison-result-tab-']").count()).isEqualTo(2);
             assertThat(page.locator("[data-testid='comparison-result-tab-dbo-supplier']").getAttribute("data-has-differences")).isEqualTo("true");
             assertThat(page.locator("[data-testid='comparison-result-tab-dbo-product']").getAttribute("data-has-differences")).isEqualTo("true");
             assertThat(page.locator("[data-testid='comparison-result-tab-dbo-customeraddress']").getAttribute("data-has-differences")).isEqualTo("false");
 
             toggleCheckbox(page, "[data-testid='comparison-differences-only-filter']");
-            page.waitForFunction("() => document.querySelectorAll('[data-testid^=\"comparison-result-tab-\"]').length === 2");
-            assertThat(page.locator("[data-testid='comparison-result-tab-dbo-customeraddress']").count()).isZero();
+            page.waitForFunction("() => document.querySelectorAll('[data-testid^=\"comparison-result-tab-\"]').length === 3");
+            assertThat(page.locator("[data-testid='comparison-result-tab-dbo-customeraddress']").count()).isEqualTo(1);
 
             assertThat(page.locator("[data-testid^='comparison-grid-dbo-']").count()).isEqualTo(1);
             final String gridText = page.locator("[data-testid^='comparison-grid-dbo-']").first().innerText();

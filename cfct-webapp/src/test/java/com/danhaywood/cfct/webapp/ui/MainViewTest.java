@@ -337,7 +337,7 @@ class MainViewTest {
 
         final com.vaadin.flow.component.checkbox.Checkbox differencesOnly =
                 (com.vaadin.flow.component.checkbox.Checkbox) findByTestId(view, "comparison-differences-only-filter").orElseThrow();
-        assertThat(differencesOnly.getValue()).isFalse();
+        assertThat(differencesOnly.getValue()).isTrue();
 
         final TableComparisonViewResult supplier = outcome.viewResult().tableResults().get(0);
         final TableComparisonViewResult customerAddress = outcome.viewResult().tableResults().get(1);
@@ -345,9 +345,12 @@ class MainViewTest {
         assertThat(invokeHasDifferences(view, supplier)).isTrue();
         assertThat(invokeHasDifferences(view, customerAddress)).isFalse();
 
-        differencesOnly.setValue(true);
         assertThat(invokeMatchesComparedTableFilter(view, supplier)).isTrue();
         assertThat(invokeMatchesComparedTableFilter(view, customerAddress)).isFalse();
+
+        differencesOnly.setValue(false);
+        assertThat(invokeMatchesComparedTableFilter(view, supplier)).isTrue();
+        assertThat(invokeMatchesComparedTableFilter(view, customerAddress)).isTrue();
     }
 
     @Test
