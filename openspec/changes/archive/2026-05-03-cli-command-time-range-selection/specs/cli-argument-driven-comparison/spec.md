@@ -24,7 +24,7 @@ The CLI SHALL fail with a clear validation error when more than one table-select
 - **WHEN** the user omits one of the required connection values and no `.env` default supplies it
 - **THEN** the CLI exits with a non-zero status and reports a clear validation error identifying the missing argument
 
-### Requirement: CLI parses table selection from supported selection sources
+### Requirement: CLI parses table selection from comma-separated schema.table list
 The `-t` argument SHALL be parsed as a comma-separated ordered list of table references.
 The CLI SHALL also accept a table-file argument whose file contains one table reference per line.
 Each table token SHALL be in `schema.table` format.

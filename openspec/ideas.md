@@ -8,7 +8,7 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 ## Candidate ideas
 
-- /opsx-propose: extend the CLI to accept a time range for commands and perform the comparison based on the derived business tables.
+- /opsx-propose: update the README, COMPAREDB_ prefix change to CFCT_ and SQLCOMPARE_ prefix change to CFCT_ .  Also update the README, reorganize according to audience (dev vs user) and then organize the user for using the CLI vs the webapp.  Ensure that all screenshots are up to date; no need for an image of the branding logo.
 
 - /opsx-propose: add a 'download' button underneath the business tables grid, to the left of 'compare'; when clicked should download a file suitable to feed into CLI's --tables-file param.  Disable this if there are no rows selected.
 
