@@ -3,7 +3,9 @@
 `cfct` (Command Footprint Comparison Tool) is a Maven multi-module project for comparing selected SQL Server tables between two databases.
 It provides a reusable comparison API, an implementation module, a Spring Boot CLI, a Vaadin webapp scaffold, a root comparison wrapper script, and a Docker-backed integration-test fixture.
 
-## Project layout
+## Developer guide
+
+### Project layout
 
 - `cfct.sh`: root comparison wrapper script for running the CLI with env-file and table-selection inputs.
 - `.env.TEMPLATE`: template for user-managed connection configuration.
@@ -15,7 +17,7 @@ It provides a reusable comparison API, an implementation module, a Spring Boot C
 - `demo/`: committed fixture example files for local comparison runs.
 - `scripts/`: local helper scripts for the fixture SQL Server.
 
-## Module boundaries and naming conventions
+### Module boundaries and naming conventions
 
 `cfct-cli` and `cfct-webapp` consume comparison orchestration through API interfaces from `cfct-api`.
 These entry-point modules only reference `cfct-impl` for explicit Spring wiring import (`ComparisonImplementationConfiguration`).
@@ -27,7 +29,7 @@ Connectivity validation, table discovery, and webapp comparison execution acquir
 For classes that implement an interface, implementation names follow interface-first convention: `<Interface><Qualifier>`.
 Examples include `CliComparisonExecutorSqlServer`, `TableMetadataReaderSqlServer`, and `TableRowReaderSqlServer`.
 
-## Prerequisites
+### Prerequisites
 
 - Java 21 or later.
 - Maven 3.9 or later.
@@ -38,7 +40,7 @@ SQL Server container startup can be slow, especially on Apple Silicon where emul
 The committed fixture credentials are examples for the local fixture only and are not production-safe.
 Do not reuse them for real systems.
 
-## Build and test
+### Build and test
 
 Run the non-integration test suite from the repository root:
 
@@ -150,7 +152,9 @@ For extended-property based ignores, set a column-level SQL Server extended prop
 Truthy values are interpreted case-insensitively and include: `true`, `1`, `yes`, `y`, `on`.
 The local `customer-address` fixture now demonstrates this by marking `dbo.CustomerAddress.postcode` as `cfct.ignored` via `sp_addextendedproperty`.
 
-## Webapp Usage
+## User guide
+
+### Webapp usage
 
 Webapp usage is now a three-stage workflow.
 - Stage 1: login in a startup modal dialog with server, source database, target database, username, and password, with defaults loaded from config props.
@@ -180,11 +184,7 @@ During comparison execution, the footer/status bar also shows live table-by-tabl
 Logout is now in the top-right account menu.
 
 The login and logout flow now looks like this.
-The login experience now includes right-side CFCT branding with the product logo.
-The authenticated navbar now includes compact CFCT branding with logo and name.
-The branding asset is served from `cfct-webapp/src/main/resources/static/images/cfct-logo.png`.
-
-![CFCT logo asset](docs/images/cfct-logo.png)
+The login experience includes right-side CFCT branding and the authenticated navbar includes compact CFCT branding.
 
 Unauthenticated startup opens the login modal dialog on the main route.
 
@@ -239,7 +239,7 @@ scripts/test-webapp-playwright-connectivity.sh
 
 Playwright tests are headless and use Testcontainers-backed SQL Server settings to keep runs reproducible in local and CI environments.
 
-## Fixture SQL Server
+### Fixture SQL Server
 
 Use `scripts/fixture-sqlserver.sh` to manage a local SQL Server container for the fixture example.
 The script starts SQL Server 2022, creates `left_db` and `right_db`, and loads fixture data for the example tables.
@@ -283,19 +283,19 @@ By default the fixture listens on `localhost:14333` and uses the container name 
 Override the host port if needed:
 
 ```bash
-SQLCOMPARER_FIXTURE_PORT=14334 scripts/fixture-sqlserver.sh start
+CFCT_FIXTURE_PORT=14334 scripts/fixture-sqlserver.sh start
 ```
 
-If you change the port, also update the env file used by the comparison wrapper or pass a different env file with `--env-file` or `COMPAREDB_ENV_FILE`.
-Use `SQLCOMPARER_INVALID_TARGET_DATABASE` to override the invalid target name used by `--invalid-target-db`.
+If you change the port, also update the env file used by the comparison wrapper or pass a different env file with `--env-file` or `CFCT_ENV_FILE`.
+Use `CFCT_INVALID_TARGET_DATABASE` to override the invalid target name used by `--invalid-target-db`.
 
-## Comparison wrapper
+### CLI wrapper (`cfct.sh`) usage
 
 `cfct.sh` is the root comparison wrapper script.
 It expects the CLI jar to already exist and then invokes the Java CLI with an env file.
 By default, the env file is `.env` in the current directory.
-The wrapper has no default tables file; provide table selection by passing `--tables-file`, passing `-t`, or setting `COMPAREDB_TABLES_FILE`.
-`--env-file <path>` takes precedence over `COMPAREDB_ENV_FILE`.
+The wrapper has no default tables file; provide table selection by passing `--tables-file`, passing `-t`, or setting `CFCT_TABLES_FILE`.
+`--env-file <path>` takes precedence over `CFCT_ENV_FILE`.
 
 For the fixture example, build the CLI jar, start the fixture, then run:
 
@@ -306,8 +306,8 @@ For the fixture example, build the CLI jar, start the fixture, then run:
 Equivalent usage with environment overrides:
 
 ```bash
-COMPAREDB_ENV_FILE=demo/.env \
-COMPAREDB_TABLES_FILE=demo/tables.txt \
+CFCT_ENV_FILE=demo/.env \
+CFCT_TABLES_FILE=demo/tables.txt \
 ./cfct.sh
 ```
 
@@ -349,24 +349,24 @@ This writes Excel output to a workbook file:
 
 The wrapper supports these environment overrides:
 
-- `COMPAREDB_ENV_FILE`: env file path, defaulting to `.env` in the current directory.
-- `COMPAREDB_TABLES_FILE`: optional table list file path, with no default.
-- `COMPAREDB_CLI_JAR`: CLI jar path, defaulting to `cfct-cli/target/cfct-cli-0.0.1-SNAPSHOT.jar`.
+- `CFCT_ENV_FILE`: env file path, defaulting to `.env` in the current directory.
+- `CFCT_TABLES_FILE`: optional table list file path, with no default.
+- `CFCT_CLI_JAR`: CLI jar path, defaulting to `cfct-cli/target/cfct-cli-0.0.1-SNAPSHOT.jar`.
 
-## Env files and table files
+### CLI env files and table files
 
 Use `.env.TEMPLATE` as the starting point for a user-managed env file.
-Copy it to `.env` in the directory from which you run `cfct.sh`, or store it elsewhere and set `COMPAREDB_ENV_FILE`.
+Copy it to `.env` in the directory from which you run `cfct.sh`, or store it elsewhere and set `CFCT_ENV_FILE`.
 Do not commit real production credentials.
 
 `demo/.env` contains fixture-only connection values using the CLI-supported dotenv keys:
 
 ```dotenv
-SQLCOMPARER_SERVER=localhost:14333
-SQLCOMPARER_USERNAME=sa
-SQLCOMPARER_PASSWORD=Str0ng_password!123
-SQLCOMPARER_LEFT_DATABASE=left_db
-SQLCOMPARER_RIGHT_DATABASE=right_db
+CFCT_SERVER=localhost:14333
+CFCT_USERNAME=sa
+CFCT_PASSWORD=Str0ng_password!123
+CFCT_LEFT_DATABASE=left_db
+CFCT_RIGHT_DATABASE=right_db
 ```
 
 `demo/tables.txt` contains one table reference per line:
@@ -381,7 +381,7 @@ dbo.PurchaseOrder
 These demo files are examples for the local fixture only.
 Do not put production credentials in committed demo files.
 
-## Direct CLI usage
+### Direct CLI usage
 
 You can run the CLI jar directly after building it:
 
@@ -413,7 +413,7 @@ The CLI supports these table-selection options:
 
 The CLI supports these dotenv options:
 
-- `-e` / `--env-file`: path to a file containing `SQLCOMPARER_SERVER`, `SQLCOMPARER_USERNAME`, `SQLCOMPARER_PASSWORD`, `SQLCOMPARER_LEFT_DATABASE`, and `SQLCOMPARER_RIGHT_DATABASE`.
+- `-e` / `--env-file`: path to a file containing `CFCT_SERVER`, `CFCT_USERNAME`, `CFCT_PASSWORD`, `CFCT_LEFT_DATABASE`, and `CFCT_RIGHT_DATABASE`.
 
 Default comparison behavior now discovers business-key objects (unique indexes or unique constraints) using the `_PK` suffix.
 By default, technical identifier columns are ignored for value comparison, including identity-backed columns, columns named `guid` or `uuid`, and SQL Server `UNIQUEIDENTIFIER` columns.
@@ -447,13 +447,13 @@ java -jar cfct-cli/target/cfct-cli-0.0.1-SNAPSHOT.jar \
 
 In command-time-range mode, the CLI selects commands inclusively at both range boundaries and infers business tables for comparison from those commands.
 
-## Testing conventions
+### Testing conventions
 
 Use AssertJ for fluent assertions in harness tests.
 Use JUnit 5 parameterized tests with `@EnumSource` when the same behavior must be checked across the left and right logical databases or similar modes.
 Use Approvals for stable textual, JSON, Excel, or tabular outputs when characterization-style verification is clearer than many small assertions.
 
-## Scope guardrail
+### Scope guardrail
 
 The fixture scripts and integration harness are intentionally narrow.
 They own local/example SQL Server lifecycle, logical database creation, fixture initialization, and smoke-test setup.

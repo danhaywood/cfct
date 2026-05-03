@@ -28,11 +28,11 @@ public final class CliArgumentsParser {
     private static final String LEFT_DATABASE = "-l";
     private static final String RIGHT_DATABASE = "-r";
 
-    private static final String ENV_SERVER = "SQLCOMPARER_SERVER";
-    private static final String ENV_USER = "SQLCOMPARER_USERNAME";
-    private static final String ENV_PASSWORD = "SQLCOMPARER_PASSWORD";
-    private static final String ENV_LEFT_DATABASE = "SQLCOMPARER_LEFT_DATABASE";
-    private static final String ENV_RIGHT_DATABASE = "SQLCOMPARER_RIGHT_DATABASE";
+    private static final String ENV_SERVER = "CFCT_SERVER";
+    private static final String ENV_USER = "CFCT_USERNAME";
+    private static final String ENV_PASSWORD = "CFCT_PASSWORD";
+    private static final String ENV_LEFT_DATABASE = "CFCT_LEFT_DATABASE";
+    private static final String ENV_RIGHT_DATABASE = "CFCT_RIGHT_DATABASE";
 
     private static final List<String> CONNECTION_FLAGS = List.of(SERVER, USER, PASSWORD, LEFT_DATABASE, RIGHT_DATABASE);
 

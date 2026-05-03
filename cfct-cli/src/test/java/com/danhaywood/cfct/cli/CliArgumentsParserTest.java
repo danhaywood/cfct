@@ -87,11 +87,11 @@ class CliArgumentsParserTest {
     @Test
     void supportsShortFlagsForLongOptions(@TempDir final Path tempDir) throws IOException {
         final Path envFile = writeEnvFile(tempDir, """
-                SQLCOMPARER_SERVER=server-from-env
-                SQLCOMPARER_USERNAME=user-from-env
-                SQLCOMPARER_PASSWORD=password-from-env
-                SQLCOMPARER_LEFT_DATABASE=left_from_env
-                SQLCOMPARER_RIGHT_DATABASE=right_from_env
+                CFCT_SERVER=server-from-env
+                CFCT_USERNAME=user-from-env
+                CFCT_PASSWORD=password-from-env
+                CFCT_LEFT_DATABASE=left_from_env
+                CFCT_RIGHT_DATABASE=right_from_env
                 """);
         final Path tablesFile = tempDir.resolve("tables.txt");
         java.nio.file.Files.writeString(tablesFile, "dbo.Supplier\ndbo.PurchaseOrder\n");
@@ -288,11 +288,11 @@ class CliArgumentsParserTest {
     void resolvesConnectionValuesFromEnvFile(@TempDir final Path tempDir) throws IOException {
         final Path envFile = writeEnvFile(tempDir, """
                 # local comparison defaults
-                SQLCOMPARER_SERVER=server-from-env
-                SQLCOMPARER_USERNAME=user-from-env
-                SQLCOMPARER_PASSWORD=password-from-env
-                SQLCOMPARER_LEFT_DATABASE=left_from_env
-                SQLCOMPARER_RIGHT_DATABASE=right_from_env
+                CFCT_SERVER=server-from-env
+                CFCT_USERNAME=user-from-env
+                CFCT_PASSWORD=password-from-env
+                CFCT_LEFT_DATABASE=left_from_env
+                CFCT_RIGHT_DATABASE=right_from_env
                 """);
 
         final CliArguments arguments = parser.parse(new String[]{
@@ -310,11 +310,11 @@ class CliArgumentsParserTest {
     @Test
     void commandLineValuesOverrideEnvFileValues(@TempDir final Path tempDir) throws IOException {
         final Path envFile = writeEnvFile(tempDir, """
-                SQLCOMPARER_SERVER=server-from-env
-                SQLCOMPARER_USERNAME=user-from-env
-                SQLCOMPARER_PASSWORD=password-from-env
-                SQLCOMPARER_LEFT_DATABASE=left_from_env
-                SQLCOMPARER_RIGHT_DATABASE=right_from_env
+                CFCT_SERVER=server-from-env
+                CFCT_USERNAME=user-from-env
+                CFCT_PASSWORD=password-from-env
+                CFCT_LEFT_DATABASE=left_from_env
+                CFCT_RIGHT_DATABASE=right_from_env
                 """);
 
         final CliArguments arguments = parser.parse(new String[]{
@@ -350,11 +350,11 @@ class CliArgumentsParserTest {
     @Test
     void loadsDefaultEnvFileFromWorkingDirectory(@TempDir final Path tempDir) throws IOException {
         writeEnvFile(tempDir, """
-                SQLCOMPARER_SERVER=server-from-default-env
-                SQLCOMPARER_USERNAME=user-from-default-env
-                SQLCOMPARER_PASSWORD=password-from-default-env
-                SQLCOMPARER_LEFT_DATABASE=left_from_default_env
-                SQLCOMPARER_RIGHT_DATABASE=right_from_default_env
+                CFCT_SERVER=server-from-default-env
+                CFCT_USERNAME=user-from-default-env
+                CFCT_PASSWORD=password-from-default-env
+                CFCT_LEFT_DATABASE=left_from_default_env
+                CFCT_RIGHT_DATABASE=right_from_default_env
                 """);
         final String originalUserDir = System.getProperty("user.dir");
         try {
@@ -377,10 +377,10 @@ class CliArgumentsParserTest {
     @Test
     void rejectsUnresolvedConnectionValue(@TempDir final Path tempDir) throws IOException {
         final Path envFile = writeEnvFile(tempDir, """
-                SQLCOMPARER_SERVER=server-from-env
-                SQLCOMPARER_USERNAME=user-from-env
-                SQLCOMPARER_PASSWORD=password-from-env
-                SQLCOMPARER_LEFT_DATABASE=left_from_env
+                CFCT_SERVER=server-from-env
+                CFCT_USERNAME=user-from-env
+                CFCT_PASSWORD=password-from-env
+                CFCT_LEFT_DATABASE=left_from_env
                 """);
 
         assertThatThrownBy(() -> parser.parse(new String[]{

@@ -3,9 +3,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${SCRIPT_DIR}"
-ENV_FILE="${COMPAREDB_ENV_FILE:-${PWD}/.env}"
-TABLES_FILE="${COMPAREDB_TABLES_FILE:-}"
-CLI_JAR="${COMPAREDB_CLI_JAR:-${REPO_ROOT}/cfct-cli/target/cfct-cli-0.0.1-SNAPSHOT.jar}"
+ENV_FILE="${CFCT_ENV_FILE:-${PWD}/.env}"
+TABLES_FILE="${CFCT_TABLES_FILE:-}"
+CLI_JAR="${CFCT_CLI_JAR:-${REPO_ROOT}/cfct-cli/target/cfct-cli-0.0.1-SNAPSHOT.jar}"
 BUILD_COMMAND="mvn -pl cfct-cli -am package"
 
 usage() {
@@ -17,15 +17,15 @@ Runs the CFCT (Command Footprint Comparison Tool) CLI with:
 
 Env-file precedence (highest to lowest):
   1) --env-file <path>
-  2) COMPAREDB_ENV_FILE
+  2) CFCT_ENV_FILE
   3) .env in the current directory
 
 Table selection must be provided either by passing CLI table arguments, for example:
   --tables-file path/to/tables.txt
   -t dbo.Supplier,dbo.Product
 
-If COMPAREDB_TABLES_FILE is set, this wrapper also passes:
-  --tables-file \${COMPAREDB_TABLES_FILE}
+If CFCT_TABLES_FILE is set, this wrapper also passes:
+  --tables-file \${CFCT_TABLES_FILE}
 
 Additional arguments are appended to the CLI invocation.
 For example, pass --output-format json for JSON output or write Excel output with --output-format excel -o comparison.xlsx.
@@ -34,9 +34,9 @@ Before running this script, build the CLI jar with:
   ${BUILD_COMMAND}
 
 Environment overrides:
-  COMPAREDB_ENV_FILE     Env file path (default: .env in the current directory)
-  COMPAREDB_TABLES_FILE  Optional tables file path (no default)
-  COMPAREDB_CLI_JAR      CLI jar path (default: ${CLI_JAR})
+  CFCT_ENV_FILE     Env file path (default: .env in the current directory)
+  CFCT_TABLES_FILE  Optional tables file path (no default)
+  CFCT_CLI_JAR      CLI jar path (default: ${CLI_JAR})
 USAGE
 }
 
@@ -73,7 +73,7 @@ done
 
 if [[ ! -f "${ENV_FILE}" ]]; then
   echo "Error: env file not found: ${ENV_FILE}" >&2
-  echo "Create .env in the current directory, copy .env.TEMPLATE, or set COMPAREDB_ENV_FILE/use --env-file with an existing file." >&2
+  echo "Create .env in the current directory, copy .env.TEMPLATE, or set CFCT_ENV_FILE/use --env-file with an existing file." >&2
   exit 1
 fi
 
@@ -81,7 +81,7 @@ TABLE_ARGS=()
 if [[ -n "${TABLES_FILE}" ]]; then
   if [[ ! -f "${TABLES_FILE}" ]]; then
     echo "Error: tables file not found: ${TABLES_FILE}" >&2
-    echo "Set COMPAREDB_TABLES_FILE to an existing table list file or pass --tables-file explicitly." >&2
+    echo "Set CFCT_TABLES_FILE to an existing table list file or pass --tables-file explicitly." >&2
     exit 1
   fi
   TABLE_ARGS=(--tables-file "${TABLES_FILE}")
@@ -91,7 +91,7 @@ if [[ ! -f "${CLI_JAR}" ]]; then
   echo "Error: CLI jar not found: ${CLI_JAR}" >&2
   echo "Build it first with:" >&2
   echo "  ${BUILD_COMMAND}" >&2
-  echo "Or set COMPAREDB_CLI_JAR to an existing executable jar." >&2
+  echo "Or set CFCT_CLI_JAR to an existing executable jar." >&2
   exit 1
 fi
 

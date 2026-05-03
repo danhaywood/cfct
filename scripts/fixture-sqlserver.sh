@@ -4,13 +4,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-CONTAINER_NAME="${SQLCOMPARER_FIXTURE_CONTAINER:-sqlcomparer-fixture-sqlserver}"
-SQLSERVER_IMAGE="${SQLCOMPARER_FIXTURE_IMAGE:-mcr.microsoft.com/mssql/server:2022-latest}"
-HOST_PORT="${SQLCOMPARER_FIXTURE_PORT:-14333}"
-SA_PASSWORD="${SQLCOMPARER_FIXTURE_PASSWORD:-Str0ng_password!123}"
-LEFT_DATABASE="${SQLCOMPARER_LEFT_DATABASE:-left_db}"
-RIGHT_DATABASE="${SQLCOMPARER_RIGHT_DATABASE:-right_db}"
-INVALID_TARGET_DATABASE="${SQLCOMPARER_INVALID_TARGET_DATABASE:-${RIGHT_DATABASE}_missing}"
+CONTAINER_NAME="${CFCT_FIXTURE_CONTAINER:-sqlcomparer-fixture-sqlserver}"
+SQLSERVER_IMAGE="${CFCT_FIXTURE_IMAGE:-mcr.microsoft.com/mssql/server:2022-latest}"
+HOST_PORT="${CFCT_FIXTURE_PORT:-14333}"
+SA_PASSWORD="${CFCT_FIXTURE_PASSWORD:-Str0ng_password!123}"
+LEFT_DATABASE="${CFCT_LEFT_DATABASE:-left_db}"
+RIGHT_DATABASE="${CFCT_RIGHT_DATABASE:-right_db}"
+INVALID_TARGET_DATABASE="${CFCT_INVALID_TARGET_DATABASE:-${RIGHT_DATABASE}_missing}"
 FIXTURE_ROOT="${REPO_ROOT}/cfct-integration-tests/src/test/resources/sql/fixtures"
 
 usage() {
@@ -29,11 +29,11 @@ Flags:
   --missing-system-tables Remove required target system objects after fixture load for manual failure testing.
 
 Environment overrides:
-  SQLCOMPARER_FIXTURE_CONTAINER       Container name (default: ${CONTAINER_NAME})
-  SQLCOMPARER_FIXTURE_IMAGE           SQL Server image (default: ${SQLSERVER_IMAGE})
-  SQLCOMPARER_FIXTURE_PORT            Host port (default: ${HOST_PORT})
-  SQLCOMPARER_FIXTURE_PASSWORD        sa password (default: fixture demo password)
-  SQLCOMPARER_INVALID_TARGET_DATABASE Missing target name used with --invalid-target-db (default: ${INVALID_TARGET_DATABASE})
+  CFCT_FIXTURE_CONTAINER       Container name (default: ${CONTAINER_NAME})
+  CFCT_FIXTURE_IMAGE           SQL Server image (default: ${SQLSERVER_IMAGE})
+  CFCT_FIXTURE_PORT            Host port (default: ${HOST_PORT})
+  CFCT_FIXTURE_PASSWORD        sa password (default: fixture demo password)
+  CFCT_INVALID_TARGET_DATABASE Missing target name used with --invalid-target-db (default: ${INVALID_TARGET_DATABASE})
 USAGE
 }
 
