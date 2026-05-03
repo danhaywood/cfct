@@ -1,9 +1,329 @@
 = cfct
 
-`cfct` (Command Footprint Comparison Tool) is a Maven multi-module project for comparing selected SQL Server tables between two databases.
-It provides a reusable comparison API, an implementation module, a Spring Boot CLI, a Vaadin webapp scaffold, a root comparison wrapper script, and a Docker-backed integration-test fixture.
+`cfct` (Command Footprint Comparison Tool) is a webapp and CLI for comparing selected SQL Server tables between two databases, typically based on a set of Apache Causeway commands having been executed.
+
+
+== User guide for Fixture SQL Server
+
+Use `scripts/fixture-sqlserver.sh` to manage a local SQL Server container for the fixture example.
+The script starts SQL Server 2022, creates `left_db` and `right_db`, and loads fixture data for the example tables.
+The script also supports invalid-target and missing-system-tables modes for manual login-validation failure testing.
+
+* To start the fixture:
++
+[source,bash]
+----
+scripts/fixture-sqlserver.sh start
+----
+
+* To check fixture status:
++
+[source,bash]
+----
+scripts/fixture-sqlserver.sh status
+----
+
+* To stop and remove the fixture:
++
+[source,bash]
+----
+scripts/fixture-sqlserver.sh stop
+----
+
+By default the fixture listens on `localhost:14333` and uses the container name `sqlcomparer-fixture-sqlserver`.
+Override the host port if needed:
+
+[source,bash]
+----
+CFCT_FIXTURE_PORT=14334 scripts/fixture-sqlserver.sh start
+----
+
+If you change the port, also update the env file used by the CLI or the webapp configuration.
+
+
+To support manual testing of sad cases:
+
+* To start the fixture in invalid-target mode
++
+[source,bash]
+----
+scripts/fixture-sqlserver.sh start --invalid-target-db
+----
++
+In this mode, one of the specified databases is missing.
+Use `CFCT_INVALID_TARGET_DATABASE` to override the invalid target name used by `--invalid-target-db`.
+
+* to start the fixture with missing required target system objects (for manual login testing):
++
+[source,bash]
+----
+scripts/fixture-sqlserver.sh start --missing-system-tables
+----
++
+In this mode, the target database exists but required system tables/views are missing.
+
+
+
+=== Smoke Tests
+
+* Run webapp connectivity-validation tests (Docker required):
++
+[source,bash]
+----
+scripts/test-webapp-connectivity-validation.sh
+----
+
+* Run headless Playwright browser tests for login + connectivity status flows (Docker required):
++
+[source,bash]
+----
+scripts/test-webapp-playwright-connectivity.sh
+----
++
+Playwright tests are headless and use Testcontainers-backed SQL Server settings to keep runs reproducible in local and CI environments.
+
+== User guide for Webapp
+
+=== Walkthrough
+
+Webapp usage is as follows.
+
+* Login in a startup modal dialog with server, source database, target database, username, and password
++
+image:docs/images/webapp-login-modal.png[Webapp startup login modal (current walkthrough)]
++
+Defaults are loaded from config props.
++
+Once logged in, the footer/status bar shows connection details and status.
+
+* After successful login, the main shell shows the initial table-selection view:
++
+image:docs/images/webapp-main.png[Webapp table selection with footer status bar]
+
+* Select commands in the navigation drawer, the corresponding business tables (representing the footprint) are selected.
+These can be fine-tuned as required.
++
+NOTE: Tables that do not meet the `_PK` suffix requirement on a unique index or unique constraint are still shown, but their checkboxes are disabled and expose the eligibility reason as tooltip text.
+
+
+* Click `compare` (or hit enter); this triggers the comparison.
++
+During comparison, the footer/status bar also shows live table-by-table progress and a terminal completion or failure message.
+If successful, the results are shown on the right hand side:
++
+image:docs/images/webapp-selected.png[Webapp table comparison results in tabs]
++
+Tabs for tables with differences are color-highlighted, and a `Diffs only` checkbox can hide unchanged tables.
+Differing values are shown on separate lines, with Excel-like status coloring.
++
+Downloads are provided through one unified `Download` action with a format selector for `json`, `yaml`, or `excel` (the selector defaults to `json`).
+
+* The navigation drawer can be collapsed, to provide more real estate.
++
+image:docs/images/webapp-collapsed.png[Webapp with collapsed navigation]
+
+* Opening the account menu shows the logout action.
++
+image:docs/images/webapp-account-menu-open.png[Webapp account menu with logout action]
+
+* After logout, the app returns to the login modal dialog.
++
+image:docs/images/webapp-after-logout-login-modal.png[Webapp after logout returns to login modal (current walkthrough)]
+
+
+== User Guide for CLI (`cfct.sh`)
+
+`cfct.sh` is the root comparison wrapper script.
+It expects the CLI jar to already exist and then invokes the Java CLI with an env file.
+
+The `CFCT_CLI_JAR` can be used to override the jar path; it defaults to  `cfct-cli/target/cfct-cli-0.0.1-SNAPSHOT.jar`.
+
+
+=== Connection
+
+The target server and databases can be specified either using a `.env` file or directly.
+The `.env` file is usually easiest
+
+==== .env file
+
+Specify the .env file directly using:
+
+* `-e` / `--env-file`: path to a file containing `CFCT_SERVER`, `CFCT_USERNAME`, `CFCT_PASSWORD`, `CFCT_LEFT_DATABASE`, and `CFCT_RIGHT_DATABASE`.
++
+The `demo/.env` contains values to connect to the SQL Server fixture script:
++
+[source,dotenv]
+----
+CFCT_SERVER=localhost:14333
+CFCT_USERNAME=sa
+CFCT_PASSWORD=Str0ng_password!123
+CFCT_LEFT_DATABASE=left_db
+CFCT_RIGHT_DATABASE=right_db
+----
++
+If not specified, will search for `.env` as per the `CFCT_ENV_FILE` env var, or in the current directory if not set.
+
+Use `.env.TEMPLATE` as the starting point for a user-managed env file.
+Copy it to `.env` in the directory from which you run `cfct.sh`, or store it elsewhere and set `CFCT_ENV_FILE`.
+Do not commit real production credentials.
+
+
+==== Direct options
+
+Alternatively, the connection can be specified directly:
+
+* `-S` / `--server`: SQL Server host, optionally including a port such as `localhost:14333`.
+* `-U` / `--username`: SQL Server username.
+* `-P` / `--password`: SQL Server password.
+* `-l` / `--left-database`: left database name.
+* `-r` / `--right-database`: right database name.
+
+
+=== Comparison Tables
+
+The CLI provides two different ways to specify the tables to compare.
+The more powerful is to specify the command range:
+
+* `--commands-from`: inclusive command timestamp range start (ISO-8601 local date-time, for example `2026-05-01T10:00:00`).
+* `--commands-to`: inclusive command timestamp range end (ISO-8601 local date-time, for example `2026-05-01T11:00:00`).
+
+From this the audit table and logical type/table mapping is used to determine the business tables impacted.
+
+Alternatively, the tables can be specified directly:
+
+* `-t` / `--tables`: comma-separated `schema.table` list.
+* `-F` / `--tables-file`: path to a flat file with one `schema.table` reference per line.
++
+This file contains one table reference per line:
+If not specified, then the `CFCT_TABLES_FILE` env var is used as a fallback.
+
+Do not mix explicit table and command-time-range options in the same invocation.
+
+=== Output formats
+
+The CLI supports these output options:
+
+* `-f` / `--output-format`: one of `text`, `json`, `yaml`, or `excel`.
++
+`text` is the default when `--output-format` is omitted.
+
+* `-o` / `--output-file`: optional output file path for successful output.
++
+Excel output requires `-o`, for example:
++
+[source,bash]
+----
+`--output-format excel -o comparison.xlsx`.
+----
+
+Text, JSON, and YAML are written to stdout as UTF-8 when `-o` is omitted.
+When `-o` is supplied, successful output is written to that file instead.
+
+CLI comparison progress is emitted to stderr as per-table progress lines so stdout or output files remain reserved for comparison artifacts.
+
+=== Examples
+
+These assume that the jar has been built, and the fixture started.
+
+* Specify tables directly:
++
+[source,bash]
+----
+./cfct.sh --env-file demo/.env --tables-file demo/tables.txt
+----
++
+where `demo/tables.txt` contains one table reference per line:
++
+[source,text]
+----
+dbo.Supplier
+dbo.Product
+dbo.CustomerAddress
+dbo.PurchaseOrder
+----
+
+* Equivalent usage with environment overrides:
++
+[source,bash]
+----
+CFCT_ENV_FILE=demo/.env \
+CFCT_TABLES_FILE=demo/tables.txt \
+./cfct.sh
+----
++
+This overrides the server value from the env file:
+
+* Override the server:
+=
+[source,bash]
+----
+./cfct.sh --env-file demo/.env --tables-file demo/tables.txt -S localhost:14334
+----
+
+* Writes JSON output instead of the default text output:
+
+[source,bash]
+----
+./cfct.sh --env-file demo/.env --tables-file demo/tables.txt --output-format json
+----
++
+Equivalent short-flag example:
++
+[source,bash]
+----
+./cfct.sh --env-file demo/.env --tables-file demo/tables.txt -f json
+----
+
+* Writes JSON output to a file:
++
+[source,bash]
+----
+./cfct.sh --env-file demo/.env --tables-file demo/tables.txt --output-format json -o comparison.json
+----
+
+* Writes YAML output instead of the default text output:
++
+[source,bash]
+----
+./cfct.sh --env-file demo/.env --tables-file demo/tables.txt --output-format yaml
+----
+
+* Writes Excel output to a workbook file:
++
+[source,bash]
+----
+./cfct.sh --env-file demo/.env --tables-file demo/tables.txt --output-format excel -o comparison.xlsx
+----
+
+* Example command-time-range invocation:
++
+[source,bash]
+----
+./cfct.sh \
+  --env-file demo/.env \
+  --commands-from 2026-05-01T10:00:00 \
+  --commands-to 2026-05-01T11:00:00 \
+  --output-format json
+----
+
+* Instead of using the `cfct.sh` script, you can run the CLI jar directly:
+
+[source,bash]
+----
+java -jar cfct-cli/target/cfct-cli-0.0.1-SNAPSHOT.jar \
+  -S localhost:14333 \
+  -U sa \
+  -P 'Str0ng_password!123' \
+  -l left_db \
+  -r right_db \
+  -t dbo.Supplier,dbo.Product,dbo.PurchaseOrder \
+  --output-format text
+----
+
 
 == Developer guide
+
+The tool consistss of a reusable comparison API, an implementation module, a Spring Boot CLI, a Vaadin webapp scaffold, a root comparison wrapper script, and a Docker-backed integration-test fixture.
 
 === Project layout
 
@@ -17,7 +337,7 @@ It provides a reusable comparison API, an implementation module, a Spring Boot C
 * `demo/`: committed fixture example files for local comparison runs.
 * `scripts/`: local helper scripts for the fixture SQL Server.
 
-=== Module boundaries and naming conventions
+=== Module responsibilities
 
 `cfct-cli` and `cfct-webapp` consume comparison orchestration through API interfaces from `cfct-api`.
 These entry-point modules only reference `cfct-impl` for explicit Spring wiring import (`ComparisonImplementationConfiguration`).
@@ -26,8 +346,47 @@ Direct references to non-configuration classes in `cfct-impl` are intentionally 
 The webapp uses Spring-managed `DataSource` beans for SQL Server access at its service boundaries.
 Connectivity validation, table discovery, and webapp comparison execution acquire short-lived JDBC connections from these DataSources and close them within the service method.
 
+=== Naming conventions
+
 For classes that implement an interface, implementation names follow interface-first convention: `<Interface><Qualifier>`.
 Examples include `CliComparisonExecutorSqlServer`, `TableMetadataReaderSqlServer`, and `TableRowReaderSqlServer`.
+
+=== Comparison
+
+Default comparison behavior discovers business-key objects (unique indexes or unique constraints) using the `_PK` suffix.
+By default, technical identifier columns are ignored for value comparison, including identity-backed columns, columns named `guid` or `uuid`, and SQL Server `UNIQUEIDENTIFIER` columns.
+
+=== Ignored columns
+
+The `IgnoreColumnAdvisor` SPI allows columns are ignored by default; there are four default implementations:
+
+* identity
+* UUID
+* `timestamps` column
+* based on the extended property `cfct.ignored` being set to a truthy value:
+
+These can each of which can be enabled/disabled if required (enabled by default):
+
+[source,properties]
+----
+cfct.comparison.ignore-column-advisors.identityEnabled=true|false
+cfct.comparison.ignore-column-advisors.uuidEnabled=true|false
+cfct.comparison.ignore-column-advisors.timestampsEnabled=true|false
+cfct.comparison.ignore-column-advisors.extendedPropertiesEnabled=true|false
+----
+
+=== Testing conventions
+
+Use AssertJ for fluent assertions in harness tests.
+Use JUnit 5 parameterized tests with `@EnumSource` when the same behavior must be checked across the left and right logical databases or similar modes.
+Use Approvals for stable textual, JSON, Excel, or tabular outputs when characterization-style verification is clearer than many small assertions.
+
+=== Scope guardrail
+
+The fixture scripts and integration harness are intentionally narrow.
+They own local/example SQL Server lifecycle, logical database creation, fixture initialization, and smoke-test setup.
+They do not implement comparison logic, reporting logic, or a broader database support matrix.
+
 
 === Prerequisites
 
@@ -39,6 +398,7 @@ Examples include `CliComparisonExecutorSqlServer`, `TableMetadataReaderSqlServer
 SQL Server container startup can be slow, especially on Apple Silicon where emulation may be involved.
 The committed fixture credentials are examples for the local fixture only and are not production-safe.
 Do not reuse them for real systems.
+
 
 === Build and test
 
@@ -73,7 +433,7 @@ Run the webapp scaffold locally from the repository root:
 mvn -pl cfct-webapp -am spring-boot:run
 ----
 
-The webapp now uses a login-first flow.
+The webapp uses a login-first flow.
 SQL connectivity, database existence, and required target-system object presence are validated when the user submits the login form.
 Required target-system objects may be either tables or views.
 The login form is pre-populated from `sqlcomparer.webapp.comparison.connection.*` configuration values, and every field remains editable.
@@ -158,327 +518,4 @@ For extended-property based ignores, set a column-level SQL Server extended prop
 Truthy values are interpreted case-insensitively and include: `true`, `1`, `yes`, `y`, `on`.
 The local `customer-address` fixture now demonstrates this by marking `dbo.CustomerAddress.postcode` as `cfct.ignored` via `sp_addextendedproperty`.
 
-== User guide
 
-=== Webapp usage
-
-Webapp usage is as follows.
-
-* Login in a startup modal dialog with server, source database, target database, username, and password
-+
-Defaults are loaded from config props.
-+
-Once logged in, the footer/status bar shows connection details and status.
-
-* Select commands in the navigation drawer, the corresponding business tables (representing the footprint) are selected.
-These can be fine-tuned as required.
-+
-NOTE: Tables that do not meet the `_PK` suffix requirement on a unique index or unique constraint are still shown, but their checkboxes are disabled and expose the eligibility reason as tooltip text.
-
-* Click `compare` (or hit enter); this triggers the comparison.
-+
-During comparison execution, the footer/status bar also shows live table-by-table progress and a terminal completion or failure message.
-
-* View comparison output in the main comparison area as dynamic tabs, one tab per selected table.
-+
-Comparison grids use Excel-like visual cues.
-Cells with differing values are highlighted, and side-only rows highlight missing-side values for faster scanning.
-
-* Downloads are provided through one unified `Download` action with a format selector for `json`, `yaml`, or `excel` (the selector defaults to `json`).
-
-* Logout from the top-right account menu.
-
-=== Walkthrough
-
-The login and logout flow now looks like this.
-
-image:docs/images/webapp-login-modal.png[Webapp startup login modal (current walkthrough)]
-
-After successful login, the main shell shows the top-right account menu.
-
-image:docs/images/webapp-after-login-account-menu.png[Webapp after login with account menu (current walkthrough)]
-
-Opening the account menu shows the logout action.
-
-image:docs/images/webapp-account-menu-open.png[Webapp account menu with logout action (current walkthrough)]
-
-After logout, the app returns to the login modal dialog.
-
-image:docs/images/webapp-after-logout-login-modal.png[Webapp after logout returns to login modal (current walkthrough)]
-
-The initial table-selection view looks like this.
-
-image:docs/images/webapp-main.png[Webapp table selection with footer status bar (current walkthrough)]
-
-After selecting eligible tables and clicking `Compare`, the right-side stage renders per-table result tabs with compact value columns.
-Tabs for tables with differences are color-highlighted, and a `Differences only` checkbox can hide unchanged tables.
-Equal values are shown once, while differing values are shown inline as `L: ... | R: ...`.
-Excel-like status coloring and unified JSON/YAML/Excel download controls are preserved.
-
-image:docs/images/webapp-selected.png[Webapp table comparison results in tabs (current walkthrough)]
-
-When the navigation drawer is collapsed, the collapsed state is captured for visual regression coverage.
-
-image:docs/images/webapp-collapsed.png[Webapp with collapsed navigation (current walkthrough)]
-
-Table selection remains strategy-driven via `SelectionPlan` and is intentionally decoupled from CLI table flags.
-This manual panel is the first user-facing stage and is designed to evolve toward auto-selection plus manual include/exclude overrides.
-
-Migration notes:
-- Removed: `sqlcomparer.webapp.comparison.table-selection.tables`
-- Removed: `sqlcomparer.webapp.comparison.table-selection.tables-file`
-- Replacement: `sqlcomparer.webapp.selection-plan.explicit.tables`
-
-Run webapp connectivity-validation tests (Docker required):
-
-[source,bash]
-----
-scripts/test-webapp-connectivity-validation.sh
-----
-
-Run headless Playwright browser tests for login + connectivity status flows (Docker required):
-
-[source,bash]
-----
-scripts/test-webapp-playwright-connectivity.sh
-----
-
-Playwright tests are headless and use Testcontainers-backed SQL Server settings to keep runs reproducible in local and CI environments.
-
-=== Fixture SQL Server
-
-Use `scripts/fixture-sqlserver.sh` to manage a local SQL Server container for the fixture example.
-The script starts SQL Server 2022, creates `left_db` and `right_db`, and loads fixture data for the example tables.
-The script also supports invalid-target and missing-system-tables modes for manual login-validation failure testing.
-
-Start the fixture:
-
-[source,bash]
-----
-scripts/fixture-sqlserver.sh start
-----
-
-Start the fixture in invalid-target mode:
-
-[source,bash]
-----
-scripts/fixture-sqlserver.sh start --invalid-target-db
-----
-
-In invalid-target mode, the script prints a non-existent target database name for manual login testing.
-
-Start the fixture with missing required target system objects:
-
-[source,bash]
-----
-scripts/fixture-sqlserver.sh start --missing-system-tables
-----
-
-In missing-system-tables mode, the target database exists but required objects are removed after fixture load.
-
-Check fixture status:
-
-[source,bash]
-----
-scripts/fixture-sqlserver.sh status
-----
-
-Stop and remove the fixture:
-
-[source,bash]
-----
-scripts/fixture-sqlserver.sh stop
-----
-
-By default the fixture listens on `localhost:14333` and uses the container name `sqlcomparer-fixture-sqlserver`.
-Override the host port if needed:
-
-[source,bash]
-----
-CFCT_FIXTURE_PORT=14334 scripts/fixture-sqlserver.sh start
-----
-
-If you change the port, also update the env file used by the comparison wrapper or pass a different env file with `--env-file` or `CFCT_ENV_FILE`.
-Use `CFCT_INVALID_TARGET_DATABASE` to override the invalid target name used by `--invalid-target-db`.
-
-=== CLI wrapper (`cfct.sh`) usage
-
-`cfct.sh` is the root comparison wrapper script.
-It expects the CLI jar to already exist and then invokes the Java CLI with an env file.
-By default, the env file is `.env` in the current directory.
-The wrapper has no default tables file; provide table selection by passing `--tables-file`, passing `-t`, or setting `CFCT_TABLES_FILE`.
-`--env-file <path>` takes precedence over `CFCT_ENV_FILE`.
-
-For the fixture example, build the CLI jar, start the fixture, then run:
-
-[source,bash]
-----
-./cfct.sh --env-file demo/.env --tables-file demo/tables.txt
-----
-
-Equivalent usage with environment overrides:
-
-[source,bash]
-----
-CFCT_ENV_FILE=demo/.env \
-CFCT_TABLES_FILE=demo/tables.txt \
-./cfct.sh
-----
-
-This overrides the server value from the env file:
-
-[source,bash]
-----
-./cfct.sh --env-file demo/.env --tables-file demo/tables.txt -S localhost:14334
-----
-
-This writes JSON output instead of the default text output:
-
-[source,bash]
-----
-./cfct.sh --env-file demo/.env --tables-file demo/tables.txt --output-format json
-----
-
-Equivalent short-flag example (passed through by the wrapper):
-
-[source,bash]
-----
-./cfct.sh --env-file demo/.env --tables-file demo/tables.txt -f json
-----
-
-This writes JSON output to a file:
-
-[source,bash]
-----
-./cfct.sh --env-file demo/.env --tables-file demo/tables.txt --output-format json -o comparison.json
-----
-
-This writes YAML output instead of the default text output:
-
-[source,bash]
-----
-./cfct.sh --env-file demo/.env --tables-file demo/tables.txt --output-format yaml
-----
-
-This writes Excel output to a workbook file:
-
-[source,bash]
-----
-./cfct.sh --env-file demo/.env --tables-file demo/tables.txt --output-format excel -o comparison.xlsx
-----
-
-The wrapper supports these environment overrides:
-
-* `CFCT_ENV_FILE`: env file path, defaulting to `.env` in the current directory.
-* `CFCT_TABLES_FILE`: optional table list file path, with no default.
-* `CFCT_CLI_JAR`: CLI jar path, defaulting to `cfct-cli/target/cfct-cli-0.0.1-SNAPSHOT.jar`.
-
-=== CLI env files and table files
-
-Use `.env.TEMPLATE` as the starting point for a user-managed env file.
-Copy it to `.env` in the directory from which you run `cfct.sh`, or store it elsewhere and set `CFCT_ENV_FILE`.
-Do not commit real production credentials.
-
-`demo/.env` contains fixture-only connection values using the CLI-supported dotenv keys:
-
-[source,dotenv]
-----
-CFCT_SERVER=localhost:14333
-CFCT_USERNAME=sa
-CFCT_PASSWORD=Str0ng_password!123
-CFCT_LEFT_DATABASE=left_db
-CFCT_RIGHT_DATABASE=right_db
-----
-
-`demo/tables.txt` contains one table reference per line:
-
-[source,text]
-----
-dbo.Supplier
-dbo.Product
-dbo.CustomerAddress
-dbo.PurchaseOrder
-----
-
-These demo files are examples for the local fixture only.
-Do not put production credentials in committed demo files.
-
-=== Direct CLI usage
-
-You can run the CLI jar directly after building it:
-
-[source,bash]
-----
-java -jar cfct-cli/target/cfct-cli-0.0.1-SNAPSHOT.jar \
-  -S localhost:14333 \
-  -U sa \
-  -P 'Str0ng_password!123' \
-  -l left_db \
-  -r right_db \
-  -t dbo.Supplier,dbo.Product,dbo.PurchaseOrder \
-  --output-format text
-----
-
-The CLI supports these connection options:
-
-* `-S` / `--server`: SQL Server host, optionally including a port such as `localhost:14333`.
-* `-U` / `--username`: SQL Server username.
-* `-P` / `--password`: SQL Server password.
-* `-l` / `--left-database`: left database name.
-* `-r` / `--right-database`: right database name.
-
-The CLI supports these table-selection options:
-
-* `-t` / `--tables`: comma-separated `schema.table` list.
-* `-F` / `--tables-file`: path to a flat file with one `schema.table` reference per line.
-* `--commands-from`: inclusive command timestamp range start (ISO-8601 local date-time, for example `2026-05-01T10:00:00`).
-* `--commands-to`: inclusive command timestamp range end (ISO-8601 local date-time, for example `2026-05-01T11:00:00`).
-
-The CLI supports these dotenv options:
-
-* `-e` / `--env-file`: path to a file containing `CFCT_SERVER`, `CFCT_USERNAME`, `CFCT_PASSWORD`, `CFCT_LEFT_DATABASE`, and `CFCT_RIGHT_DATABASE`.
-
-Default comparison behavior now discovers business-key objects (unique indexes or unique constraints) using the `_PK` suffix.
-By default, technical identifier columns are ignored for value comparison, including identity-backed columns, columns named `guid` or `uuid`, and SQL Server `UNIQUEIDENTIFIER` columns.
-The default ignored set still includes `version`.
-
-The CLI supports these output options:
-
-* `-f` / `--output-format`: one of `text`, `json`, `yaml`, or `excel`.
-* `-o` / `--output-file`: optional output file path for successful output.
-
-`text` is the default when `--output-format` is omitted.
-Text, JSON, and YAML are written to stdout as UTF-8 when `-o` is omitted.
-When `-o` is supplied, successful output is written to that file instead.
-CLI comparison progress is emitted to stderr as per-table progress lines so stdout or output files remain reserved for comparison artifacts.
-Excel output requires `-o`, for example `--output-format excel -o comparison.xlsx`.
-
-Explicit CLI values override values loaded from `--env-file`.
-Use exactly one selection mode.
-Use explicit table mode (`-t` or `--tables-file`) or command-time-range mode (`--commands-from` and `--commands-to`).
-Do not mix explicit table and command-time-range options in the same invocation.
-
-Example command-time-range invocation:
-
-[source,bash]
-----
-java -jar cfct-cli/target/cfct-cli-0.0.1-SNAPSHOT.jar \
-  --env-file demo/.env \
-  --commands-from 2026-05-01T10:00:00 \
-  --commands-to 2026-05-01T11:00:00 \
-  --output-format json
-----
-
-In command-time-range mode, the CLI selects commands inclusively at both range boundaries and infers business tables for comparison from those commands.
-
-=== Testing conventions
-
-Use AssertJ for fluent assertions in harness tests.
-Use JUnit 5 parameterized tests with `@EnumSource` when the same behavior must be checked across the left and right logical databases or similar modes.
-Use Approvals for stable textual, JSON, Excel, or tabular outputs when characterization-style verification is clearer than many small assertions.
-
-=== Scope guardrail
-
-The fixture scripts and integration harness are intentionally narrow.
-They own local/example SQL Server lifecycle, logical database creation, fixture initialization, and smoke-test setup.
-They do not implement comparison logic, reporting logic, or a broader database support matrix.
