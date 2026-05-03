@@ -12,6 +12,7 @@ The Grid SHALL NOT include a dedicated eligibility column.
 The Grid SHALL make ineligible rows non-selectable and expose the eligibility reason as a tooltip.
 The Grid SHALL support sorting table rows by visible table-identity columns.
 The Grid SHALL support filtering table rows by visible table-identity values without requiring a separate apply-filter action.
+The Grid SHALL support Space-key toggling of the focused eligible row.
 The selection drawer SHALL NOT display a `Select tables` heading or selected-table count.
 The schema column SHALL auto-size to fit visible schema values.
 The selection control column SHALL be center-aligned.
@@ -37,6 +38,10 @@ The manual selection state SHALL be available as input to the later comparison-e
 #### Scenario: Ineligible row is non-selectable
 - **WHEN** the table-selection Grid includes an ineligible table
 - **THEN** the table row cannot be selected and exposes an eligibility reason tooltip
+
+#### Scenario: Focused eligible row toggles with Space
+- **WHEN** keyboard focus is on an eligible row in the table-selection Grid and user presses Space
+- **THEN** that row selection is toggled using the same selection-state update path as checkbox interaction
 
 #### Scenario: Schema column auto-sizes for content
 - **WHEN** the table-selection Grid renders schema values
