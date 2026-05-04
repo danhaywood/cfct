@@ -64,37 +64,6 @@ In this mode, the target database exists but required system tables/views are mi
 
 
 
-=== Smoke Tests
-
-* Run webapp connectivity-validation tests (Docker required):
-+
-[source,bash]
-----
-scripts/test-webapp-connectivity-validation.sh
-----
-
-* Run headless Playwright browser tests for login + connectivity status flows (Docker required):
-+
-[source,bash]
-----
-mvn -pl cfct-webapp -am \
-  -Dplaywright=true \
-  -Dtest=HomePageConnectionStatusPlaywrightSuccessTest,HomePageConnectionStatusPlaywrightFailureTest \
-  -Dsurefire.failIfNoSpecifiedTests=false \
-  test
-----
-+
-Playwright tests are headless and use Testcontainers-backed SQL Server settings to keep runs reproducible in local and CI environments.
-+
-* Run layered webapp Docker image smoke test (Docker required):
-+
-[source,bash]
-----
-scripts/test-webapp-layered-image.sh
-----
-+
-This smoke test builds the webapp jar, validates layertools metadata, builds the layered Docker image, and checks that the container becomes reachable.
-
 == User guide for Webapp
 
 === Walkthrough
@@ -686,6 +655,38 @@ The `jar tf` check confirms the production `index.html` is present before image 
 The webapp is reachable at http://localhost:8080 when the container is running.
 
 If browser access shows a whitelabel error and logs include `Unable to find index.html`, rebuild the jar with Maven package and recheck the classpath entry above before rebuilding the image.
+
+=== Smoke Tests
+
+* Run webapp connectivity-validation tests (Docker required):
++
+[source,bash]
+----
+scripts/test-webapp-connectivity-validation.sh
+----
+
+* Run headless Playwright browser tests for login + connectivity status flows (Docker required):
++
+[source,bash]
+----
+mvn -pl cfct-webapp -am \
+  -Dplaywright=true \
+  -Dtest=HomePageConnectionStatusPlaywrightSuccessTest,HomePageConnectionStatusPlaywrightFailureTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  test
+----
++
+Playwright tests are headless and use Testcontainers-backed SQL Server settings to keep runs reproducible in local and CI environments.
++
+* Run layered webapp Docker image smoke test (Docker required):
++
+[source,bash]
+----
+scripts/test-webapp-layered-image.sh
+----
++
+This smoke test builds the webapp jar, validates layertools metadata, builds the layered Docker image, and checks that the container becomes reachable.
+
 
 === Docker Hub publishing with GitHub Actions
 

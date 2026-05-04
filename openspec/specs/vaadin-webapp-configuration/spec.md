@@ -19,7 +19,8 @@ The webapp module SHALL use a stable Vaadin Flow release line, selecting the lat
 
 ### Requirement: Webapp configuration models the same logical inputs as CLI
 The webapp SHALL use Spring datasource properties for connection defaults: `spring.datasource.url`, `spring.datasource.driver-class-name`, `spring.datasource.username`, and `spring.datasource.password`.
-The webapp SHALL provide typed configuration properties for non-datasource execution preferences such as database names, env-file path, output format, and output file.
+The webapp SHALL provide typed configuration properties for webapp execution preferences `cfct.webapp.connection.left-database`, `cfct.webapp.connection.right-database`, `cfct.webapp.validation.enabled`, and `cfct.webapp.validation.fail-fast`.
+The webapp SHALL NOT provide runtime configuration keys for CLI-only concerns such as env-file and output format/file selection.
 The webapp SHALL provide typed configuration properties for default ignore-column advisor enablement flags.
 The webapp SHALL allow independent enable or disable control for identity, uuid/guid, timestamp, and extended-properties ignore advisors.
 The webapp SHALL default each default ignore-column advisor enablement flag to enabled.
