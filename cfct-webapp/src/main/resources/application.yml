@@ -17,7 +17,3 @@ cfct:
       validation:
         enabled: true
         fail-fast: true
-    selection-plan:
-      explicit:
-        tables:
-          - dbo.Supplier
