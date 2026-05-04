@@ -1,0 +1,103 @@
+## MODIFIED Requirements
+
+### Requirement: Webapp exposes a manual table catalog for selection
+The webapp SHALL discover and present a manual table catalog for comparison selection.
+The webapp SHALL present the catalog in a Vaadin Grid in the AppLayout navigation area.
+The manual table-selection grid SHALL be positioned below the command-selection grid when both sections are present.
+Each catalog row SHALL include table identity.
+The Grid SHALL NOT include a dedicated eligibility column.
+The Grid SHALL make ineligible rows non-selectable and expose the eligibility reason as a tooltip.
+The Grid SHALL support sorting table rows by visible table-identity columns.
+The Grid SHALL support filtering table rows by visible table-identity values without requiring a separate apply-filter action.
+The Grid SHALL support Space-key toggling of the focused eligible row.
+The selection drawer SHALL NOT display a `Select tables` heading or selected-table count.
+The schema column SHALL auto-size to fit visible schema values.
+The selection control column SHALL be center-aligned.
+The selection control column header SHALL be blank and SHALL NOT render `Select` text.
+The manual selection state SHALL be available as input to the later comparison-execution stage.
+The business table selection section SHALL provide a `Selected only` checkbox control.
+The `Selected only` checkbox SHALL be checked by default.
+When `Selected only` is checked, the table grid SHALL show only currently selected business table rows.
+When `Selected only` is unchecked, the table grid SHALL show selected and unselected business table rows subject to existing table-identity filters.
+Toggling `Selected only` SHALL change row visibility only and SHALL NOT directly change underlying row selection state.
+
+#### Scenario: Catalog lists candidate tables
+- **WHEN** the home page initializes table-selection data
+- **THEN** users see a Vaadin Grid in the navigation area with one row per table and per-row selection controls for eligible rows
+
+#### Scenario: Selection drawer omits redundant labels
+- **WHEN** the home page renders the table-selection drawer
+- **THEN** the drawer does not show a `Select tables` heading or selected-table count
+
+#### Scenario: User sorts candidate tables
+- **WHEN** a user sorts the table-selection Grid by a visible table-identity column
+- **THEN** the visible candidate table rows are reordered according to the selected sort direction
+
+#### Scenario: User filters candidate tables
+- **WHEN** a user enters a table-identity filter in the table-selection Grid
+- **THEN** the visible candidate table rows are narrowed to rows matching the filter without pressing an apply-filter button
+
+#### Scenario: Ineligible row is non-selectable
+- **WHEN** the table-selection Grid includes an ineligible table
+- **THEN** the table row cannot be selected and exposes an eligibility reason tooltip
+
+#### Scenario: Focused eligible row toggles with Space
+- **WHEN** keyboard focus is on an eligible row in the table-selection Grid and user presses Space
+- **THEN** that row selection is toggled using the same selection-state update path as checkbox interaction
+
+#### Scenario: Schema column auto-sizes for content
+- **WHEN** the table-selection Grid renders schema values
+- **THEN** the schema column width auto-sizes to fit visible schema content without unnecessary truncation
+
+#### Scenario: Select column is centered with blank header
+- **WHEN** the table-selection Grid renders selection controls
+- **THEN** the selection control column is center-aligned and its header does not display `Select`
+
+#### Scenario: Selected tables become execution input
+- **WHEN** a user marks eligible tables as selected
+- **THEN** the resulting selected-table set is available as the stage-one output for comparison execution
+
+#### Scenario: Manual table grid remains below command selection
+- **WHEN** command selection and manual table selection sections are both visible
+- **THEN** the manual table-selection grid is rendered below the command-selection grid
+
+#### Scenario: Selected only filter defaults to checked
+- **WHEN** the business table selection section is first rendered
+- **THEN** the `Selected only` checkbox is checked
+- **AND** only selected business table rows are visible
+
+#### Scenario: User reveals all business tables by unchecking selected only
+- **WHEN** the user unchecks `Selected only`
+- **THEN** the grid shows both selected and unselected business table rows
+- **AND** previously selected rows remain selected
+
+### Requirement: Manual table grid accepts command-driven programmatic selections
+The manual table grid SHALL accept programmatic selection updates from command footprint resolution.
+Programmatic updates SHALL only affect rows that are present in the visible business table catalog.
+Programmatic updates SHALL not fail when touched tables are unmapped or absent from the catalog.
+When `Selected only` is checked, command-driven programmatic selections SHALL update visible grid rows so newly selected matches become visible.
+When command-driven recomputation deselects rows while `Selected only` is checked, those rows SHALL no longer remain visible.
+
+#### Scenario: Command-driven selections apply only to visible business rows
+- **WHEN** command footprint resolution returns a touched table set
+- **THEN** only matching business table rows that exist in the manual table grid are selected
+- **AND** unmatched touched tables are ignored
+
+#### Scenario: Manual filtering remains stable with command-driven selections
+- **WHEN** command-driven table selections are active
+- **AND** the user applies or clears business table filters
+- **THEN** selected-state consistency is preserved for the underlying selected table set
+
+#### Scenario: Compare readiness reflects command-driven selected tables
+- **WHEN** command-driven updates select one or more eligible business table rows
+- **THEN** compare readiness is evaluated using the updated selected table set
+
+#### Scenario: Command-driven selected rows stay visible with selected-only enabled
+- **WHEN** `Selected only` is checked
+- **AND** command selection changes produce a new touched-table union
+- **THEN** rows that are newly selected by the command-driven update are visible in the business table grid
+
+#### Scenario: Command-driven deselected rows are hidden with selected-only enabled
+- **WHEN** `Selected only` is checked
+- **AND** command deselection recomputation removes previously selected business rows
+- **THEN** those rows are no longer visible in the business table grid
