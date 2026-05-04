@@ -38,11 +38,12 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
         PlaywrightSqlServerFixture.createDatabaseIfMissing(RIGHT_DB);
         PlaywrightSqlServerFixture.prepareManualSelectionTables(LEFT_DB);
         PlaywrightSqlServerFixture.prepareManualSelectionTables(RIGHT_DB);
-        registry.add("cfct.webapp.comparison.connection.server", PlaywrightSqlServerFixture::server);
-        registry.add("cfct.webapp.comparison.connection.username", PlaywrightSqlServerFixture::username);
-        registry.add("cfct.webapp.comparison.connection.password", PlaywrightSqlServerFixture::password);
-        registry.add("cfct.webapp.comparison.connection.left-database", () -> LEFT_DB);
-        registry.add("cfct.webapp.comparison.connection.right-database", () -> RIGHT_DB);
+        registry.add("spring.datasource.url", PlaywrightSqlServerFixture::jdbcUrl);
+        registry.add("spring.datasource.driver-class-name", () -> "com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        registry.add("spring.datasource.username", PlaywrightSqlServerFixture::username);
+        registry.add("spring.datasource.password", PlaywrightSqlServerFixture::password);
+        registry.add("cfct.webapp.comparison.left-database", () -> LEFT_DB);
+        registry.add("cfct.webapp.comparison.right-database", () -> RIGHT_DB);
     }
 
     @Test
@@ -155,7 +156,7 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
             assertThat(page.locator("[data-testid='hamburger-menu']").count()).isEqualTo(1);
             final String footerText = page.locator("[data-testid='connection-details-footer']").innerText();
-            assertThat(footerText).contains(PlaywrightSqlServerFixture.server(), LEFT_DB, RIGHT_DB, "Status: OK");
+            assertThat(footerText).contains(PlaywrightSqlServerFixture.jdbcUrl(), LEFT_DB, RIGHT_DB, "Status: OK");
             assertThat(footerText).doesNotContain(PlaywrightSqlServerFixture.password(), "SQL connectivity status");
 
             assertThat(page.locator("[data-testid='selected-table-feedback']").count()).isZero();
@@ -277,7 +278,7 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
 
     private void fillLoginForm(final Page page, final String leftDb, final String rightDb) {
-        setLoginField(page, "login-server", PlaywrightSqlServerFixture.server());
+        setLoginField(page, "login-jdbc-url", PlaywrightSqlServerFixture.jdbcUrl());
         setLoginField(page, "login-username", PlaywrightSqlServerFixture.username());
         setLoginField(page, "login-password", PlaywrightSqlServerFixture.password());
         setLoginField(page, "login-left-database", leftDb);

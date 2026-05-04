@@ -1,12 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:sqlserver://localhost:14333;encrypt=false;trustServerCertificate=true
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    username: sa
+    password: Str0ng_password!123
+
 cfct:
   webapp:
     comparison:
-      connection:
-        server: localhost:14333
-        username: sa
-        password: change-me
-        left-database: left_db
-        right-database: right_db
+      left-database: left_db
+      right-database: right_db
       env-file: .env
       output:
         format: text
@@ -14,9 +17,6 @@ cfct:
       validation:
         enabled: true
         fail-fast: true
-    # Migration note: legacy keys removed
-    # - cfct.webapp.comparison.table-selection.tables
-    # - cfct.webapp.comparison.table-selection.tables-file
     selection-plan:
       explicit:
         tables:

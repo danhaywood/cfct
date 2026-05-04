@@ -4,7 +4,6 @@ import com.danhaywood.cfct.webapp.auth.ConnectionLoginRequest;
 import com.danhaywood.cfct.webapp.auth.WebappAuthenticationService;
 
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -18,7 +17,8 @@ public class LoginForm extends VerticalLayout {
     private final WebappAuthenticationService authenticationService;
     private final Runnable onSuccess;
 
-    private final TextField server = new TextField("Server");
+    private final TextField jdbcUrl = new TextField("JDBC URL");
+    private final TextField jdbcDriver = new TextField("JDBC Driver");
     private final TextField username = new TextField("Username");
     private final PasswordField password = new PasswordField("Password");
     private final TextField leftDatabase = new TextField("Left database");
@@ -40,9 +40,8 @@ public class LoginForm extends VerticalLayout {
         fieldsColumn.setWidthFull();
         fieldsColumn.getStyle().set("min-width", "3rem");
 
-//        fieldsColumn.add(new H2("Login"));
-
-        server.getElement().setAttribute("data-testid", "login-server");
+        jdbcUrl.getElement().setAttribute("data-testid", "login-jdbc-url");
+        jdbcDriver.getElement().setAttribute("data-testid", "login-jdbc-driver");
         username.getElement().setAttribute("data-testid", "login-username");
         password.getElement().setAttribute("data-testid", "login-password");
         leftDatabase.getElement().setAttribute("data-testid", "login-left-database");
@@ -50,9 +49,10 @@ public class LoginForm extends VerticalLayout {
 
         final ConnectionLoginRequest configuredDefaults = authenticationService.loginDefaults();
         final ConnectionLoginRequest defaults = configuredDefaults == null
-                ? new ConnectionLoginRequest(null, null, null, null, null)
+                ? new ConnectionLoginRequest(null, null, null, null, null, null)
                 : configuredDefaults;
-        server.setValue(orEmpty(defaults.server()));
+        jdbcUrl.setValue(orEmpty(defaults.jdbcUrl()));
+        jdbcDriver.setValue(orEmpty(defaults.jdbcDriver()));
         username.setValue(orEmpty(defaults.username()));
         password.setValue(orEmpty(defaults.password()));
         leftDatabase.setValue(orEmpty(defaults.leftDatabase()));
@@ -65,7 +65,7 @@ public class LoginForm extends VerticalLayout {
         error.getElement().setAttribute("data-testid", "login-error");
         error.getStyle().set("color", "var(--lumo-error-text-color)");
 
-        fieldsColumn.add(server, username, password, leftDatabase, rightDatabase, login, error);
+        fieldsColumn.add(jdbcUrl, jdbcDriver, username, password, leftDatabase, rightDatabase, login, error);
 
         final VerticalLayout brandingPanel = new VerticalLayout();
         brandingPanel.getElement().setAttribute("data-testid", "login-branding-panel");
@@ -103,7 +103,8 @@ public class LoginForm extends VerticalLayout {
         error.setText("");
         try {
             authenticationService.authenticate(new ConnectionLoginRequest(
-                    server.getValue(),
+                    jdbcUrl.getValue(),
+                    jdbcDriver.getValue(),
                     username.getValue(),
                     password.getValue(),
                     leftDatabase.getValue(),

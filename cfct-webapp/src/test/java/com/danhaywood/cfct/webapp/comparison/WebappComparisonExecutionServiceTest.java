@@ -70,7 +70,7 @@ class WebappComparisonExecutionServiceTest {
     }
 
     private static AuthenticatedConnectionContext mockContext() {
-        return new AuthenticatedConnectionContext("server", "sa", "secret", "left_db", "right_db");
+        return new AuthenticatedConnectionContext("jdbc:sqlserver://server", "com.microsoft.sqlserver.jdbc.SQLServerDriver", "sa", "secret", "left_db", "right_db");
     }
 
     private static final class RecordingComparisonService implements MultiTableComparisonService {

@@ -17,7 +17,7 @@ class CliArgumentsParserTest {
     @Test
     void parsesRequiredArgumentsAndOrderedTables() {
         final CliArguments arguments = parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -25,7 +25,7 @@ class CliArgumentsParserTest {
                 "-t", "dbo.Supplier,dbo.PurchaseOrder"
         });
 
-        assertThat(arguments.server()).isEqualTo("server-host");
+        assertThat(arguments.jdbcUrl()).isEqualTo("jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true");
         assertThat(arguments.username()).isEqualTo("sa");
         assertThat(arguments.password()).isEqualTo("secret");
         assertThat(arguments.leftDatabase()).isEqualTo("left_db");
@@ -39,7 +39,7 @@ class CliArgumentsParserTest {
     @Test
     void parsesOptionalOutputFile() {
         final CliArguments arguments = parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -54,7 +54,7 @@ class CliArgumentsParserTest {
     @Test
     void requiresOutputFileForExcelOutput() {
         assertThatThrownBy(() -> parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -70,7 +70,7 @@ class CliArgumentsParserTest {
     @Test
     void acceptsExcelOutputWhenOutputFileIsProvided() {
         final CliArguments arguments = parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -87,9 +87,9 @@ class CliArgumentsParserTest {
     @Test
     void supportsShortFlagsForLongOptions(@TempDir final Path tempDir) throws IOException {
         final Path envFile = writeEnvFile(tempDir, """
-                CFCT_SERVER=server-from-env
-                CFCT_USERNAME=user-from-env
-                CFCT_PASSWORD=password-from-env
+                SPRING_DATASOURCE_URL=server-from-env
+                SPRING_DATASOURCE_USERNAME=user-from-env
+                SPRING_DATASOURCE_PASSWORD=password-from-env
                 CFCT_LEFT_DATABASE=left_from_env
                 CFCT_RIGHT_DATABASE=right_from_env
                 """);
@@ -103,7 +103,7 @@ class CliArgumentsParserTest {
                 "-o", "comparison.json"
         });
 
-        assertThat(arguments.server()).isEqualTo("server-from-env");
+        assertThat(arguments.jdbcUrl()).isEqualTo("server-from-env");
         assertThat(arguments.outputFormat()).isEqualTo(CliOutputFormat.JSON);
         assertThat(arguments.outputFile()).hasToString("comparison.json");
         assertThat(arguments.tables()).extracting(table -> table.displayName())
@@ -114,7 +114,7 @@ class CliArgumentsParserTest {
     void parsesSupportedNonExcelOutputFormatsWithoutOutputFile() {
         for (CliOutputFormat outputFormat : List.of(CliOutputFormat.TEXT, CliOutputFormat.JSON, CliOutputFormat.YAML)) {
             final CliArguments arguments = parser.parse(new String[]{
-                    "-S", "server-host",
+                    "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                     "-U", "sa",
                     "-P", "secret",
                     "-l", "left_db",
@@ -130,7 +130,7 @@ class CliArgumentsParserTest {
     @Test
     void rejectsUnsupportedOutputFormat() {
         assertThatThrownBy(() -> parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -147,7 +147,7 @@ class CliArgumentsParserTest {
     @Test
     void rejectsMissingRequiredArguments() {
         assertThatThrownBy(() -> parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -160,7 +160,7 @@ class CliArgumentsParserTest {
     @Test
     void rejectsUnknownArgument() {
         assertThatThrownBy(() -> parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "--unknown", "value",
                 "-t", "dbo.Supplier"
         }))
@@ -172,7 +172,7 @@ class CliArgumentsParserTest {
     @Test
     void rejectsMissingValueForNewOptions() {
         assertThatThrownBy(() -> parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -186,7 +186,7 @@ class CliArgumentsParserTest {
     @Test
     void rejectsMalformedTableToken() {
         assertThatThrownBy(() -> parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -201,7 +201,7 @@ class CliArgumentsParserTest {
     @Test
     void rejectsBlankTableTokenFromTrailingComma() {
         assertThatThrownBy(() -> parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -218,7 +218,7 @@ class CliArgumentsParserTest {
         java.nio.file.Files.writeString(tablesFile, "dbo.Supplier\ndbo.PurchaseOrder\n");
 
         final CliArguments arguments = parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -236,7 +236,7 @@ class CliArgumentsParserTest {
         java.nio.file.Files.writeString(tablesFile, "dbo.Supplier\n\ndbo.PurchaseOrder\n");
 
         assertThatThrownBy(() -> parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -254,7 +254,7 @@ class CliArgumentsParserTest {
         java.nio.file.Files.writeString(tablesFile, "dbo.Supplier\nbrokenToken\n");
 
         assertThatThrownBy(() -> parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -272,7 +272,7 @@ class CliArgumentsParserTest {
         java.nio.file.Files.writeString(tablesFile, "dbo.Supplier\n");
 
         assertThatThrownBy(() -> parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -288,9 +288,9 @@ class CliArgumentsParserTest {
     void resolvesConnectionValuesFromEnvFile(@TempDir final Path tempDir) throws IOException {
         final Path envFile = writeEnvFile(tempDir, """
                 # local comparison defaults
-                CFCT_SERVER=server-from-env
-                CFCT_USERNAME=user-from-env
-                CFCT_PASSWORD=password-from-env
+                SPRING_DATASOURCE_URL=server-from-env
+                SPRING_DATASOURCE_USERNAME=user-from-env
+                SPRING_DATASOURCE_PASSWORD=password-from-env
                 CFCT_LEFT_DATABASE=left_from_env
                 CFCT_RIGHT_DATABASE=right_from_env
                 """);
@@ -300,7 +300,7 @@ class CliArgumentsParserTest {
                 "-t", "dbo.Supplier"
         });
 
-        assertThat(arguments.server()).isEqualTo("server-from-env");
+        assertThat(arguments.jdbcUrl()).isEqualTo("server-from-env");
         assertThat(arguments.username()).isEqualTo("user-from-env");
         assertThat(arguments.password()).isEqualTo("password-from-env");
         assertThat(arguments.leftDatabase()).isEqualTo("left_from_env");
@@ -310,21 +310,21 @@ class CliArgumentsParserTest {
     @Test
     void commandLineValuesOverrideEnvFileValues(@TempDir final Path tempDir) throws IOException {
         final Path envFile = writeEnvFile(tempDir, """
-                CFCT_SERVER=server-from-env
-                CFCT_USERNAME=user-from-env
-                CFCT_PASSWORD=password-from-env
+                SPRING_DATASOURCE_URL=server-from-env
+                SPRING_DATASOURCE_USERNAME=user-from-env
+                SPRING_DATASOURCE_PASSWORD=password-from-env
                 CFCT_LEFT_DATABASE=left_from_env
                 CFCT_RIGHT_DATABASE=right_from_env
                 """);
 
         final CliArguments arguments = parser.parse(new String[]{
                 "--env-file", envFile.toString(),
-                "-S", "server-from-cli",
+                "--jdbc-url", "jdbc:sqlserver://server-from-cli;encrypt=false;trustServerCertificate=true",
                 "-P", "password-from-cli",
                 "-t", "dbo.Supplier"
         });
 
-        assertThat(arguments.server()).isEqualTo("server-from-cli");
+        assertThat(arguments.jdbcUrl()).isEqualTo("jdbc:sqlserver://server-from-cli;encrypt=false;trustServerCertificate=true");
         assertThat(arguments.username()).isEqualTo("user-from-env");
         assertThat(arguments.password()).isEqualTo("password-from-cli");
         assertThat(arguments.leftDatabase()).isEqualTo("left_from_env");
@@ -334,7 +334,7 @@ class CliArgumentsParserTest {
     @Test
     void missingDefaultEnvFileIsIgnoredWhenCommandLineValuesAreComplete() {
         final CliArguments arguments = parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -342,7 +342,7 @@ class CliArgumentsParserTest {
                 "-t", "dbo.Supplier"
         });
 
-        assertThat(arguments.server()).isEqualTo("server-host");
+        assertThat(arguments.jdbcUrl()).isEqualTo("jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true");
         assertThat(arguments.tables()).extracting(table -> table.displayName())
                 .containsExactly("dbo.Supplier");
     }
@@ -350,9 +350,9 @@ class CliArgumentsParserTest {
     @Test
     void loadsDefaultEnvFileFromWorkingDirectory(@TempDir final Path tempDir) throws IOException {
         writeEnvFile(tempDir, """
-                CFCT_SERVER=server-from-default-env
-                CFCT_USERNAME=user-from-default-env
-                CFCT_PASSWORD=password-from-default-env
+                SPRING_DATASOURCE_URL=server-from-default-env
+                SPRING_DATASOURCE_USERNAME=user-from-default-env
+                SPRING_DATASOURCE_PASSWORD=password-from-default-env
                 CFCT_LEFT_DATABASE=left_from_default_env
                 CFCT_RIGHT_DATABASE=right_from_default_env
                 """);
@@ -364,7 +364,7 @@ class CliArgumentsParserTest {
                     "-t", "dbo.Supplier"
             });
 
-            assertThat(arguments.server()).isEqualTo("server-from-default-env");
+            assertThat(arguments.jdbcUrl()).isEqualTo("server-from-default-env");
             assertThat(arguments.username()).isEqualTo("user-from-default-env");
             assertThat(arguments.password()).isEqualTo("password-from-default-env");
             assertThat(arguments.leftDatabase()).isEqualTo("left_from_default_env");
@@ -377,9 +377,9 @@ class CliArgumentsParserTest {
     @Test
     void rejectsUnresolvedConnectionValue(@TempDir final Path tempDir) throws IOException {
         final Path envFile = writeEnvFile(tempDir, """
-                CFCT_SERVER=server-from-env
-                CFCT_USERNAME=user-from-env
-                CFCT_PASSWORD=password-from-env
+                SPRING_DATASOURCE_URL=server-from-env
+                SPRING_DATASOURCE_USERNAME=user-from-env
+                SPRING_DATASOURCE_PASSWORD=password-from-env
                 CFCT_LEFT_DATABASE=left_from_env
                 """);
 
@@ -394,7 +394,7 @@ class CliArgumentsParserTest {
     @Test
     void parsesCommandTimeRangeSelectionMode() {
         final CliArguments arguments = parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -412,7 +412,7 @@ class CliArgumentsParserTest {
     @Test
     void rejectsMixedExplicitTableAndCommandTimeRangeModes() {
         assertThatThrownBy(() -> parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -428,7 +428,7 @@ class CliArgumentsParserTest {
     @Test
     void rejectsIncompleteCommandTimeRangeMode() {
         assertThatThrownBy(() -> parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -442,7 +442,7 @@ class CliArgumentsParserTest {
     @Test
     void rejectsInvalidCommandTimeRangeTimestamp() {
         assertThatThrownBy(() -> parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",
@@ -457,7 +457,7 @@ class CliArgumentsParserTest {
     @Test
     void rejectsCommandTimeRangeWhenEndBeforeStart() {
         assertThatThrownBy(() -> parser.parse(new String[]{
-                "-S", "server-host",
+                "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                 "-U", "sa",
                 "-P", "secret",
                 "-l", "left_db",

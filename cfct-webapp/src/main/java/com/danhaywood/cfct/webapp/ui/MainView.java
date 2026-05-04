@@ -1021,16 +1021,16 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
     private void refreshConnectionFooter() {
         final AuthenticatedConnectionContext context = authenticatedContextHolder.current().orElseGet(() -> {
-            final WebappComparisonProperties.Connection configured = properties.getConnection();
             return new AuthenticatedConnectionContext(
-                    configured.getServer(),
-                    configured.getUsername(),
-                    configured.getPassword(),
-                    configured.getLeftDatabase(),
-                    configured.getRightDatabase());
+                    properties.getDatasourceUrl(),
+                    properties.getDatasourceDriverClassName(),
+                    properties.getDatasourceUsername(),
+                    properties.getDatasourcePassword(),
+                    properties.getLeftDatabase(),
+                    properties.getRightDatabase());
         });
 
-        connectionServer.setText(safe(context.server()));
+        connectionServer.setText(safe(context.jdbcUrl()));
         connectionDatabases.setText(safe(context.leftDatabase()) + " ↔ " + safe(context.rightDatabase()));
 
         final ConnectionValidationStatus status = statusHolder.current();

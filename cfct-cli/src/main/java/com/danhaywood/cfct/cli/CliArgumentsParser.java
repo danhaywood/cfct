@@ -22,19 +22,21 @@ import picocli.CommandLine.Option;
 @Component
 public final class CliArgumentsParser {
 
-    private static final String SERVER = "-S";
+    private static final String JDBC_URL = "--jdbc-url";
+    private static final String JDBC_DRIVER = "--jdbc-driver";
     private static final String USER = "-U";
     private static final String PASSWORD = "-P";
     private static final String LEFT_DATABASE = "-l";
     private static final String RIGHT_DATABASE = "-r";
 
-    private static final String ENV_SERVER = "CFCT_SERVER";
-    private static final String ENV_USER = "CFCT_USERNAME";
-    private static final String ENV_PASSWORD = "CFCT_PASSWORD";
+    private static final String ENV_JDBC_URL = "SPRING_DATASOURCE_URL";
+    private static final String ENV_JDBC_DRIVER = "SPRING_DATASOURCE_DRIVER_CLASS_NAME";
+    private static final String ENV_USER = "SPRING_DATASOURCE_USERNAME";
+    private static final String ENV_PASSWORD = "SPRING_DATASOURCE_PASSWORD";
     private static final String ENV_LEFT_DATABASE = "CFCT_LEFT_DATABASE";
     private static final String ENV_RIGHT_DATABASE = "CFCT_RIGHT_DATABASE";
 
-    private static final List<String> CONNECTION_FLAGS = List.of(SERVER, USER, PASSWORD, LEFT_DATABASE, RIGHT_DATABASE);
+    private static final List<String> CONNECTION_FLAGS = List.of(JDBC_URL, JDBC_DRIVER, USER, PASSWORD, LEFT_DATABASE, RIGHT_DATABASE);
 
     public CliArguments parse(final String[] args) {
         final CliParseOptions options = parseOptions(args == null ? new String[0] : args);
@@ -48,7 +50,8 @@ public final class CliArgumentsParser {
 
         final SelectionMode selectionMode = parseSelectionMode(options);
         return new CliArguments(
-                resolvedValues.get(SERVER).trim(),
+                resolvedValues.get(JDBC_URL).trim(),
+                resolvedValues.get(JDBC_DRIVER).trim(),
                 resolvedValues.get(USER).trim(),
                 resolvedValues.get(PASSWORD),
                 resolvedValues.get(LEFT_DATABASE).trim(),
@@ -110,7 +113,9 @@ public final class CliArgumentsParser {
 
     private Map<String, String> resolveConnectionValues(final CliParseOptions options, final Map<String, String> valuesByEnvKey) {
         final Map<String, String> resolvedValues = new HashMap<>();
-        putResolvedValue(resolvedValues, options.server, valuesByEnvKey, SERVER, ENV_SERVER);
+        putResolvedValue(resolvedValues, options.jdbcUrl, valuesByEnvKey, JDBC_URL, ENV_JDBC_URL);
+        putResolvedValue(resolvedValues, options.jdbcDriver, valuesByEnvKey, JDBC_DRIVER, ENV_JDBC_DRIVER);
+        resolvedValues.putIfAbsent(JDBC_DRIVER, "com.microsoft.sqlserver.jdbc.SQLServerDriver");
         putResolvedValue(resolvedValues, options.username, valuesByEnvKey, USER, ENV_USER);
         putResolvedValue(resolvedValues, options.password, valuesByEnvKey, PASSWORD, ENV_PASSWORD);
         putResolvedValue(resolvedValues, options.leftDatabase, valuesByEnvKey, LEFT_DATABASE, ENV_LEFT_DATABASE);
@@ -274,8 +279,11 @@ public final class CliArgumentsParser {
     @Command(name = "cfct", sortOptions = false)
     private static final class CliParseOptions {
 
-        @Option(names = {"-S", "--server"})
-        private String server;
+        @Option(names = {"--jdbc-url"})
+        private String jdbcUrl;
+
+        @Option(names = {"--jdbc-driver"})
+        private String jdbcDriver;
 
         @Option(names = {"-U", "--username"})
         private String username;

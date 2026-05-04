@@ -36,12 +36,12 @@ public class SqlServerConnectivityValidationService {
             ensureDatabaseExists(master, context.leftDatabase());
             ensureDatabaseExists(master, context.rightDatabase());
         } catch (SQLException ex) {
-            throw mapConnectionError(context.server(), ex);
+            throw mapConnectionError(context.jdbcUrl(), ex);
         }
 
-        validateDatabaseReachable(context.server(), dataSources.left());
-        validateDatabaseReachable(context.server(), dataSources.right());
-        validateRequiredTargetObjects(context.server(), dataSources.right());
+        validateDatabaseReachable(context.jdbcUrl(), dataSources.left());
+        validateDatabaseReachable(context.jdbcUrl(), dataSources.right());
+        validateRequiredTargetObjects(context.jdbcUrl(), dataSources.right());
     }
 
     private void ensureDatabaseExists(final Connection masterConnection, final String databaseName) throws SQLException {
@@ -94,7 +94,7 @@ public class SqlServerConnectivityValidationService {
         }
     }
 
-    private SqlServerConnectivityValidationException mapConnectionError(final String server, final SQLException ex) {
+    private SqlServerConnectivityValidationException mapConnectionError(final String jdbcUrl, final SQLException ex) {
         final String message = (ex.getMessage() == null ? "" : ex.getMessage()).toLowerCase(Locale.ROOT);
         if (message.contains("login failed")) {
             return new SqlServerConnectivityValidationException(
@@ -102,7 +102,7 @@ public class SqlServerConnectivityValidationService {
         }
         if (message.contains("tcp/ip connection") || message.contains("connection refused") || message.contains("timed out")) {
             return new SqlServerConnectivityValidationException(
-                    "Unable to reach SQL Server at configured server '%s'.".formatted(server), ex);
+                    "Unable to reach SQL Server using configured JDBC URL '%s'.".formatted(jdbcUrl), ex);
         }
         return new SqlServerConnectivityValidationException(
                 "SQL Server connectivity validation failed: " + ex.getMessage(), ex);

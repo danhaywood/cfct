@@ -1,5 +1,6 @@
 package com.danhaywood.cfct.webapp.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -7,26 +8,22 @@ import jakarta.validation.Valid;
 
 /**
  * Maps shared Spring configuration to CLI-equivalent execution options.
- * <p>
- * Shared mapping reference:
- * <ul>
- *     <li>connection.server -> CLI -S / --server</li>
- *     <li>connection.username -> CLI -U / --username</li>
- *     <li>connection.password -> CLI -P / --password</li>
- *     <li>connection.left-database -> CLI -l / --left-database</li>
- *     <li>connection.right-database -> CLI -r / --right-database</li>
- *     <li>env-file -> CLI -e / --env-file</li>
- *     <li>output.format -> CLI -f / --output-format</li>
- *     <li>output.file -> CLI -o / --output-file</li>
- * </ul>
- * Table selection is intentionally handled by SelectionPlan strategies and not by these shared properties.
  */
 @ConfigurationProperties(prefix = "cfct.webapp.comparison")
 @Validated
 public class WebappComparisonProperties {
 
-    @Valid
-    private Connection connection = new Connection();
+    @Value("${spring.datasource.url:}")
+    private String datasourceUrl;
+
+    @Value("${spring.datasource.driver-class-name:com.microsoft.sqlserver.jdbc.SQLServerDriver}")
+    private String datasourceDriverClassName;
+
+    @Value("${spring.datasource.username:sa}")
+    private String datasourceUsername;
+
+    @Value("${spring.datasource.password:change-me}")
+    private String datasourcePassword;
 
     @Valid
     private Output output = new Output();
@@ -35,13 +32,39 @@ public class WebappComparisonProperties {
     private Validation validation = new Validation();
 
     private String envFile;
+    private String leftDatabase;
+    private String rightDatabase;
 
-    public Connection getConnection() {
-        return connection;
+    public String getDatasourceUrl() {
+        return datasourceUrl;
     }
 
-    public void setConnection(final Connection connection) {
-        this.connection = connection;
+    public void setDatasourceUrl(final String datasourceUrl) {
+        this.datasourceUrl = datasourceUrl;
+    }
+
+    public String getDatasourceDriverClassName() {
+        return datasourceDriverClassName;
+    }
+
+    public void setDatasourceDriverClassName(final String datasourceDriverClassName) {
+        this.datasourceDriverClassName = datasourceDriverClassName;
+    }
+
+    public String getDatasourceUsername() {
+        return datasourceUsername;
+    }
+
+    public void setDatasourceUsername(final String datasourceUsername) {
+        this.datasourceUsername = datasourceUsername;
+    }
+
+    public String getDatasourcePassword() {
+        return datasourcePassword;
+    }
+
+    public void setDatasourcePassword(final String datasourcePassword) {
+        this.datasourcePassword = datasourcePassword;
     }
 
     public Output getOutput() {
@@ -68,52 +91,20 @@ public class WebappComparisonProperties {
         this.envFile = envFile;
     }
 
-    public static class Connection {
-        private String server;
-        private String username;
-        private String password;
-        private String leftDatabase;
-        private String rightDatabase;
+    public String getLeftDatabase() {
+        return leftDatabase;
+    }
 
-        public String getServer() {
-            return server;
-        }
+    public void setLeftDatabase(final String leftDatabase) {
+        this.leftDatabase = leftDatabase;
+    }
 
-        public void setServer(final String server) {
-            this.server = server;
-        }
+    public String getRightDatabase() {
+        return rightDatabase;
+    }
 
-        public String getUsername() {
-            return username;
-        }
-
-        public void setUsername(final String username) {
-            this.username = username;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(final String password) {
-            this.password = password;
-        }
-
-        public String getLeftDatabase() {
-            return leftDatabase;
-        }
-
-        public void setLeftDatabase(final String leftDatabase) {
-            this.leftDatabase = leftDatabase;
-        }
-
-        public String getRightDatabase() {
-            return rightDatabase;
-        }
-
-        public void setRightDatabase(final String rightDatabase) {
-            this.rightDatabase = rightDatabase;
-        }
+    public void setRightDatabase(final String rightDatabase) {
+        this.rightDatabase = rightDatabase;
     }
 
     public static class Output {

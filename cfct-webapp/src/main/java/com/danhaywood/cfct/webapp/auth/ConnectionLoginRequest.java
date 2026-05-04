@@ -1,7 +1,8 @@
 package com.danhaywood.cfct.webapp.auth;
 
 public record ConnectionLoginRequest(
-        String server,
+        String jdbcUrl,
+        String jdbcDriver,
         String username,
         String password,
         String leftDatabase,
@@ -9,7 +10,8 @@ public record ConnectionLoginRequest(
 
     public AuthenticatedConnectionContext toAuthenticatedContext() {
         return new AuthenticatedConnectionContext(
-                required(server, "Server"),
+                required(jdbcUrl, "JDBC URL"),
+                required(jdbcDriver, "JDBC driver"),
                 required(username, "Username"),
                 required(password, "Password"),
                 required(leftDatabase, "Left database"),

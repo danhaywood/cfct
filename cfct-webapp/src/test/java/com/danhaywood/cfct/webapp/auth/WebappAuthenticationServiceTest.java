@@ -26,10 +26,10 @@ class WebappAuthenticationServiceTest {
                 authHolder,
                 statusHolder);
 
-        service.authenticate(new ConnectionLoginRequest("server", "sa", "secret", "left_db", "right_db"));
+        service.authenticate(new ConnectionLoginRequest("jdbc:sqlserver://server", "com.microsoft.sqlserver.jdbc.SQLServerDriver", "sa", "secret", "left_db", "right_db"));
 
         assertThat(authHolder.isAuthenticated()).isTrue();
-        assertThat(authHolder.required().server()).isEqualTo("server");
+        assertThat(authHolder.required().jdbcUrl()).isEqualTo("jdbc:sqlserver://server");
         assertThat(statusHolder.current().state()).isEqualTo(ConnectionValidationState.OK);
     }
 
@@ -41,9 +41,9 @@ class WebappAuthenticationServiceTest {
                 new AuthenticatedConnectionContextHolder(),
                 new ConnectionValidationStatusHolder());
 
-        assertThatThrownBy(() -> service.authenticate(new ConnectionLoginRequest("", "sa", "secret", "left_db", "right_db")))
+        assertThatThrownBy(() -> service.authenticate(new ConnectionLoginRequest("", "com.microsoft.sqlserver.jdbc.SQLServerDriver", "sa", "secret", "left_db", "right_db")))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Server is required");
+                .hasMessageContaining("JDBC URL is required");
     }
 
     @Test
@@ -51,7 +51,7 @@ class WebappAuthenticationServiceTest {
         final SqlServerConnectivityValidationService validationService = mock(SqlServerConnectivityValidationService.class);
         doThrow(new SqlServerConnectivityValidationException("Authentication failed"))
                 .when(validationService)
-                .validate(new AuthenticatedConnectionContext("server", "sa", "wrong", "left_db", "right_db"));
+                .validate(new AuthenticatedConnectionContext("jdbc:sqlserver://server", "com.microsoft.sqlserver.jdbc.SQLServerDriver", "sa", "wrong", "left_db", "right_db"));
 
         final WebappAuthenticationService service = new WebappAuthenticationService(
                 propertiesWithDefaults(),
@@ -59,7 +59,7 @@ class WebappAuthenticationServiceTest {
                 new AuthenticatedConnectionContextHolder(),
                 new ConnectionValidationStatusHolder());
 
-        assertThatThrownBy(() -> service.authenticate(new ConnectionLoginRequest("server", "sa", "wrong", "left_db", "right_db")))
+        assertThatThrownBy(() -> service.authenticate(new ConnectionLoginRequest("jdbc:sqlserver://server", "com.microsoft.sqlserver.jdbc.SQLServerDriver", "sa", "wrong", "left_db", "right_db")))
                 .isInstanceOf(SqlServerConnectivityValidationException.class)
                 .hasMessageContaining("Authentication failed");
     }
@@ -75,7 +75,7 @@ class WebappAuthenticationServiceTest {
                 authHolder,
                 statusHolder);
 
-        service.authenticate(new ConnectionLoginRequest("server", "sa", "secret", "left_db", "right_db"));
+        service.authenticate(new ConnectionLoginRequest("jdbc:sqlserver://server", "com.microsoft.sqlserver.jdbc.SQLServerDriver", "sa", "secret", "left_db", "right_db"));
         service.logout();
 
         assertThat(authHolder.isAuthenticated()).isFalse();
@@ -91,7 +91,8 @@ class WebappAuthenticationServiceTest {
                 new ConnectionValidationStatusHolder());
 
         final ConnectionLoginRequest defaults = service.loginDefaults();
-        assertThat(defaults.server()).isEqualTo("localhost:1433");
+        assertThat(defaults.jdbcUrl()).isEqualTo("jdbc:sqlserver://localhost:1433");
+        assertThat(defaults.jdbcDriver()).isEqualTo("com.microsoft.sqlserver.jdbc.SQLServerDriver");
         assertThat(defaults.username()).isEqualTo("sa");
         assertThat(defaults.password()).isEqualTo("change-me");
         assertThat(defaults.leftDatabase()).isEqualTo("left_db");
@@ -100,11 +101,12 @@ class WebappAuthenticationServiceTest {
 
     private WebappComparisonProperties propertiesWithDefaults() {
         final WebappComparisonProperties properties = new WebappComparisonProperties();
-        properties.getConnection().setServer("localhost:1433");
-        properties.getConnection().setUsername("sa");
-        properties.getConnection().setPassword("change-me");
-        properties.getConnection().setLeftDatabase("left_db");
-        properties.getConnection().setRightDatabase("right_db");
+        properties.setDatasourceUrl("jdbc:sqlserver://localhost:1433");
+        properties.setDatasourceDriverClassName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        properties.setDatasourceUsername("sa");
+        properties.setDatasourcePassword("change-me");
+        properties.setLeftDatabase("left_db");
+        properties.setRightDatabase("right_db");
         return properties;
     }
 }

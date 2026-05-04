@@ -19,11 +19,12 @@ class WebappComparisonPropertiesTest {
     void bindsSharedExecutionPropertiesFromConfiguration() {
         contextRunner
                 .withPropertyValues(
-                        "cfct.webapp.comparison.connection.server=server-host",
-                        "cfct.webapp.comparison.connection.username=sa",
-                        "cfct.webapp.comparison.connection.password=secret",
-                        "cfct.webapp.comparison.connection.left-database=left_db",
-                        "cfct.webapp.comparison.connection.right-database=right_db",
+                        "spring.datasource.url=jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
+                        "spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver",
+                        "spring.datasource.username=sa",
+                        "spring.datasource.password=secret",
+                        "cfct.webapp.comparison.left-database=left_db",
+                        "cfct.webapp.comparison.right-database=right_db",
                         "cfct.webapp.comparison.env-file=demo/.env",
                         "cfct.webapp.comparison.output.format=json",
                         "cfct.webapp.comparison.output.file=comparison.json",
@@ -32,11 +33,12 @@ class WebappComparisonPropertiesTest {
                 .run(context -> {
                     assertThat(context).hasNotFailed();
                     final WebappComparisonProperties properties = context.getBean(WebappComparisonProperties.class);
-                    assertThat(properties.getConnection().getServer()).isEqualTo("server-host");
-                    assertThat(properties.getConnection().getUsername()).isEqualTo("sa");
-                    assertThat(properties.getConnection().getPassword()).isEqualTo("secret");
-                    assertThat(properties.getConnection().getLeftDatabase()).isEqualTo("left_db");
-                    assertThat(properties.getConnection().getRightDatabase()).isEqualTo("right_db");
+                    assertThat(properties.getDatasourceUrl()).isEqualTo("jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true");
+                    assertThat(properties.getDatasourceDriverClassName()).isEqualTo("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+                    assertThat(properties.getDatasourceUsername()).isEqualTo("sa");
+                    assertThat(properties.getDatasourcePassword()).isEqualTo("secret");
+                    assertThat(properties.getLeftDatabase()).isEqualTo("left_db");
+                    assertThat(properties.getRightDatabase()).isEqualTo("right_db");
                     assertThat(properties.getEnvFile()).isEqualTo("demo/.env");
                     assertThat(properties.getOutput().getFormat()).isEqualTo("json");
                     assertThat(properties.getOutput().getFile()).isEqualTo("comparison.json");

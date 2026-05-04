@@ -365,7 +365,7 @@ class MainViewTest {
                 holder,
                 mock(WebappAuthenticationService.class));
 
-        holder.set(new AuthenticatedConnectionContext("localhost:1433", "sa", "super-secret-password", "left_db", "right_db"));
+        holder.set(new AuthenticatedConnectionContext("jdbc:sqlserver://localhost:1433", "com.microsoft.sqlserver.jdbc.SQLServerDriver", "sa", "super-secret-password", "left_db", "right_db"));
 
         assertThatCode(() -> invokeOnAuthenticationSuccess(view)).doesNotThrowAnyException();
         final Component commandGrid = findByTestId(view, "command-selection-grid").orElseThrow();
@@ -623,7 +623,7 @@ class MainViewTest {
 
     private AuthenticatedConnectionContextHolder authenticatedHolder() {
         final AuthenticatedConnectionContextHolder holder = new AuthenticatedConnectionContextHolder();
-        holder.set(new AuthenticatedConnectionContext("localhost:1433", "sa", "super-secret-password", "left_db", "right_db"));
+        holder.set(new AuthenticatedConnectionContext("jdbc:sqlserver://localhost:1433", "com.microsoft.sqlserver.jdbc.SQLServerDriver", "sa", "super-secret-password", "left_db", "right_db"));
         return holder;
     }
 
@@ -856,11 +856,11 @@ class MainViewTest {
 
     private WebappComparisonProperties propertiesWithDefaults() {
         final WebappComparisonProperties properties = new WebappComparisonProperties();
-        properties.getConnection().setServer("localhost:1433");
-        properties.getConnection().setUsername("sa");
-        properties.getConnection().setPassword("super-secret-password");
-        properties.getConnection().setLeftDatabase("left_db");
-        properties.getConnection().setRightDatabase("right_db");
+        properties.setDatasourceUrl("jdbc:sqlserver://localhost:1433;encrypt=false;trustServerCertificate=true");
+        properties.setDatasourceUsername("sa");
+        properties.setDatasourcePassword("super-secret-password");
+        properties.setLeftDatabase("left_db");
+        properties.setRightDatabase("right_db");
         return properties;
     }
 

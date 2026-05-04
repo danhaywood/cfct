@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.PrintStream;
 import java.sql.Connection;
+import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -44,8 +45,9 @@ public class CliComparisonExecutorSqlServer implements CliComparisonExecutor {
 
     @Override
     public CliExecutionOutput execute(final CliArguments arguments, final PrintStream err) throws Exception {
-        final String leftJdbcUrl = jdbcUrl(arguments.server(), arguments.leftDatabase());
-        final String rightJdbcUrl = jdbcUrl(arguments.server(), arguments.rightDatabase());
+        final String leftJdbcUrl = jdbcUrl(arguments.jdbcUrl(), arguments.leftDatabase());
+        final String rightJdbcUrl = jdbcUrl(arguments.jdbcUrl(), arguments.rightDatabase());
+        ensureDriverRegistered(arguments.jdbcDriver());
         try (Connection leftConnection = openConnection(leftJdbcUrl, arguments.username(), arguments.password());
              Connection rightConnection = openConnection(rightJdbcUrl, arguments.username(), arguments.password())) {
             final ComparisonOptions options = new ComparisonOptions(
@@ -147,8 +149,25 @@ public class CliComparisonExecutorSqlServer implements CliComparisonExecutor {
         return List.copyOf(resolved);
     }
 
-    private String jdbcUrl(final String server, final String databaseName) {
-        return "jdbc:sqlserver://%s;databaseName=%s;encrypt=false;trustServerCertificate=true"
-                .formatted(server, databaseName);
+    private void ensureDriverRegistered(final String jdbcDriver) throws Exception {
+        if (jdbcDriver == null || jdbcDriver.isBlank()) {
+            return;
+        }
+        final Class<?> loaded = Class.forName(jdbcDriver.trim());
+        if (!Driver.class.isAssignableFrom(loaded)) {
+            throw new IllegalArgumentException("Configured JDBC driver is not a java.sql.Driver: " + jdbcDriver);
+        }
+    }
+
+    private String jdbcUrl(final String jdbcUrlBase, final String databaseName) {
+        final String base = jdbcUrlBase == null ? "" : jdbcUrlBase.trim();
+        if (base.isBlank()) {
+            return base;
+        }
+        if (base.contains("databaseName=")) {
+            return base;
+        }
+        final String separator = base.contains(";") ? ";" : ";";
+        return base + separator + "databaseName=" + databaseName;
     }
 }

@@ -161,15 +161,16 @@ The `.env` file is usually easiest
 
 Specify the .env file directly using:
 
-* `-e` / `--env-file`: path to a file containing `CFCT_SERVER`, `CFCT_USERNAME`, `CFCT_PASSWORD`, `CFCT_LEFT_DATABASE`, and `CFCT_RIGHT_DATABASE`.
+d* `-e` / `--env-file`: path to a file containing `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`, `CFCT_LEFT_DATABASE`, and `CFCT_RIGHT_DATABASE`.
 +
 The `demo/.env` contains values to connect to the SQL Server fixture script:
 +
 [source,dotenv]
 ----
-CFCT_SERVER=localhost:14333
-CFCT_USERNAME=sa
-CFCT_PASSWORD=Str0ng_password!123
+SPRING_DATASOURCE_URL=jdbc:sqlserver://localhost:14333;encrypt=false;trustServerCertificate=true
+SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.microsoft.sqlserver.jdbc.SQLServerDriver
+SPRING_DATASOURCE_USERNAME=sa
+SPRING_DATASOURCE_PASSWORD=Str0ng_password!123
 CFCT_LEFT_DATABASE=left_db
 CFCT_RIGHT_DATABASE=right_db
 ----
@@ -185,7 +186,8 @@ Do not commit real production credentials.
 
 Alternatively, the connection can be specified directly:
 
-* `-S` / `--server`: SQL Server host, optionally including a port such as `localhost:14333`.
+* `--jdbc-url`: SQL Server JDBC URL, for example `jdbc:sqlserver://localhost:14333;encrypt=false;trustServerCertificate=true`.
+* `--jdbc-driver`: JDBC driver class name, for example `com.microsoft.sqlserver.jdbc.SQLServerDriver`.
 * `-U` / `--username`: SQL Server username.
 * `-P` / `--password`: SQL Server password.
 * `-l` / `--left-database`: left database name.
@@ -264,13 +266,13 @@ CFCT_TABLES_FILE=demo/tables.txt \
 ./cfct.sh
 ----
 +
-This overrides the server value from the env file:
+This overrides the JDBC URL value from the env file:
 
-* Override the server:
-=
+* Override the JDBC URL:
++
 [source,bash]
 ----
-./cfct.sh --env-file demo/.env --tables-file demo/tables.txt -S localhost:14334
+./cfct.sh --env-file demo/.env --tables-file demo/tables.txt --jdbc-url "jdbc:sqlserver://localhost:14334;encrypt=false;trustServerCertificate=true"
 ----
 
 * Writes JSON output instead of the default text output:
@@ -324,7 +326,8 @@ Equivalent short-flag example:
 [source,bash]
 ----
 java -jar cfct-cli/target/cfct-cli-0.0.1-SNAPSHOT.jar \
-  -S localhost:14333 \
+  --jdbc-url "jdbc:sqlserver://localhost:14333;encrypt=false;trustServerCertificate=true" \
+  --jdbc-driver com.microsoft.sqlserver.jdbc.SQLServerDriver \
   -U sa \
   -P 'Str0ng_password!123' \
   -l left_db \
@@ -410,15 +413,17 @@ Use this as a deployer reference for supported keys:
 [source,yaml]
 .application.yml
 ----
+spring:
+  datasource:
+    url: jdbc:sqlserver://localhost:14333;encrypt=false;trustServerCertificate=true
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    username: sa
+    password: change-me
 cfct:
   webapp:
     comparison:
-      connection:
-        server: localhost:14333
-        username: sa
-        password: change-me
-        left-database: left_db
-        right-database: right_db
+      left-database: left_db
+      right-database: right_db
       env-file: .env
       output:
         format: text
@@ -438,23 +443,23 @@ Configuration property reference:
 |===
 |Property |Default |Description
 
-|cfct.webapp.comparison.connection.server
-|localhost:14333
-|SQL Server host and port shown as the default login server.
+|spring.datasource.url
+|jdbc:sqlserver://localhost:14333;encrypt=false;trustServerCertificate=true
+|SQL Server JDBC URL shown as the default login endpoint.
 
-|cfct.webapp.comparison.connection.username
+|spring.datasource.username
 |sa
 |Default login username shown in the webapp login form.
 
-|cfct.webapp.comparison.connection.password
+|spring.datasource.password
 |change-me
 |Default login password shown in the webapp login form.
 
-|cfct.webapp.comparison.connection.left-database
+|cfct.webapp.comparison.left-database
 |left_db
 |Default source database name used for the left-hand comparison side.
 
-|cfct.webapp.comparison.connection.right-database
+|cfct.webapp.comparison.right-database
 |right_db
 |Default target database name used for the right-hand comparison side.
 
@@ -498,7 +503,7 @@ scripts/fixture-sqlserver.sh start
 [source,bash]
 ----
 mvn -pl cfct-webapp -am spring-boot:run \
-  -Dspring-boot.run.arguments="--cfct.webapp.comparison.connection.server=localhost:14333 --cfct.webapp.comparison.connection.username=sa --cfct.webapp.comparison.connection.password=Str0ng_password!123 --cfct.webapp.comparison.connection.left-database=left_db --cfct.webapp.comparison.connection.right-database=right_db"
+  -Dspring-boot.run.arguments="--spring.datasource.url=jdbc:sqlserver://localhost:14333;encrypt=false;trustServerCertificate=true --spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver --spring.datasource.username=sa --spring.datasource.password=Str0ng_password!123 --cfct.webapp.comparison.left-database=left_db --cfct.webapp.comparison.right-database=right_db"
 ----
 +
 Or use the one-liner helper script that starts the fixture and runs the webapp with the same happy-path settings:
@@ -543,11 +548,12 @@ The webapp reads login defaults and shared execution defaults from `cfct-webapp/
 
 These keys map to CLI concepts as follows:
 
-* `connection.server` ↔ `-S` / `--server`
-* `connection.username` ↔ `-U` / `--username`
-* `connection.password` ↔ `-P` / `--password`
-* `connection.left-database` ↔ `-l` / `--left-database`
-* `connection.right-database` ↔ `-r` / `--right-database`
+* `spring.datasource.url` ↔ `--jdbc-url`
+* `spring.datasource.driver-class-name` ↔ `--jdbc-driver`
+* `spring.datasource.username` ↔ `-U` / `--username`
+* `spring.datasource.password` ↔ `-P` / `--password`
+* `cfct.webapp.comparison.left-database` ↔ `-l` / `--left-database`
+* `cfct.webapp.comparison.right-database` ↔ `-r` / `--right-database`
 * `env-file` ↔ `-e` / `--env-file`
 * `output.format` ↔ `-f` / `--output-format`
 * `output.file` ↔ `-o` / `--output-file`
@@ -753,22 +759,24 @@ This is useful for overriding default values:
 [source,yaml]
 .application.yml
 ----
+spring:
+  datasource:
+    url: jdbc:sqlserver://xxx;encrypt=true;trustServerCertificate=false
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    username: xxx
+    password: xxx
 cfct:
   webapp:
     comparison:
-      connection:
-        server: xxx
-        username: xxx
-        password: xxx
-        left-database: xxx
-        right-database: xxx
+      left-database: xxx
+      right-database: xxx
 ----
 
 
 The webapp uses a login-first flow.
 SQL connectivity, database existence, and required target-system object presence are validated when the user submits the login form.
 Required target-system objects may be either tables or views.
-The login form is pre-populated from `cfct.webapp.comparison.connection.*` configuration values, and every field remains editable.
+The login form is pre-populated from `spring.datasource.*` plus `cfct.webapp.comparison.left-database` and `cfct.webapp.comparison.right-database` configuration values, and every field remains editable.
 
 
 

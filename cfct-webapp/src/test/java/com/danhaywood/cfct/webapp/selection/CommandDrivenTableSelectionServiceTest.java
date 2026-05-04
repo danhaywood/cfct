@@ -31,7 +31,7 @@ class CommandDrivenTableSelectionServiceTest {
 
         final WebappDataSourceConfiguration dataSourceConfiguration = mock(WebappDataSourceConfiguration.class);
         final AuthenticatedConnectionContextHolder contextHolder = new AuthenticatedConnectionContextHolder();
-        contextHolder.set(new AuthenticatedConnectionContext("localhost:1433", "sa", "pwd", "left_db", "right_db"));
+        contextHolder.set(new AuthenticatedConnectionContext("jdbc:sqlserver://localhost:1433", "com.microsoft.sqlserver.jdbc.SQLServerDriver", "sa", "pwd", "left_db", "right_db"));
 
         when(dataSourceConfiguration.dataSourcesFor(Mockito.any()))
                 .thenReturn(new WebappDataSources(mock(DataSource.class), leftDataSource, mock(DataSource.class)));

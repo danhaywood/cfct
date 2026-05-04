@@ -35,11 +35,12 @@ class HomePageConnectionStatusPlaywrightFailureTest {
     static void registerProperties(final DynamicPropertyRegistry registry) {
         PlaywrightSqlServerFixture.createDatabaseIfMissing(LEFT_DB);
         PlaywrightSqlServerFixture.prepareManualSelectionTables(LEFT_DB);
-        registry.add("cfct.webapp.comparison.connection.server", PlaywrightSqlServerFixture::server);
-        registry.add("cfct.webapp.comparison.connection.username", PlaywrightSqlServerFixture::username);
-        registry.add("cfct.webapp.comparison.connection.password", PlaywrightSqlServerFixture::password);
-        registry.add("cfct.webapp.comparison.connection.left-database", () -> LEFT_DB);
-        registry.add("cfct.webapp.comparison.connection.right-database", () -> MISSING_DB);
+        registry.add("spring.datasource.url", PlaywrightSqlServerFixture::jdbcUrl);
+        registry.add("spring.datasource.driver-class-name", () -> "com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        registry.add("spring.datasource.username", PlaywrightSqlServerFixture::username);
+        registry.add("spring.datasource.password", PlaywrightSqlServerFixture::password);
+        registry.add("cfct.webapp.comparison.left-database", () -> LEFT_DB);
+        registry.add("cfct.webapp.comparison.right-database", () -> MISSING_DB);
     }
 
     @Test
@@ -59,7 +60,7 @@ class HomePageConnectionStatusPlaywrightFailureTest {
     }
 
     private void fillLoginForm(final Page page) {
-        setLoginField(page, "login-server", PlaywrightSqlServerFixture.server());
+        setLoginField(page, "login-jdbc-url", PlaywrightSqlServerFixture.jdbcUrl());
         setLoginField(page, "login-username", PlaywrightSqlServerFixture.username());
         setLoginField(page, "login-password", PlaywrightSqlServerFixture.password());
         setLoginField(page, "login-left-database", LEFT_DB);

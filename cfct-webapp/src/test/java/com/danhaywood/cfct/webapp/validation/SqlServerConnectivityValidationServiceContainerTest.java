@@ -133,7 +133,13 @@ class SqlServerConnectivityValidationServiceContainerTest {
             final String password,
             final String leftDatabase,
             final String rightDatabase) {
-        return new AuthenticatedConnectionContext(server, username, password, leftDatabase, rightDatabase);
+        return new AuthenticatedConnectionContext(
+                "jdbc:sqlserver://" + server + ";encrypt=false;trustServerCertificate=true",
+                "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+                username,
+                password,
+                leftDatabase,
+                rightDatabase);
     }
 
     private static void createDatabaseIfMissing(final String databaseName) throws SQLException {

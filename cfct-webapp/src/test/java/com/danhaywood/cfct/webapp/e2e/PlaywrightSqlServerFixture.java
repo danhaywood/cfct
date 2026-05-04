@@ -34,6 +34,10 @@ final class PlaywrightSqlServerFixture {
         return "%s:%d".formatted(SQL_SERVER.getHost(), SQL_SERVER.getMappedPort(MSSQLServerContainer.MS_SQL_SERVER_PORT));
     }
 
+    static String jdbcUrl() {
+        return "jdbc:sqlserver://%s;encrypt=false;trustServerCertificate=true".formatted(server());
+    }
+
     static String username() {
         return SQL_SERVER.getUsername();
     }
@@ -98,7 +102,7 @@ final class PlaywrightSqlServerFixture {
 
     private static void executeSql(final String databaseName, final String sql) {
         try (Connection connection = DriverManager.getConnection(
-                "jdbc:sqlserver://%s;databaseName=%s;encrypt=false;trustServerCertificate=true".formatted(server(), databaseName),
+                "%s;databaseName=%s".formatted(jdbcUrl(), databaseName),
                 username(),
                 password());
              Statement statement = connection.createStatement()) {

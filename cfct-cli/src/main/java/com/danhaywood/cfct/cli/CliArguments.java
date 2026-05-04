@@ -7,7 +7,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record CliArguments(
-        String server,
+        String jdbcUrl,
+        String jdbcDriver,
         String username,
         String password,
         String leftDatabase,
@@ -20,7 +21,8 @@ public record CliArguments(
 ) {
 
     public CliArguments(
-            final String server,
+            final String jdbcUrl,
+            final String jdbcDriver,
             final String username,
             final String password,
             final String leftDatabase,
@@ -28,7 +30,7 @@ public record CliArguments(
             final List<TableRef> tables,
             final CliOutputFormat outputFormat,
             final Path outputFile) {
-        this(server, username, password, leftDatabase, rightDatabase, tables, outputFormat, outputFile, null, null);
+        this(jdbcUrl, jdbcDriver, username, password, leftDatabase, rightDatabase, tables, outputFormat, outputFile, null, null);
     }
 
     public CliArguments {

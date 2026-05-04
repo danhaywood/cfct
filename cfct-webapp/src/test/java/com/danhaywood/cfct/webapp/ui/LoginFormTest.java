@@ -19,7 +19,7 @@ class LoginFormTest {
     @Test
     void rendersRightSideBrandingElements() {
         final WebappAuthenticationService auth = mock(WebappAuthenticationService.class);
-        when(auth.loginDefaults()).thenReturn(new ConnectionLoginRequest("server", "sa", "secret", "left", "right"));
+        when(auth.loginDefaults()).thenReturn(new ConnectionLoginRequest("jdbc:sqlserver://server", "com.microsoft.sqlserver.jdbc.SQLServerDriver", "sa", "secret", "left", "right"));
 
         final LoginForm form = new LoginForm(auth, () -> {
         });

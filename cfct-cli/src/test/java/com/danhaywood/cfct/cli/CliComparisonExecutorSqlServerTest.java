@@ -16,7 +16,6 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.SortedSet;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,7 +50,9 @@ class CliComparisonExecutorSqlServerTest {
         };
         final ByteArrayOutputStream errBytes = new ByteArrayOutputStream();
         final CliArguments arguments = new CliArguments(
-                "server", "sa", "secret", "left", "right", List.of(new TableRef("dbo", "Supplier")),
+                "jdbc:sqlserver://server;encrypt=false;trustServerCertificate=true",
+                "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+                "sa", "secret", "left", "right", List.of(new TableRef("dbo", "Supplier")),
                 CliOutputFormat.TEXT, null);
 
         executor.execute(arguments, new PrintStream(errBytes, true, StandardCharsets.UTF_8));
@@ -88,7 +89,9 @@ class CliComparisonExecutorSqlServerTest {
         };
 
         final CliArguments arguments = new CliArguments(
-                "server", "sa", "secret", "left", "right", List.of(),
+                "jdbc:sqlserver://server;encrypt=false;trustServerCertificate=true",
+                "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+                "sa", "secret", "left", "right", List.of(),
                 CliOutputFormat.TEXT, null,
                 LocalDateTime.parse("2026-05-01T10:00:00"),
                 LocalDateTime.parse("2026-05-01T11:00:00"));
@@ -120,7 +123,9 @@ class CliComparisonExecutorSqlServerTest {
         };
 
         final CliArguments arguments = new CliArguments(
-                "server", "sa", "secret", "left", "right", List.of(),
+                "jdbc:sqlserver://server;encrypt=false;trustServerCertificate=true",
+                "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+                "sa", "secret", "left", "right", List.of(),
                 CliOutputFormat.TEXT, null,
                 LocalDateTime.parse("2026-05-01T10:00:00"),
                 LocalDateTime.parse("2026-05-01T11:00:00"));

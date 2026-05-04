@@ -28,13 +28,13 @@ public class WebappAuthenticationService {
     }
 
     public ConnectionLoginRequest loginDefaults() {
-        final WebappComparisonProperties.Connection configured = properties.getConnection();
         return new ConnectionLoginRequest(
-                configured.getServer(),
-                configured.getUsername(),
-                configured.getPassword(),
-                configured.getLeftDatabase(),
-                configured.getRightDatabase());
+                properties.getDatasourceUrl(),
+                properties.getDatasourceDriverClassName(),
+                properties.getDatasourceUsername(),
+                properties.getDatasourcePassword(),
+                properties.getLeftDatabase(),
+                properties.getRightDatabase());
     }
 
     public void authenticate(final ConnectionLoginRequest request) {

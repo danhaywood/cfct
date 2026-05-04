@@ -1,7 +1,8 @@
 package com.danhaywood.cfct.webapp.auth;
 
 public record AuthenticatedConnectionContext(
-        String server,
+        String jdbcUrl,
+        String jdbcDriver,
         String username,
         String password,
         String leftDatabase,

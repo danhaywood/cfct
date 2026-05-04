@@ -23,7 +23,7 @@ class CliCommandRunnerTest {
         final ByteArrayOutputStream stderrBytes = new ByteArrayOutputStream();
 
         final int exitCode = runner.run(new String[]{
-                        "-S", "server-host",
+                        "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                         "-U", "sa",
                         "-P", "secret",
                         "-l", "left_db",
@@ -49,7 +49,7 @@ class CliCommandRunnerTest {
         final ByteArrayOutputStream stderrBytes = new ByteArrayOutputStream();
 
         final int exitCode = runner.run(new String[]{
-                        "-S", "server-host",
+                        "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                         "-U", "sa",
                         "-P", "secret",
                         "-l", "left_db",
@@ -74,7 +74,7 @@ class CliCommandRunnerTest {
         final Path outputFile = tempDir.resolve("comparison.txt");
 
         final int exitCode = runner.run(new String[]{
-                        "-S", "server-host",
+                        "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                         "-U", "sa",
                         "-P", "secret",
                         "-l", "left_db",
@@ -99,7 +99,7 @@ class CliCommandRunnerTest {
         final ByteArrayOutputStream stderrBytes = new ByteArrayOutputStream();
 
         final int exitCode = runner.run(new String[]{
-                        "-S", "server-host",
+                        "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                         "-U", "sa",
                         "-P", "secret",
                         "-l", "left_db",
@@ -125,7 +125,7 @@ class CliCommandRunnerTest {
         final Path outputFile = tempDir.resolve("comparison.yaml");
 
         final int exitCode = runner.run(new String[]{
-                        "-S", "server-host",
+                        "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                         "-U", "sa",
                         "-P", "secret",
                         "-l", "left_db",
@@ -157,7 +157,7 @@ class CliCommandRunnerTest {
         final Path outputFile = tempDir.resolve("comparison.xlsx");
 
         final int exitCode = runner.run(new String[]{
-                        "-S", "server-host",
+                        "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                         "-U", "sa",
                         "-P", "secret",
                         "-l", "left_db",
@@ -182,7 +182,7 @@ class CliCommandRunnerTest {
         final ByteArrayOutputStream stderrBytes = new ByteArrayOutputStream();
 
         final int exitCode = runner.run(new String[]{
-                        "-S", "server-host",
+                        "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                         "-U", "sa",
                         "-P", "secret",
                         "-l", "left_db"
@@ -205,7 +205,7 @@ class CliCommandRunnerTest {
         final ByteArrayOutputStream stderrBytes = new ByteArrayOutputStream();
 
         final int exitCode = runner.run(new String[]{
-                        "-S", "server-host",
+                        "--jdbc-url", "jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true",
                         "-U", "sa",
                         "-P", "secret",
                         "-l", "left_db",
