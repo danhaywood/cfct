@@ -47,6 +47,7 @@ import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.page.ColorScheme;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.select.Select;
@@ -336,6 +337,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("right", "0")
                 .set("bottom", "0")
                 .set("z-index", "100")
+                .setHeight("2em")
                 .set("display", "flex")
                 .set("flex-wrap", "wrap")
                 .set("align-items", "center")
@@ -362,8 +364,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("justify-content", "flex-end")
                 .set("align-items", "center")
                 .set("gap", "var(--lumo-space-l)")
-                .set("padding-left", "var(--lumo-space-l)")
-                .set("padding-right", "var(--lumo-space-s)")
+                .set("padding-left", "var(--lumo-space-l, .5em)")
+                .set("padding-right", "var(--lumo-space-s .5em)")
                 .set("margin-left", "auto");
 
         connectionStatusState.getElement().setAttribute("data-testid", "connection-status-state");
@@ -407,7 +409,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         final Div topSpacer = new Div();
         topSpacer.getElement().setAttribute("data-testid", "command-selection-spacer");
         topSpacer.getStyle()
-                .set("height", "calc(var(--lumo-size-s, .3rem) + var(--lumo-space-m, .3rem))")
+                .set("height", "calc(var(--lumo-size-s, 1.45rem) + var(--lumo-space-m, 1.45rem))")
                 .set("width", "100%");
 
         final Grid<CommandCatalogEntry> commandGrid = buildCommandSelectionGrid();
@@ -488,7 +490,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         grid.getElement().setAttribute("data-testid", "table-selection-grid");
         grid.getElement().setAttribute("tabindex", "0");
         grid.setAllRowsVisible(false);
-        grid.setHeight("9rem");
+        grid.setHeight("6rem");
         grid.setWidthFull();
         grid.setPartNameGenerator(entry -> entry.eligible() ? "eligible-table-row" : "ineligible-table-row");
         grid.setDataProvider(selectionDataProvider);
@@ -550,7 +552,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         grid.getElement().setAttribute("data-testid-focus-target", "command-selection-grid");
         grid.getElement().setAttribute("tabindex", "0");
         grid.setAllRowsVisible(false);
-        grid.setHeight("18rem");
+        grid.setHeight("22rem");
         grid.setWidthFull();
         grid.setDataProvider(commandSelectionDataProvider);
 
