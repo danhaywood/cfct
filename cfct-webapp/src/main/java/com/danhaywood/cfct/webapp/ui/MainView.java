@@ -37,6 +37,7 @@ import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Footer;
@@ -67,9 +68,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -120,6 +123,10 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private WebappComparisonExecutionService.ComparisonExecutionOutcome latestOutcome;
     private int drawerWidthPx = 512;
     private String tableFilterValue = "";
+    private String commandMemberFilterValue = "";
+    private String commandInteractionFilterValue = "";
+    private final Set<String> commandReplayStateFilters = new LinkedHashSet<>();
+    private static final List<String> REPLAY_STATE_FILTER_OPTIONS = List.of("OK", "PENDING", "FAILED");
     private static final int MIN_DRAWER_WIDTH_PX = 360;
     private static final int MAX_DRAWER_WIDTH_PX = 860;
 
@@ -163,7 +170,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         if (authenticatedContextHolder.isAuthenticated()) {
             tableCatalogEntries.addAll(tableCatalogService.discoverTableCatalog());
-            commandCatalogEntries.addAll(commandCatalogService.discoverCommandCatalog());
+            commandCatalogEntries.addAll(sortCommandCatalog(commandCatalogService.discoverCommandCatalog()));
         }
         this.selectionState = new ManualTableSelectionState(tableCatalogEntries);
         this.commandSelectionState = new CommandSelectionState(commandCatalogEntries);
@@ -403,33 +410,6 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("height", "calc(var(--lumo-size-s, .3rem) + var(--lumo-space-m, .3rem))")
                 .set("width", "100%");
 
-        final TextField commandMemberFilter = new TextField();
-        commandMemberFilter.setPlaceholder("Filter member id");
-        commandMemberFilter.setClearButtonVisible(true);
-        commandMemberFilter.setValueChangeMode(ValueChangeMode.EAGER);
-        commandMemberFilter.getElement().setAttribute("data-testid", "command-filter-member-id");
-        commandMemberFilter.setWidthFull();
-
-        final TextField commandInteractionFilter = new TextField();
-        commandInteractionFilter.setPlaceholder("Filter interaction id");
-        commandInteractionFilter.setClearButtonVisible(true);
-        commandInteractionFilter.setValueChangeMode(ValueChangeMode.EAGER);
-        commandInteractionFilter.getElement().setAttribute("data-testid", "command-filter-interaction-id");
-        commandInteractionFilter.setWidthFull();
-
-        commandMemberFilter.addValueChangeListener(event ->
-                applyCommandFilter(commandMemberFilter.getValue(), commandInteractionFilter.getValue()));
-        commandInteractionFilter.addValueChangeListener(event ->
-                applyCommandFilter(commandMemberFilter.getValue(), commandInteractionFilter.getValue()));
-
-        final HorizontalLayout commandFilterRow = new HorizontalLayout(commandMemberFilter, commandInteractionFilter);
-        commandFilterRow.getElement().setAttribute("data-testid", "command-filter-row");
-        commandFilterRow.setWidthFull();
-        commandFilterRow.setSpacing(true);
-        commandFilterRow.setPadding(true);
-        commandFilterRow.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.END);
-        commandFilterRow.expand(commandMemberFilter, commandInteractionFilter);
-
         final Grid<CommandCatalogEntry> commandGrid = buildCommandSelectionGrid();
 
         final Div actionBar = new Div(compareButton);
@@ -496,9 +476,10 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         resizeHandle.addClassName("navigation-drawer-resize-handle");
         enableDrawerResize(panel, resizeHandle);
 
-        layout.add(topSpacer, commandFilterRow, commandGrid, clearActionBar, tableFilterRow, tableGrid, actionBar);
+        layout.add(topSpacer, commandGrid, clearActionBar, tableFilterRow, tableGrid, actionBar);
         panel.add(layout, resizeHandle);
         applySelectionFilters();
+        applyCommandFilters();
         return panel;
     }
 
@@ -507,7 +488,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         grid.getElement().setAttribute("data-testid", "table-selection-grid");
         grid.getElement().setAttribute("tabindex", "0");
         grid.setAllRowsVisible(false);
-        grid.setHeight("20rem");
+        grid.setHeight("9rem");
         grid.setWidthFull();
         grid.setPartNameGenerator(entry -> entry.eligible() ? "eligible-table-row" : "ineligible-table-row");
         grid.setDataProvider(selectionDataProvider);
@@ -569,7 +550,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         grid.getElement().setAttribute("data-testid-focus-target", "command-selection-grid");
         grid.getElement().setAttribute("tabindex", "0");
         grid.setAllRowsVisible(false);
-        grid.setHeight("14rem");
+        grid.setHeight("18rem");
         grid.setWidthFull();
         grid.setDataProvider(commandSelectionDataProvider);
 
@@ -586,24 +567,71 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             return checkbox;
         })).setHeader("").setAutoWidth(true).setFlexGrow(0).setTextAlign(ColumnTextAlign.CENTER);
 
-        grid.addColumn(CommandCatalogEntry::timestamp)
-                .setHeader("Timestamp")
+        final Grid.Column<CommandCatalogEntry> replayStateColumn = grid.addColumn(CommandCatalogEntry::replayState)
+                .setHeader("Replay state")
                 .setSortable(true)
-                .setComparator(Comparator.comparing(CommandCatalogEntry::timestamp, String.CASE_INSENSITIVE_ORDER))
+                .setComparator(Comparator.comparing(CommandCatalogEntry::replayState, String.CASE_INSENSITIVE_ORDER))
                 .setAutoWidth(true)
-                .setKey("timestamp");
-        grid.addColumn(CommandCatalogEntry::logicalMemberIdentifier)
+                .setKey("replay-state");
+        final Grid.Column<CommandCatalogEntry> memberColumn = grid.addColumn(CommandCatalogEntry::logicalMemberIdentifier)
                 .setHeader("Member")
                 .setSortable(true)
                 .setComparator(Comparator.comparing(CommandCatalogEntry::logicalMemberIdentifier, String.CASE_INSENSITIVE_ORDER))
                 .setAutoWidth(true)
                 .setKey("member");
-        grid.addColumn(CommandCatalogEntry::interactionId)
+        final Grid.Column<CommandCatalogEntry> timestampColumn = grid.addColumn(CommandCatalogEntry::timestamp)
+                .setHeader("Timestamp")
+                .setSortable(true)
+                .setComparator(Comparator.comparing(CommandCatalogEntry::timestamp, String.CASE_INSENSITIVE_ORDER))
+                .setAutoWidth(true)
+                .setKey("timestamp");
+        final Grid.Column<CommandCatalogEntry> interactionColumn = grid.addColumn(CommandCatalogEntry::interactionId)
                 .setHeader("Interaction")
                 .setSortable(true)
                 .setComparator(Comparator.comparing(CommandCatalogEntry::interactionId, String.CASE_INSENSITIVE_ORDER))
                 .setAutoWidth(true)
                 .setKey("interaction");
+
+        final var filterHeader = grid.appendHeaderRow();
+
+        final TextField memberFilter = filterField("Member", "command-filter-member-id", value -> {
+            commandMemberFilterValue = value;
+            applyCommandFilters();
+        });
+        filterHeader.getCell(memberColumn).setComponent(memberFilter);
+
+        final TextField interactionFilter = filterField("Interaction", "command-filter-interaction-id", value -> {
+            commandInteractionFilterValue = value;
+            applyCommandFilters();
+        });
+        filterHeader.getCell(interactionColumn).setComponent(interactionFilter);
+
+        final HorizontalLayout replayFilterLayout = new HorizontalLayout();
+        replayFilterLayout.getElement().setAttribute("data-testid", "command-filter-replay-state-layout");
+        replayFilterLayout.setPadding(false);
+        replayFilterLayout.setSpacing(true);
+        replayFilterLayout.setWidthFull();
+        replayFilterLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
+        replayFilterLayout.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
+
+        for (String replayState : REPLAY_STATE_FILTER_OPTIONS) {
+            final Checkbox replayStateCheckbox = new Checkbox(replayStateAbbreviation(replayState));
+            replayStateCheckbox.getElement().setAttribute("data-testid", "command-filter-replay-state-" + replayState.toLowerCase(Locale.ROOT));
+            replayStateCheckbox.getElement().setAttribute("title", replayState);
+            replayStateCheckbox.setValue(commandReplayStateFilters.contains(replayState));
+            replayStateCheckbox.addValueChangeListener(event -> {
+                if (Boolean.TRUE.equals(event.getValue())) {
+                    commandReplayStateFilters.add(replayState);
+                } else {
+                    commandReplayStateFilters.remove(replayState);
+                }
+                applyCommandFilters();
+            });
+            replayFilterLayout.add(replayStateCheckbox);
+        }
+        filterHeader.getCell(replayStateColumn).setComponent(replayFilterLayout);
+
+        grid.sort(List.of(new GridSortOrder<>(timestampColumn, com.vaadin.flow.data.provider.SortDirection.ASCENDING)));
 
         grid.addItemClickListener(event -> focusedCommandInteractionId = event.getItem().interactionId());
         grid.addCellFocusListener(event -> event.getItem().ifPresent(item -> focusedCommandInteractionId = item.interactionId()));
@@ -648,9 +676,14 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         drawerWidthPx = Math.max(MIN_DRAWER_WIDTH_PX, Math.min(MAX_DRAWER_WIDTH_PX, requestedWidthPx));
     }
 
-    private void applyCommandFilter(final String memberIdFilter, final String interactionIdFilter) {
+    private void applyCommandFilters() {
         commandSelectionDataProvider.clearFilters();
-        commandSelectionDataProvider.addFilter(entry -> commandSelectionState.matchesFilter(entry, memberIdFilter, interactionIdFilter));
+        commandSelectionDataProvider.addFilter(entry -> commandSelectionState.matchesFilter(
+                entry,
+                commandMemberFilterValue,
+                commandInteractionFilterValue,
+                commandReplayStateFilters));
+        commandSelectionDataProvider.refreshAll();
     }
 
     private void applySelectionFilters() {
@@ -1122,9 +1155,28 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         commandSelectionGrid.getElement().executeJs("this.focus()");
     }
 
+    private List<CommandCatalogEntry> sortCommandCatalog(final List<CommandCatalogEntry> entries) {
+        return entries.stream()
+                .sorted(Comparator.comparing(CommandCatalogEntry::timestamp, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    private String replayStateAbbreviation(final String replayState) {
+        if ("OK".equalsIgnoreCase(replayState)) {
+            return "K";
+        }
+        if ("PENDING".equalsIgnoreCase(replayState)) {
+            return "P";
+        }
+        if ("FAILED".equalsIgnoreCase(replayState)) {
+            return "F";
+        }
+        return replayState == null || replayState.isBlank() ? "?" : replayState.substring(0, 1).toUpperCase(Locale.ROOT);
+    }
+
     private void reloadTableCatalog() {
         final List<TableCatalogEntry> tableCatalog = tableCatalogService.discoverTableCatalog();
-        final List<CommandCatalogEntry> commandCatalog = commandCatalogService.discoverCommandCatalog();
+        final List<CommandCatalogEntry> commandCatalog = sortCommandCatalog(commandCatalogService.discoverCommandCatalog());
 
         selectionState = new ManualTableSelectionState(tableCatalog);
         commandSelectionState = new CommandSelectionState(commandCatalog);
@@ -1136,7 +1188,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         commandCatalogEntries.addAll(commandCatalog);
 
         selectionDataProvider.refreshAll();
-        commandSelectionDataProvider.refreshAll();
+        applyCommandFilters();
         refreshActionButtons();
     }
 
@@ -1147,7 +1199,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         tableCatalogEntries.clear();
         commandCatalogEntries.clear();
         selectionDataProvider.refreshAll();
-        commandSelectionDataProvider.refreshAll();
+        applyCommandFilters();
         refreshActionButtons();
     }
 

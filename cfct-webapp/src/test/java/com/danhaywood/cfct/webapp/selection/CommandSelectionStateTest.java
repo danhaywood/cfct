@@ -3,6 +3,7 @@ package com.danhaywood.cfct.webapp.selection;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,21 +25,23 @@ class CommandSelectionStateTest {
     }
 
     @Test
-    void matchesFilterByMemberAndInteractionId() {
+    void matchesFilterByMemberInteractionAndReplayState() {
         final CommandSelectionState state = new CommandSelectionState(List.of());
         final CommandCatalogEntry entry = new CommandCatalogEntry(
                 "11111111-1111-1111-1111-111111111111",
                 "supplier.Supplier#registerProduct",
                 "supplier.Supplier:301",
-                "EXPORTED",
+                "FAILED",
                 "FOREGROUND",
                 "2026-04-05T10:00:00.000",
                 false);
 
-        assertThat(state.matchesFilter(entry, "supplier", "1111")).isTrue();
-        assertThat(state.matchesFilter(entry, "invoice", "1111")).isFalse();
-        assertThat(state.matchesFilter(entry, "supplier", "2222")).isFalse();
-        assertThat(state.matchesFilter(entry, "", "")).isTrue();
+        assertThat(state.matchesFilter(entry, "supplier", "1111", Set.of())).isTrue();
+        assertThat(state.matchesFilter(entry, "invoice", "1111", Set.of())).isFalse();
+        assertThat(state.matchesFilter(entry, "supplier", "2222", Set.of())).isFalse();
+        assertThat(state.matchesFilter(entry, "supplier", "1111", Set.of("FAILED"))).isTrue();
+        assertThat(state.matchesFilter(entry, "supplier", "1111", Set.of("PENDING"))).isFalse();
+        assertThat(state.matchesFilter(entry, "", "", Set.of())).isTrue();
     }
 
     @Test

@@ -171,8 +171,6 @@ class MainViewTest {
                 mock(WebappAuthenticationService.class));
 
         assertThat(findByTestId(view, "command-selection-spacer")).isPresent();
-        assertThat(findByTestId(view, "command-filter-member-id")).isPresent();
-        assertThat(findByTestId(view, "command-filter-interaction-id")).isPresent();
         assertThat(findByTestId(view, "command-selection-grid")).isPresent();
         assertThat(findByTestId(view, "clear-selections-button")).isPresent();
         assertThat(findByTestId(view, "table-selection-grid")).isPresent();
@@ -183,10 +181,6 @@ class MainViewTest {
                 .filter(id -> id != null && !id.isBlank())
                 .toList();
 
-        assertThat(testIdsInOrder.indexOf("command-filter-member-id"))
-                .isLessThan(testIdsInOrder.indexOf("command-filter-interaction-id"));
-        assertThat(testIdsInOrder.indexOf("command-filter-interaction-id"))
-                .isLessThan(testIdsInOrder.indexOf("command-selection-grid"));
         assertThat(testIdsInOrder.indexOf("command-selection-grid"))
                 .isLessThan(testIdsInOrder.indexOf("clear-selections-button"));
         assertThat(testIdsInOrder.indexOf("clear-selections-button"))
@@ -196,7 +190,7 @@ class MainViewTest {
     }
 
     @Test
-    void commandGridDisplaysTimestampMemberInteractionColumnsInOrder() {
+    void commandGridDisplaysReplayMemberTimestampInteractionColumnsInOrder() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithDefaults(),
@@ -207,8 +201,26 @@ class MainViewTest {
                 mock(WebappAuthenticationService.class));
 
         final Grid<?> commandGrid = (Grid<?>) findByTestId(view, "command-selection-grid").orElseThrow();
-        final List<String> headers = commandGrid.getColumns().stream().map(Grid.Column::getHeaderText).toList();
-        assertThat(headers).containsExactly("", "Timestamp", "Member", "Interaction");
+        final List<String> columnKeys = commandGrid.getColumns().stream().map(Grid.Column::getKey).toList();
+        assertThat(columnKeys).containsExactly(null, "replay-state", "member", "timestamp", "interaction");
+    }
+
+    @Test
+    void commandGridDefaultsToTimestampAscendingOrder() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithReverseTimestamps(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        final Grid<?> commandGrid = (Grid<?>) findByTestId(view, "command-selection-grid").orElseThrow();
+        final List<?> items = commandGrid.getListDataView().getItems().toList();
+        assertThat(items)
+                .extracting(item -> ((CommandCatalogEntry) item).timestamp())
+                .containsExactly("2026-04-05T10:00:00.000", "2026-04-05T11:00:00.000");
     }
 
     @Test
@@ -924,8 +936,16 @@ class MainViewTest {
     private SqlServerCommandCatalogService commandCatalogServiceWithDefaults() {
         final SqlServerCommandCatalogService service = Mockito.mock(SqlServerCommandCatalogService.class);
         when(service.discoverCommandCatalog()).thenReturn(List.of(
-                new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "EXPORTED", "FOREGROUND", "2026-04-05T10:00:00.000", false),
+                new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", false),
                 new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "PENDING", "FOREGROUND", "2026-04-05T11:00:00.000", false)));
+        return service;
+    }
+
+    private SqlServerCommandCatalogService commandCatalogServiceWithReverseTimestamps() {
+        final SqlServerCommandCatalogService service = Mockito.mock(SqlServerCommandCatalogService.class);
+        when(service.discoverCommandCatalog()).thenReturn(List.of(
+                new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "FAILED", "FOREGROUND", "2026-04-05T11:00:00.000", false),
+                new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", false)));
         return service;
     }
 

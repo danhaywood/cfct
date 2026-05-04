@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class CommandSelectionState {
@@ -53,9 +54,23 @@ public class CommandSelectionState {
     public boolean matchesFilter(
             final CommandCatalogEntry entry,
             final String memberIdFilter,
-            final String interactionIdFilter) {
+            final String interactionIdFilter,
+            final Set<String> replayStateFilters) {
         return matches(entry.logicalMemberIdentifier(), memberIdFilter)
-                && matches(entry.interactionId(), interactionIdFilter);
+                && matches(entry.interactionId(), interactionIdFilter)
+                && matchesReplayState(entry.replayState(), replayStateFilters);
+    }
+
+    private boolean matchesReplayState(
+            final String replayState,
+            final Set<String> replayStateFilters) {
+        if (replayStateFilters == null || replayStateFilters.isEmpty()) {
+            return true;
+        }
+        if (replayState == null) {
+            return false;
+        }
+        return replayStateFilters.stream().anyMatch(filter -> replayState.equalsIgnoreCase(filter));
     }
 
     private boolean matches(final String value, final String filter) {

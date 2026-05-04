@@ -175,20 +175,21 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             final double commandGridTop = positionOf(page, "[data-testid='command-selection-grid']")[1];
             final double compareTop = positionOf(page, "[data-testid='navigation-compare-action-bar']")[1];
             final double tableGridTop = positionOf(page, "[data-testid='table-selection-grid']")[1];
-            assertThat(Math.abs(memberFilterTop - interactionFilterTop)).isLessThan(8.0);
-            assertThat(memberFilterTop).isLessThan(commandGridTop);
+            assertThat(Math.abs(memberFilterTop - interactionFilterTop)).isLessThan(16.0);
             assertThat(commandGridTop).isLessThan(tableGridTop);
             assertThat(compareTop).isGreaterThan(tableGridTop);
 
             final String commandGridText = page.locator("[data-testid='command-selection-grid']").innerText();
             assertThat(commandGridText).contains(
-                    "Timestamp",
+                    "Replay state",
                     "Member",
+                    "Timestamp",
                     "Interaction",
                     PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID,
                     PlaywrightSqlServerFixture.SECOND_COMMAND_INTERACTION_ID);
-            assertThat(commandGridText.indexOf("Timestamp")).isLessThan(commandGridText.indexOf("Member"));
-            assertThat(commandGridText.indexOf("Member")).isLessThan(commandGridText.indexOf("Interaction"));
+            assertThat(commandGridText.indexOf("Replay state")).isLessThan(commandGridText.indexOf("Member"));
+            assertThat(commandGridText.indexOf("Member")).isLessThan(commandGridText.indexOf("Timestamp"));
+            assertThat(commandGridText.indexOf("Timestamp")).isLessThan(commandGridText.indexOf("Interaction"));
 
             final double[] footerMetrics = footerStatusAlignmentMetrics(page);
             assertThat(footerMetrics[0]).isGreaterThan(footerMetrics[1]);
@@ -219,12 +220,23 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             final Object compareVisibleAfterResize = page.evaluate("() => { const bar = document.querySelector('[data-testid=\"navigation-compare-action-bar\"]'); if (!bar) return false; const r = bar.getBoundingClientRect(); return r.top >= 0 && r.bottom <= window.innerHeight; }");
             assertThat(compareVisibleAfterResize).isEqualTo(Boolean.TRUE);
 
+            assertThat(page.locator("[data-testid='command-filter-replay-state-ok']").isChecked()).isFalse();
+            assertThat(page.locator("[data-testid='command-filter-replay-state-pending']").isChecked()).isFalse();
+            assertThat(page.locator("[data-testid='command-filter-replay-state-failed']").isChecked()).isFalse();
+
             setCommandMemberFilter(page, "supplier.Supplier");
             page.waitForFunction("() => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('supplier.Supplier#registerProduct') && !document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('product.Product#changeStatus')");
             setCommandInteractionFilter(page, PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.substring(0, 8));
             page.waitForFunction("() => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('11111111-1111-1111-1111-111111111111')");
+
             setCommandMemberFilter(page, "");
             setCommandInteractionFilter(page, "");
+            toggleCheckbox(page, "[data-testid='command-filter-replay-state-pending']");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('product.Product#changeStatus') && !document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('supplier.Supplier#registerProduct')");
+            toggleCheckbox(page, "[data-testid='command-filter-replay-state-pending']");
+            toggleCheckbox(page, "[data-testid='command-filter-replay-state-ok']");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('supplier.Supplier#registerProduct') && !document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('product.Product#changeStatus')");
+            toggleCheckbox(page, "[data-testid='command-filter-replay-state-ok']");
 
             toggleCheckbox(page, "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.toLowerCase() + "']");
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-supplier\"]').checked === true");

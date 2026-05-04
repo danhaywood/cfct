@@ -38,28 +38,29 @@ The command grid SHALL preserve useful Up/Down and Left/Right arrow key navigati
 ### Requirement: Command grid supports live filtering
 The command grid SHALL provide filtering controls within a command-grid header row.
 The command grid header row SHALL provide text filtering inputs for member and interactionId columns.
-The command grid header row SHALL provide a replay-state filter checkbox control.
-The command grid header row SHALL reveal a replay-state dropdown only when the replay-state filter checkbox is checked.
-The replay-state dropdown SHALL support values `PENDING`, `OK`, and `FAILED`.
+The command grid header row SHALL provide three replay-state filter checkboxes for `OK`, `PENDING`, and `FAILED`.
+The replay-state checkboxes SHALL use compact labels `K`, `P`, and `F` mapped to `OK`, `PENDING`, and `FAILED` respectively.
+The replay-state checkbox group SHALL be left-aligned within the replayState header filter cell.
 Filtering SHALL narrow visible command rows without requiring a separate apply-filter action.
-The command grid SHALL combine member, interactionId, and replay-state filters when replay-state filtering is enabled.
+The command grid SHALL combine member, interactionId, and replay-state filters when one or more replay-state checkboxes are selected.
+When no replay-state checkboxes are selected, replay-state filtering SHALL be inactive.
 
 #### Scenario: User filters command rows by visible identity values
 - **WHEN** a user enters filter text for member or interactionId in the command-grid header row
 - **THEN** only matching command rows remain visible in the grid without pressing an apply button
 
-#### Scenario: Replay-state dropdown is hidden until enabled
-- **WHEN** the command-grid header filter row is rendered and replay-state filtering is not enabled
-- **THEN** the replay-state dropdown is not visible
+#### Scenario: Replay-state filter checkboxes are shown in header row
+- **WHEN** the command-grid header filter row is rendered
+- **THEN** replay-state filter checkboxes for `K`, `P`, and `F` are visible in the replayState filter cell
 
-#### Scenario: Replay-state dropdown appears when checkbox is checked
-- **WHEN** the user checks the replay-state filter checkbox in the command-grid header row
-- **THEN** the replay-state dropdown becomes visible with `PENDING`, `OK`, and `FAILED` options
+#### Scenario: Single replay-state checkbox narrows command rows
+- **WHEN** the user selects one replay-state checkbox
+- **THEN** only command rows matching that replay state remain visible
 
-#### Scenario: Replay-state filter narrows command rows
-- **WHEN** replay-state filtering is enabled and the user selects one replay-state value
-- **THEN** only command rows with that replay-state value remain visible
+#### Scenario: Multiple replay-state checkboxes combine with OR semantics
+- **WHEN** the user selects two or more replay-state checkboxes
+- **THEN** command rows matching any selected replay state remain visible
 
 #### Scenario: Replay-state filter combines with text filters
-- **WHEN** replay-state filtering is enabled and member or interactionId filters are also provided
-- **THEN** only rows matching all active filter criteria remain visible
+- **WHEN** one or more replay-state checkboxes are selected and member or interactionId filters are also provided
+- **THEN** only rows matching all active text filters and any selected replay state remain visible
