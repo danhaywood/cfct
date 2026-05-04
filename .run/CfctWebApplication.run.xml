@@ -5,7 +5,7 @@
     <module name="cfct-webapp" />
     <option name="PROGRAM_PARAMETERS" value="--cfct.webapp.comparison.connection.server=localhost:14333 --cfct.webapp.comparison.connection.username=sa --cfct.webapp.comparison.connection.password=Str0ng_password!123 --cfct.webapp.comparison.connection.left-database=left_db --cfct.webapp.comparison.connection.right-database=right_db" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="com.danhaywood.cfct.webapp.CfctWebApplication" />
-    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>
