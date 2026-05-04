@@ -3,15 +3,17 @@
 CFCT currently models SQL Server connection input around a `server` host:port value plus separate credentials and database names.
 This works for local fixture usage but is too limited for deployment targets that require additional JDBC URL parameters.
 Azure SQL Managed Instance and similar environments often need connection properties such as encryption, host certificate settings, login timeout, and application intent encoded in the URL.
-The change touches CLI arguments, dotenv defaults, webapp login/config defaults, and connection construction in implementation code.
+The project also uses custom CFCT connection-property names that duplicate Spring Boot datasource conventions.
+The change touches CLI arguments, dotenv/env defaults, webapp login/config defaults, and connection construction in implementation code.
 
 ## Goals / Non-Goals
 
 **Goals:**
 - Replace server-host style input with JDBC URL input across CLI and webapp comparison entry paths.
-- Preserve current authentication and left/right database semantics while allowing deployers to supply URL-level SQL Server options.
+- Standardize on Spring Boot datasource properties (`spring.datasource.url`, `spring.datasource.driver-class-name`, `spring.datasource.username`, `spring.datasource.password`) instead of custom CFCT connection keys.
+- Preserve left/right database semantics while allowing deployers to supply URL-level SQL Server options.
 - Keep fixture and local usage straightforward by documenting valid local JDBC URL examples.
-- Provide clear migration guidance for existing users moving from `server` input to JDBC URL input.
+- Provide clear migration guidance for existing users moving from `server` input and CFCT connection keys to Spring datasource properties.
 
 **Non-Goals:**
 - No change to comparison algorithms or result rendering behavior.
@@ -20,8 +22,8 @@ The change touches CLI arguments, dotenv defaults, webapp login/config defaults,
 
 ## Decisions
 
-### Decision: Introduce `jdbc-url` as the canonical connection input.
-CLI and webapp configuration/login defaults will use JDBC URL terminology and values.
+### Decision: Introduce JDBC URL as canonical endpoint via `spring.datasource.url`.
+CLI and webapp configuration/login defaults will use Spring datasource terminology and values.
 This removes ambiguity and gives deployers direct control over SQL Server driver parameters.
 Alternative considered: keep `server` and add optional advanced URL options field.
 Rejected because dual models create conflicting precedence rules and more user confusion.
@@ -32,16 +34,16 @@ This preserves existing two-database workflow and minimizes blast radius in comp
 Alternative considered: require database name inside each JDBC URL and remove left/right database fields.
 Rejected because it complicates current UX and requires larger changes across CLI/webapp flows.
 
-### Decision: Use SQL Server JDBC URL examples in docs and fixture defaults.
-Update `.env` examples, README snippets, and webapp config defaults to show executable `jdbc:sqlserver://...` values.
+### Decision: Use Spring datasource examples in docs and fixture defaults.
+Update `.env`/env examples, README snippets, and webapp config defaults to show executable `SPRING_DATASOURCE_*` values and `jdbc:sqlserver://...` URLs.
 This ensures new deployers adopt the supported model immediately.
 Alternative considered: keep legacy examples and add a migration note.
 Rejected because examples strongly shape usage and would prolong server-based assumptions.
 
-### Decision: Treat server-based keys/arguments as breaking and remove them from current contract.
-Spec and docs will define `jdbc-url` as required instead of `server`.
+### Decision: Treat server-based and custom CFCT connection keys/arguments as breaking and remove them from current contract.
+Spec and docs will define Spring datasource properties as the required configuration contract.
 This keeps the contract explicit and avoids hidden fallback behavior that is hard to test.
-Alternative considered: temporary compatibility alias from `server` to synthesized URL.
+Alternative considered: temporary compatibility alias from old keys to datasource keys.
 Rejected to avoid silent misconfiguration for deployments requiring explicit URL properties.
 
 ## Risks / Trade-offs
@@ -53,12 +55,12 @@ Rejected to avoid silent misconfiguration for deployments requiring explicit URL
 
 ## Migration Plan
 
-Update specs, docs, and defaults to use JDBC URL keys and arguments.
+Update specs, docs, and defaults to use Spring datasource keys and JDBC URL values.
 Implement parsing/validation and connection construction changes in CLI and webapp paths.
-Update tests and demo scripts to use JDBC URL examples.
-Communicate breaking rename from `server` to `jdbc-url` in README and change notes.
+Update tests and demo scripts to use `SPRING_DATASOURCE_*` examples.
+Communicate breaking rename from `server`/custom connection keys to Spring datasource properties in README and change notes.
 
 ## Open Questions
 
 Should CLI accept both `--jdbc-url` and a short alias such as `-J`, or only long-form for clarity.
-Should we support temporary one-release compatibility for legacy `CFCT_SERVER` env keys.
+Should we support temporary one-release compatibility for legacy `CFCT_SERVER`/`CFCT_JDBC_URL` env keys.

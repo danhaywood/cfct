@@ -1,7 +1,8 @@
 ## MODIFIED Requirements
 
 ### Requirement: Webapp configuration models the same logical inputs as CLI
-The webapp SHALL provide typed configuration properties for login defaults and execution preferences such as JDBC URL, database names, username, password, env-file path, output format, and output file.
+The webapp SHALL use Spring datasource properties for connection defaults: `spring.datasource.url`, `spring.datasource.driver-class-name`, `spring.datasource.username`, and `spring.datasource.password`.
+The webapp SHALL provide typed configuration properties for non-datasource execution preferences such as database names, env-file path, output format, and output file.
 The webapp SHALL provide typed configuration properties for default ignore-column advisor enablement flags.
 The webapp SHALL allow independent enable or disable control for identity, uuid/guid, timestamp, and extended-properties ignore advisors.
 The webapp SHALL default each default ignore-column advisor enablement flag to enabled.
@@ -15,7 +16,7 @@ The webapp SHALL treat table selection as a strategy concern and SHALL NOT requi
 - **THEN** typed configuration still binds non-secret defaults and the application starts successfully
 
 #### Scenario: Configured defaults pre-populate login form
-- **WHEN** the webapp has connection-related properties configured in `application.yml` or externalized configuration
+- **WHEN** the webapp has `spring.datasource.*` connection properties configured in `application.yml` or externalized configuration
 - **THEN** those values are shown as initial editable defaults in the login form
 
 #### Scenario: Configuration defaults can be overridden externally

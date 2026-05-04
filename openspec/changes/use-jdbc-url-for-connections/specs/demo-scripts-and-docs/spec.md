@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Repository provides demo CLI input files
-The repository SHALL provide a committed example environment file at `demo/.env` containing fixture-only connection settings for `--jdbc-url`, `-U`, `-P`, `-l`, and `-r`.
+The repository SHALL provide a committed example environment file at `demo/.env` containing fixture-only connection settings aligned with Spring datasource keys and left/right database values.
 The repository SHALL provide a committed demo tables flat file with one `schema.table` reference per line.
 The repository SHALL provide a root `.env.TEMPLATE` that documents the supported dotenv keys for user-managed environments.
 The demo files SHALL be safe examples and SHALL not contain production credentials.
@@ -9,7 +9,7 @@ The documented dotenv keys for CLI and wrapper usage SHALL use `CFCT_` prefixes.
 
 #### Scenario: Demo environment file maps to CLI dotenv keys
 - **WHEN** the demo environment file is inspected
-- **THEN** it contains the CLI-supported dotenv keys for JDBC URL, username, password, left database, and right database using `CFCT_` prefixes
+- **THEN** it contains `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_DRIVER_CLASS_NAME`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`, `CFCT_LEFT_DATABASE`, and `CFCT_RIGHT_DATABASE`
 
 #### Scenario: Demo tables file contains one table per line
 - **WHEN** the demo tables file is inspected
@@ -37,7 +37,7 @@ The README SHALL remove or correct information that no longer matches current pr
 
 #### Scenario: README documents direct CLI invocation
 - **WHEN** a user wants to bypass the wrapper script
-- **THEN** the README shows the supported CLI options for JDBC URL, username, password, left database, right database, table list, table file, environment file, output format, and output file
+- **THEN** the README shows the supported CLI options for JDBC URL/driver, username, password, left database, right database, table list, table file, environment file, output format, and output file
 
 #### Scenario: README documents invalid-target fixture mode
 - **WHEN** a user needs to manually verify target-database validation failures
