@@ -481,9 +481,6 @@ If empty, output is rendered without writing a file.
 |Stops login flow immediately when validation fails.
 |===
 
-Migration note:
-`cfct.webapp.selection-plan.explicit.tables` has been removed.
-Manual and command-driven selection in the webapp UI are now the supported table-selection paths.
 
 Happy-path connectivity check with the demo fixture SQL Server:
 
