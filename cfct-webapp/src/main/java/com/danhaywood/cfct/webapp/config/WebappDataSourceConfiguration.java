@@ -1,5 +1,6 @@
 package com.danhaywood.cfct.webapp.config;
 
+import com.danhaywood.cfct.sql.TracingDataSourceProxyFactory;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
 import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
 
@@ -14,9 +15,9 @@ public class WebappDataSourceConfiguration {
 
     public WebappDataSources dataSourcesFor(final AuthenticatedConnectionContext context) {
         return new WebappDataSources(
-                sqlServerDataSource(context.jdbcUrl(), context.jdbcDriver(), context.username(), context.password(), "master"),
-                sqlServerDataSource(context.jdbcUrl(), context.jdbcDriver(), context.username(), context.password(), context.leftDatabase()),
-                sqlServerDataSource(context.jdbcUrl(), context.jdbcDriver(), context.username(), context.password(), context.rightDatabase()));
+                sqlServerDataSource(context.jdbcUrl(), context.jdbcDriver(), context.username(), context.password(), "master", "webapp-master"),
+                sqlServerDataSource(context.jdbcUrl(), context.jdbcDriver(), context.username(), context.password(), context.leftDatabase(), "webapp-left"),
+                sqlServerDataSource(context.jdbcUrl(), context.jdbcDriver(), context.username(), context.password(), context.rightDatabase(), "webapp-right"));
     }
 
     public static DataSource sqlServerDataSource(
@@ -25,6 +26,16 @@ public class WebappDataSourceConfiguration {
             final String username,
             final String password,
             final String databaseName) {
+        return sqlServerDataSource(jdbcUrl, jdbcDriver, username, password, databaseName, "webapp-" + databaseName);
+    }
+
+    private static DataSource sqlServerDataSource(
+            final String jdbcUrl,
+            final String jdbcDriver,
+            final String username,
+            final String password,
+            final String databaseName,
+            final String dataSourceName) {
         final SQLServerDataSource dataSource = new SQLServerDataSource();
         applyJdbcUrl(dataSource, jdbcUrl, databaseName);
         dataSource.setUser(username);
@@ -32,7 +43,7 @@ public class WebappDataSourceConfiguration {
         if (jdbcDriver != null && !jdbcDriver.isBlank()) {
             dataSource.setSelectMethod("direct");
         }
-        return dataSource;
+        return TracingDataSourceProxyFactory.wrapIfEnabled(dataSource, dataSourceName);
     }
 
     public static DataSource sqlServerDataSource(final WebappComparisonProperties properties, final String databaseName) {

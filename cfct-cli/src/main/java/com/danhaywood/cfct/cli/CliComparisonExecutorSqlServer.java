@@ -6,13 +6,15 @@ import com.danhaywood.cfct.request.MultiTableComparisonRequest;
 import com.danhaywood.cfct.service.ComparisonProgressPhase;
 import com.danhaywood.cfct.service.MultiTableComparisonService;
 import com.danhaywood.cfct.spi.CommandAuditTouchedTableResolver;
+import com.danhaywood.cfct.sql.TracingDataSourceProxyFactory;
+import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
 
 import org.springframework.stereotype.Service;
 
 import java.io.PrintStream;
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.Driver;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -81,7 +83,14 @@ public class CliComparisonExecutorSqlServer implements CliComparisonExecutor {
     }
 
     protected Connection openConnection(final String jdbcUrl, final String username, final String password) throws Exception {
-        return DriverManager.getConnection(jdbcUrl, username, password);
+        final SQLServerDataSource sqlServerDataSource = new SQLServerDataSource();
+        sqlServerDataSource.setURL(jdbcUrl);
+        sqlServerDataSource.setUser(username);
+        sqlServerDataSource.setPassword(password);
+        final DataSource dataSource = TracingDataSourceProxyFactory.wrapIfEnabled(
+                sqlServerDataSource,
+                "cli-" + Integer.toHexString(jdbcUrl.hashCode()));
+        return dataSource.getConnection();
     }
 
     protected List<TableRef> resolveTablesForExecution(final CliArguments arguments, final Connection leftConnection) throws Exception {

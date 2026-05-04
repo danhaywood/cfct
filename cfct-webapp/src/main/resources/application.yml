@@ -13,3 +13,4 @@ cfct:
     validation:
       enabled: true
       fail-fast: true
+

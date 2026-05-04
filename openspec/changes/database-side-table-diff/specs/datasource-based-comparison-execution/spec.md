@@ -8,6 +8,7 @@ DataSource-based execution SHALL generate and run one composed SQL diff query pe
 The composed query SHALL execute through datasource-managed JDBC connections.
 The composed query SHALL remain executable when the compared databases are configured with SQL Server compatibility level 100.
 The execution SHALL avoid fetching full left and right table rowsets into application memory.
+The execution layer SHALL support opt-in SQL statement tracing using datasource-proxy wrappers that log emitted SQL statements before execution.
 
 #### Scenario: Existing fixture comparisons remain deterministic after migration
 - **WHEN** existing integration fixtures are compared through DataSource-based execution
@@ -24,3 +25,7 @@ The execution SHALL avoid fetching full left and right table rowsets into applic
 #### Scenario: Diff query executes under compatibility level 100
 - **WHEN** datasource-based execution runs against SQL Server databases configured with compatibility level 100
 - **THEN** the generated query executes successfully without syntax errors related to unsupported language features
+
+#### Scenario: SQL tracing is available for verification
+- **WHEN** SQL tracing is enabled for a comparison run
+- **THEN** emitted SQL statements are logged before execution so operators can verify generated SQL text

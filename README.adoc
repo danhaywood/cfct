@@ -562,7 +562,9 @@ Examples include `CliComparisonExecutorSqlServer`, `TableMetadataReaderSqlServer
 Default comparison behavior discovers business-key objects (unique indexes or unique constraints) using the `_PK` suffix.
 By default, technical identifier columns are ignored for value comparison, including identity-backed columns, columns named `guid` or `uuid`, and SQL Server `UNIQUEIDENTIFIER` columns.
 For SQL Server-backed runs on the same server instance, CFCT executes one database-side diff query per table and returns only left-only, right-only, and value-different rows.
+
 Generated SQL is intentionally compatibility-level-100-safe and avoids post-2008 syntax such as `OFFSET/FETCH`, `IIF`, `TRY_CONVERT`, `CONCAT`, and `STRING_AGG`.
+Set `CFCT_SQL_TRACE_ENABLED=true` (or JVM system property `-Dcfct.sql.trace.enabled=true`) to emit SQL statements before execution for verification and troubleshooting.
 
 === Query plan and indexing expectations
 

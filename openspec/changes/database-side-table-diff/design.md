@@ -53,6 +53,12 @@ The query builder SHALL avoid `OFFSET/FETCH`, `IIF`, `TRY_CONVERT`, `CONCAT`, `S
 Alternative considered: enabling higher compatibility level as a prerequisite.
 Alternative rejected: environment constraint is fixed for this change and cannot be assumed mutable.
 
+7. Add opt-in SQL statement tracing through `datasource-proxy` DataSource wrappers.
+Rationale: operators need a low-friction way to inspect SQL emitted by comparison services without changing business behavior.
+Tracing SHALL be disabled by default and enabled through environment or system-property toggles.
+Alternative considered: custom statement-level tracing code at each query call site.
+Alternative rejected: `datasource-proxy` centralizes SQL interception and reduces maintenance drift.
+
 ## Risks / Trade-offs
 
 [Large execution plans on very wide tables] → Mitigation: project only required key and comparable columns and avoid `SELECT *`.
@@ -60,6 +66,7 @@ Alternative rejected: environment constraint is fixed for this change and cannot
 [Potential regressions in row classification mapping] → Mitigation: retain explicit diff-kind marker and add golden output regression tests.
 [Higher DB CPU consumption] → Mitigation: document indexing expectations on key columns and monitor query duration in test harness.
 [Generated SQL accidentally uses post-2008 syntax] → Mitigation: add compatibility-level-100 integration coverage and SQL-shape assertions in query-builder tests.
+[SQL tracing leaks into noisy production logs] → Mitigation: keep tracing opt-in and off by default.
 
 ## Migration Plan
 

@@ -25,3 +25,9 @@
 - [x] 4.3 Add a large-table benchmark or characterization test to verify reduced client memory usage and lower transferred row counts.
 - [x] 4.4 Document indexing and query-plan expectations for business-key columns in developer-facing notes.
 - [x] 4.5 Add integration coverage that executes generated SQL against a database configured with compatibility level 100.
+
+## 5. SQL tracing support
+
+- [x] 5.1 Add opt-in SQL tracing based on `datasource-proxy` DataSource wrappers.
+- [x] 5.2 Route CLI and webapp DataSource creation through tracing-capable wrappers so comparison and metadata SQL is logged centrally.
+- [x] 5.3 Document how to enable SQL tracing for verification runs.

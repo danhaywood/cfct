@@ -9,6 +9,7 @@ The comparer only needs non-matching and value-different rows, so materializing 
 - Build one composed SQL diff query per comparison that returns only left-only, right-only, and value-different rows.
 - Keep existing output semantics for missing rows and differing values while reducing data transfer and client memory usage.
 - Preserve deterministic ordering and existing downstream formatting for text, JSON, YAML, and Excel outputs.
+- Add optional SQL statement tracing so operators can verify the exact SQL emitted during comparison execution.
 
 ## Capabilities
 
@@ -26,3 +27,4 @@ The comparer only needs non-matching and value-different rows, so materializing 
 Comparison query generation and execution paths in the core comparison modules will change.
 Database CPU usage for comparison queries may increase while network transfer and JVM heap usage should decrease.
 No external API shape changes are expected, but performance characteristics and execution plans will change for large tables.
+An opt-in SQL tracing toggle will increase log volume when enabled for verification runs.
