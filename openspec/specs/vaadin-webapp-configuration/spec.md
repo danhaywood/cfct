@@ -18,7 +18,8 @@ The webapp module SHALL use a stable Vaadin Flow release line, selecting the lat
 - **THEN** Spring Boot and Vaadin initialize successfully and render a minimal placeholder view
 
 ### Requirement: Webapp configuration models the same logical inputs as CLI
-The webapp SHALL provide typed configuration properties for login defaults and execution preferences such as server, database names, username, password, env-file path, output format, and output file.
+The webapp SHALL use Spring datasource properties for connection defaults: `spring.datasource.url`, `spring.datasource.driver-class-name`, `spring.datasource.username`, and `spring.datasource.password`.
+The webapp SHALL provide typed configuration properties for non-datasource execution preferences such as database names, env-file path, output format, and output file.
 The webapp SHALL provide typed configuration properties for default ignore-column advisor enablement flags.
 The webapp SHALL allow independent enable or disable control for identity, uuid/guid, timestamp, and extended-properties ignore advisors.
 The webapp SHALL default each default ignore-column advisor enablement flag to enabled.
@@ -32,7 +33,7 @@ The webapp SHALL treat table selection as a strategy concern and SHALL NOT requi
 - **THEN** typed configuration still binds non-secret defaults and the application starts successfully
 
 #### Scenario: Configured defaults pre-populate login form
-- **WHEN** the webapp has connection-related properties configured in `application.yml` or externalized configuration
+- **WHEN** the webapp has `spring.datasource.*` connection properties configured in `application.yml` or externalized configuration
 - **THEN** those values are shown as initial editable defaults in the login form
 
 #### Scenario: Configuration defaults can be overridden externally
@@ -74,7 +75,7 @@ The required-object check SHALL accept both `BASE TABLE` and `VIEW` entries for 
 The webapp SHALL fail login with clear diagnostics when connectivity fails, authentication fails, requested databases are missing, or required target objects are missing.
 
 #### Scenario: Valid runtime credentials allow authentication to complete
-- **WHEN** runtime login credentials can connect to the SQL Server endpoint, both requested databases exist, and required target objects are present as tables or views
+- **WHEN** runtime login credentials with a valid JDBC URL can connect to the SQL Server endpoint, both requested databases exist, and required target objects are present as tables or views
 - **THEN** connectivity validation succeeds and the user is authenticated for comparison workflows
 
 #### Scenario: Invalid runtime credentials fail authentication
