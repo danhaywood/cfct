@@ -15,14 +15,12 @@ Until then, ideas here are notes only and do not represent current system behavi
 * /opsx-propose: rationalize the config properties.  Currently they are all under 'cfct.webapp', but some of them only really relate to cli, and I'd like to rename others:
 
 cfct.webapp.comparison.connection.left-database: remove the 'comparison' part, ie cfct.webapp.connection.left-database
-cfct.webapp.comparison.connection.right-database: remove the 'comparison' part
+cfct.webapp.comparison.connection.right-database: remove the 'comparison' part, ie cfct.webapp.connection.right-database
 cfct.webapp.comparison.env-file: remove, relates only to CLI
 cfct.webapp.comparison.output.format: remove, relates only to CLI
 cfct.webapp.comparison.output.file: remove, relates only to CLI
-cfct.webapp.comparison.validation.enabled: remove the 'comparison' part
-cfct.webapp.comparison.validation.fail-fast: remove the 'comparison' part
-
-analyze the cfct.webapp.selection-plan.explicit.tables config prop: what uses it?  My analysis is that this is only used by beans (SelectionPlan, WebappComparisonPreparationService) that have no function - they are tested, but not wired into prod anywhere.  Is this is the case, could they be removed?
+cfct.webapp.comparison.validation.enabled: remove the 'comparison' part, ie cfct.webapp.validation.enabled
+cfct.webapp.comparison.validation.fail-fast: remove the 'comparison' part, ie cfct.webapp.validation.fail-fast
 
 * /opsx-propose: cosmetic fix to webapp: make the status line the same colour as the menu bar, add appropriate spaces between the labels
 

@@ -100,8 +100,9 @@ The README SHALL include a short database-requirements section for deployers tha
 The README SHALL include expected structure for required system objects, including column names and SQL Server data types.
 The README SHALL state that comparable business tables must provide a unique index or unique constraint whose name ends with `_PK`.
 The README SHALL include a configuration reference section rendered in `application.yml` format for deployers.
-The README SHALL include all supported `cfct.webapp.comparison.*` and `cfct.webapp.selection-plan.explicit.tables` properties in that YAML reference, with defaults or placeholders where appropriate.
+The README SHALL include all supported `cfct.webapp.comparison.*` properties in that YAML reference, with defaults or placeholders where appropriate.
 The README SHALL include a property reference table that explains each supported property and its runtime purpose.
+The README SHALL include a migration note that `cfct.webapp.selection-plan.explicit.tables` was removed.
 
 #### Scenario: README explains the comparison wrapper path
 - **WHEN** a user reads the README from a clean checkout
@@ -109,7 +110,7 @@ The README SHALL include a property reference table that explains each supported
 
 #### Scenario: README documents direct CLI invocation
 - **WHEN** a user wants to bypass the wrapper script
-- **THEN** the README shows the supported CLI options for server, username, password, left database, right database, table list, table file, environment file, output format, and output file
+- **THEN** the README shows the supported CLI options for JDBC URL, JDBC driver, username, password, left database, right database, table list, table file, environment file, output format, and output file
 
 #### Scenario: README documents invalid-target fixture mode
 - **WHEN** a user needs to manually verify target-database validation failures
@@ -126,14 +127,10 @@ The README SHALL include a property reference table that explains each supported
 
 #### Scenario: README includes YAML configuration reference for deployers
 - **WHEN** a deployer needs to prepare runtime configuration for webapp comparison execution
-- **THEN** the README provides a copyable `application.yml`-formatted reference containing supported `cfct.webapp.comparison.*` properties and `cfct.webapp.selection-plan.explicit.tables`
+- **THEN** the README provides a copyable `application.yml`-formatted reference containing supported `cfct.webapp.comparison.*` properties
 - **AND** the reference is consistent with current application defaults and documented runtime options
 
-#### Scenario: README documents required system object structure
-- **WHEN** a deployer verifies target-database readiness
-- **THEN** the README provides column-level structure for required system objects including SQL Server data types
-
-#### Scenario: README explains each configuration property
-- **WHEN** a deployer chooses runtime values for webapp configuration
-- **THEN** the README includes a property table that explains defaults and purpose for each supported configuration key
+#### Scenario: README documents removed selection-plan property
+- **WHEN** a deployer reviews configuration migration notes
+- **THEN** the README states that `cfct.webapp.selection-plan.explicit.tables` is removed and not used by runtime selection
 

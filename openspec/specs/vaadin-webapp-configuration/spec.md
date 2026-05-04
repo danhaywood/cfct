@@ -48,24 +48,6 @@ The webapp SHALL treat table selection as a strategy concern and SHALL NOT requi
 - **WHEN** deployment configuration disables one ignore-column advisor flag and leaves others enabled
 - **THEN** only that advisor stops contributing ignore decisions while other advisors continue to apply
 
-### Requirement: Webapp resolves table targets through SelectionPlan strategies
-The webapp SHALL define a `SelectionPlan` abstraction that resolves comparison targets as `List<TableRef>`.
-The webapp SHALL provide an initial explicit selection-plan implementation that stores concrete `TableRef` values.
-The webapp SHALL allow future automated selection-plan implementations without changing the comparison execution contract.
-The webapp SHALL consume resolved `List<TableRef>` output from `SelectionPlan` when preparing comparison execution.
-
-#### Scenario: Explicit selection plan resolves concrete tables
-- **WHEN** the webapp uses the explicit selection-plan implementation with configured concrete `TableRef` values
-- **THEN** the plan resolves those values as the comparison table list
-
-#### Scenario: Selection plan output is used for execution preparation
-- **WHEN** the webapp prepares a comparison run
-- **THEN** it reads table targets from `SelectionPlan` output instead of CLI table-input structures
-
-#### Scenario: Automated selection plan can be added later
-- **WHEN** a new automated selection-plan implementation is introduced
-- **THEN** it can plug into the same `SelectionPlan` contract and return `List<TableRef>` without changing core execution interfaces
-
 ### Requirement: Webapp validates configured SQL Server connectivity and databases
 The webapp SHALL validate SQL Server connectivity and database reachability using runtime login credentials instead of startup-time static credentials.
 The webapp SHALL execute connectivity validation during login or explicit connection test flow before granting access to comparison workflows.
