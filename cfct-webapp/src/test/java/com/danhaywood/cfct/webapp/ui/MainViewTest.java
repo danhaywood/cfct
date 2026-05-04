@@ -19,7 +19,6 @@ import com.danhaywood.cfct.webapp.selection.CommandDrivenTableSelectionService;
 import com.danhaywood.cfct.webapp.selection.SqlServerCommandCatalogService;
 import com.danhaywood.cfct.webapp.selection.SqlServerTableCatalogService;
 import com.danhaywood.cfct.webapp.selection.TableCatalogEntry;
-import com.danhaywood.cfct.webapp.validation.ConnectionValidationState;
 import com.danhaywood.cfct.webapp.validation.ConnectionValidationStatusHolder;
 
 import com.vaadin.flow.component.Component;
@@ -30,6 +29,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEnterEvent;
 
 import org.junit.jupiter.api.Test;
@@ -71,7 +71,7 @@ class MainViewTest {
     }
 
     @Test
-    void rendersAppLayoutShellAndOkStatusInFooter() {
+    void rendersAppLayoutShellAndFooterWithoutConnectionStatusLabels() {
         final ConnectionValidationStatusHolder holder = new ConnectionValidationStatusHolder();
         holder.markOk("Connected to configured SQL Server and databases.");
 
@@ -94,11 +94,11 @@ class MainViewTest {
         final Component accountLabel = findByTestId(view, "account-menu-label").orElseThrow();
         assertThat(accountLabel.getElement().getText()).isEqualTo("sa");
         assertThat(findByTestId(view, "logout-button")).isEmpty();
+        assertThat(findByTestId(view, "connection-status-state")).isEmpty();
+        assertThat(findByTestId(view, "connection-status-summary")).isEmpty();
 
-        final Span status = (Span) findByTestId(view, "connection-status-state").orElseThrow();
-        assertThat(status.getText()).contains(ConnectionValidationState.OK.name());
-        final Span summary = (Span) findByTestId(view, "connection-status-summary").orElseThrow();
-        assertThat(summary.isVisible()).isFalse();
+        final Span progress = (Span) findByTestId(view, "comparison-progress-summary").orElseThrow();
+        assertThat(progress.getText()).isBlank();
     }
 
     @Test
@@ -340,7 +340,7 @@ class MainViewTest {
 
         final String footerText = textOf(footer);
 
-        assertThat(footerText).contains("left_db", "right_db", "Status: OK");
+        assertThat(footerText).contains("left_db", "right_db");
         assertThat(footerText).doesNotContain("localhost:1433", "jdbc:sqlserver");
         assertThat(footerText).doesNotContain("super-secret-password", "SQL connectivity status");
     }
@@ -376,6 +376,95 @@ class MainViewTest {
         assertThat(formatSelect.getValue().toString().toLowerCase()).contains("json");
         final Span progress = (Span) findByTestId(view, "comparison-progress-summary").orElseThrow();
         assertThat(progress.getText()).isNotBlank();
+    }
+
+    @Test
+    void executeComparisonAppliesSuccessProgressStyle() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        invokeShowComparisonProgress(view, "Comparison complete.", "comparison-progress-summary-success");
+
+        final Span progress = (Span) findByTestId(view, "comparison-progress-summary").orElseThrow();
+        assertThat(progress.getText()).isEqualTo("Comparison complete.");
+        assertThat(progress.getElement().getAttribute("class")).contains("comparison-progress-summary-success");
+    }
+
+    @Test
+    void executeComparisonAppliesFailureProgressStyleWhenComparisonThrows() {
+        final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
+        when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class)))
+                .thenThrow(new RuntimeException("boom"));
+
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                comparisonExecutionService,
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        invokeExecuteComparison(view);
+
+        final Span progress = (Span) findByTestId(view, "comparison-progress-summary").orElseThrow();
+        assertThat(progress.getText()).isEqualTo("Comparison failed.");
+        assertThat(progress.getElement().getAttribute("class")).contains("comparison-progress-summary-failure");
+    }
+
+    @Test
+    void clearActionClearsAnyExistingComparisonProgressSummary() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        invokeShowComparisonProgress(view, "Comparison complete.", "comparison-progress-summary-success");
+        final Span progress = (Span) findByTestId(view, "comparison-progress-summary").orElseThrow();
+        assertThat(progress.getText()).isEqualTo("Comparison complete.");
+
+        invokeClearAllSelections(view);
+
+        assertThat(progress.getText()).isBlank();
+        final String cssClass = progress.getElement().getAttribute("class");
+        assertThat(cssClass == null ? "" : cssClass)
+                .doesNotContain("comparison-progress-summary-success", "comparison-progress-summary-failure", "comparison-progress-summary-neutral");
+    }
+
+    @Test
+    void changingCommandOrTableFiltersClearsAnyExistingComparisonProgressSummary() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        invokeShowComparisonProgress(view, "Comparison complete.", "comparison-progress-summary-success");
+        final Span progress = (Span) findByTestId(view, "comparison-progress-summary").orElseThrow();
+        assertThat(progress.getText()).isEqualTo("Comparison complete.");
+
+        invokeToggleFocusedCommandSelection(view);
+        assertThat(progress.getText()).isBlank();
+
+        invokeShowComparisonProgress(view, "Comparison complete.", "comparison-progress-summary-success");
+        assertThat(progress.getText()).isEqualTo("Comparison complete.");
+
+        final TextField tableFilter = (TextField) findByTestId(view, "table-filter-table").orElseThrow();
+        tableFilter.setValue("Supplier");
+        assertThat(progress.getText()).isBlank();
     }
 
     @Test
@@ -891,6 +980,16 @@ class MainViewTest {
             final var method = MainView.class.getDeclaredMethod("executeComparison");
             method.setAccessible(true);
             method.invoke(view);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void invokeShowComparisonProgress(final MainView view, final String message, final String styleClass) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("showComparisonProgress", String.class, String.class);
+            method.setAccessible(true);
+            method.invoke(view, message, styleClass);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

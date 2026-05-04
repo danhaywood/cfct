@@ -61,6 +61,8 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             final String firstCommandCheckbox = "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.toLowerCase() + "']";
             final String secondCommandCheckbox = "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.SECOND_COMMAND_INTERACTION_ID.toLowerCase() + "']";
 
+            page.waitForSelector(firstCommandCheckbox);
+            page.waitForSelector(secondCommandCheckbox);
             page.waitForFunction("([first, second]) => !document.querySelector(first).checked && !document.querySelector(second).checked", List.of(firstCommandCheckbox, secondCommandCheckbox));
 
             page.keyboard().press("Tab");
@@ -93,10 +95,13 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             page.click("[data-testid='login-submit']");
             page.waitForSelector("[data-testid='table-selection-grid']");
             setSelectedOnly(page, false);
+            page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('Supplier')");
 
             final String supplierCheckbox = "[data-testid='table-checkbox-dbo-supplier']";
             final String productCheckbox = "[data-testid='table-checkbox-dbo-product']";
 
+            page.waitForSelector(supplierCheckbox);
+            page.waitForSelector(productCheckbox);
             page.waitForFunction("([first, second]) => !document.querySelector(first).checked && !document.querySelector(second).checked", List.of(supplierCheckbox, productCheckbox));
 
             page.locator(supplierCheckbox).click();
@@ -127,6 +132,7 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             page.click("[data-testid='login-submit']");
             page.waitForSelector("[data-testid='command-selection-grid']");
 
+            page.waitForSelector("[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.toLowerCase() + "']");
             toggleCheckbox(page, "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.toLowerCase() + "']");
             page.waitForFunction("() => !document.querySelector('[data-testid=\"compare-button\"]').disabled");
 
@@ -137,7 +143,7 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
     }
 
     @Test
-    void showsOkStatusAndMainUiHappyPathOnHomePage() {
+    void showsMainUiHappyPathWithFooterProgressStatusBehavior() {
         try (Playwright playwright = Playwright.create();
              Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
              Page page = browser.newPage()) {
@@ -147,23 +153,23 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isDisabled()).isTrue();
             fillLoginForm(page, LEFT_DB, RIGHT_DB);
             page.click("[data-testid='login-submit']");
-            page.waitForSelector("[data-testid='connection-status-state']");
+            page.waitForSelector("[data-testid='comparison-progress-summary']");
             page.waitForSelector("[data-testid='command-selection-grid']");
             page.waitForSelector("[data-testid='table-selection-grid']");
 
-            final String statusText = page.locator("[data-testid='connection-status-state']").innerText();
-            assertThat(statusText).contains("OK");
+            assertThat(page.locator("[data-testid='connection-status-state']").count()).isZero();
             assertThat(page.locator("[data-testid='connection-status-summary']").count()).isZero();
 
             assertThat(page.locator("[data-testid='hamburger-menu']").count()).isEqualTo(1);
             final String footerText = page.locator("[data-testid='connection-details-footer']").innerText();
-            assertThat(footerText).contains(LEFT_DB, RIGHT_DB, "Status: OK");
+            assertThat(footerText).contains(LEFT_DB, RIGHT_DB);
             assertThat(footerText).doesNotContain(PlaywrightSqlServerFixture.jdbcUrl(), PlaywrightSqlServerFixture.password(), "SQL connectivity status");
 
             assertThat(page.locator("[data-testid='selected-table-feedback']").count()).isZero();
             assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isDisabled()).isTrue();
             assertThat(page.locator("[data-testid='clear-selections-button']").isDisabled()).isTrue();
             assertThat(page.locator("[data-testid='apply-table-filter']").count()).isZero();
+            page.waitForSelector("[data-testid='account-menu']");
             assertThat(page.locator("[data-testid='account-menu']").count()).isEqualTo(1);
             assertThat(page.locator("[data-testid='account-menu-label']").innerText()).contains(PlaywrightSqlServerFixture.username());
             assertThat(page.locator("[data-testid='logout-button']").count()).isZero();
@@ -220,9 +226,12 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             final Object compareVisibleAfterResize = page.evaluate("() => { const bar = document.querySelector('[data-testid=\"navigation-compare-action-bar\"]'); if (!bar) return false; const r = bar.getBoundingClientRect(); return r.top >= 0 && r.bottom <= window.innerHeight; }");
             assertThat(compareVisibleAfterResize).isEqualTo(Boolean.TRUE);
 
-            assertThat(page.locator("[data-testid='command-filter-replay-state-ok']").isChecked()).isFalse();
-            assertThat(page.locator("[data-testid='command-filter-replay-state-pending']").isChecked()).isFalse();
-            assertThat(page.locator("[data-testid='command-filter-replay-state-failed']").isChecked()).isFalse();
+            assertThat(isCheckboxChecked(page, "[data-testid='command-filter-replay-state-ok']")).isFalse();
+            assertThat(isCheckboxChecked(page, "[data-testid='command-filter-replay-state-pending']")).isFalse();
+            assertThat(isCheckboxChecked(page, "[data-testid='command-filter-replay-state-failed']")).isFalse();
+
+            page.setViewportSize(1440, 900);
+            page.waitForTimeout(200);
 
             setCommandMemberFilter(page, "supplier.Supplier");
             page.waitForFunction("() => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('supplier.Supplier#registerProduct') && !document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('product.Product#changeStatus')");
@@ -272,7 +281,11 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
             page.click("[data-testid='compare-button']");
             page.waitForSelector("[data-testid='comparison-results-tabs']");
-            assertThat(page.locator("[data-testid='comparison-differences-only-filter']").isChecked()).isTrue();
+            page.waitForFunction("() => document.querySelector('[data-testid=\"comparison-progress-summary\"]').innerText.includes('Comparison complete.')");
+            final String successProgressClass = (String) page.evaluate(
+                    "() => document.querySelector('[data-testid=\"comparison-progress-summary\"]')?.getAttribute('class') ?? ''");
+            assertThat(successProgressClass).contains("comparison-progress-summary-success");
+            assertThat(isCheckboxChecked(page, "[data-testid='comparison-differences-only-filter']")).isTrue();
             assertThat(page.locator("[data-testid^='comparison-result-tab-']").count()).isEqualTo(2);
             assertThat(page.locator("[data-testid='comparison-result-tab-dbo-supplier']").getAttribute("data-has-differences")).isEqualTo("true");
             assertThat(page.locator("[data-testid='comparison-result-tab-dbo-product']").getAttribute("data-has-differences")).isEqualTo("true");
@@ -290,6 +303,18 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             assertThat(page.locator("[data-testid='comparison-differences-only-filter']").count()).isEqualTo(1);
             assertThat(page.locator("[data-testid='download-format-select']").count()).isEqualTo(1);
             assertThat(page.locator("[data-testid='download-action']").count()).isEqualTo(1);
+
+            setFilter(page, "Supplier");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"comparison-progress-summary\"]').innerText.trim() === ''");
+            final String clearedProgressClass = (String) page.evaluate(
+                    "() => document.querySelector('[data-testid=\"comparison-progress-summary\"]')?.getAttribute('class') ?? ''");
+            assertThat(clearedProgressClass)
+                    .doesNotContain("comparison-progress-summary-success", "comparison-progress-summary-failure");
+
+            page.click("[data-testid='compare-button']");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"comparison-progress-summary\"]').innerText.includes('Comparison complete.')");
+            page.click("[data-testid='clear-selections-button']");
+            page.waitForFunction("() => document.querySelector('[data-testid=\"comparison-progress-summary\"]').innerText.trim() === ''");
 
             page.screenshot(new Page.ScreenshotOptions().setPath(screenshotPath("webapp-selected.png")).setFullPage(true));
         }
@@ -309,9 +334,12 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
     }
 
     private void toggleCheckbox(final Page page, final String selector) {
-        page.evaluate(
-                "(selector) => { const host = document.querySelector(selector); if (!host) return; host.checked = !host.checked; host.dispatchEvent(new CustomEvent('checked-changed', { detail: { value: host.checked }, bubbles: true, composed: true })); host.dispatchEvent(new Event('change', { bubbles: true, composed: true })); }",
-                selector);
+        page.locator(selector).click();
+    }
+
+    private boolean isCheckboxChecked(final Page page, final String selector) {
+        final Object evaluated = page.evaluate("(selector) => { const host = document.querySelector(selector); return host ? !!host.checked : false; }", selector);
+        return Boolean.TRUE.equals(evaluated);
     }
 
     private void selectAllEligibleTables(final Page page) {
@@ -326,8 +354,9 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
     private void setSelectedOnly(final Page page, final boolean checked) {
         final CheckboxState state = selectedOnlyState(page);
         if (state.exists() && state.checked() != checked) {
-            toggleCheckbox(page, "[data-testid='selected-only-checkbox']");
+            page.locator("[data-testid='selected-only-checkbox']").click();
         }
+        page.waitForFunction("(checked) => { const host = document.querySelector('[data-testid=\"selected-only-checkbox\"]'); return !!host && !!host.checked === checked; }", checked);
     }
 
     private CheckboxState selectedOnlyState(final Page page) {
@@ -366,7 +395,7 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
     }
 
     private double[] footerStatusAlignmentMetrics(final Page page) {
-        final Object evaluated = page.evaluate("() => { const footer = document.querySelector('[data-testid=\"connection-details-footer\"]'); const state = document.querySelector('[data-testid=\"connection-status-state\"]'); if (!footer || !state) return [-1, -1]; const fr = footer.getBoundingClientRect(); const sr = state.getBoundingClientRect(); return [sr.right, fr.left + (fr.width / 2)]; }");
+        final Object evaluated = page.evaluate("() => { const footer = document.querySelector('[data-testid=\"connection-details-footer\"]'); const panel = document.querySelector('[data-testid=\"connection-status-panel\"]'); if (!footer || !panel) return [-1, -1]; const fr = footer.getBoundingClientRect(); const pr = panel.getBoundingClientRect(); return [pr.right, fr.left + (fr.width / 2)]; }");
         return toDoubleArray((List<?>) evaluated);
     }
 

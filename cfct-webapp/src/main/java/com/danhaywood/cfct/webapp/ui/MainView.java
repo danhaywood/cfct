@@ -20,8 +20,6 @@ import com.danhaywood.cfct.webapp.selection.ManualTableSelectionState;
 import com.danhaywood.cfct.webapp.selection.SqlServerCommandCatalogService;
 import com.danhaywood.cfct.webapp.selection.SqlServerTableCatalogService;
 import com.danhaywood.cfct.webapp.selection.TableCatalogEntry;
-import com.danhaywood.cfct.webapp.validation.ConnectionValidationState;
-import com.danhaywood.cfct.webapp.validation.ConnectionValidationStatus;
 import com.danhaywood.cfct.webapp.validation.ConnectionValidationStatusHolder;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,6 +80,9 @@ import java.util.function.Consumer;
 public class MainView extends AppLayout implements BeforeEnterObserver {
 
     private static final DateTimeFormatter FILE_TS = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
+    private static final String PROGRESS_STYLE_NEUTRAL = "comparison-progress-summary-neutral";
+    private static final String PROGRESS_STYLE_SUCCESS = "comparison-progress-summary-success";
+    private static final String PROGRESS_STYLE_FAILURE = "comparison-progress-summary-failure";
 
     private ManualTableSelectionState selectionState;
     private CommandSelectionState commandSelectionState;
@@ -113,8 +114,6 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final HorizontalLayout resultActions = new HorizontalLayout();
 
     private final Span connectionDatabases = new Span();
-    private final Span connectionStatusState = new Span();
-    private final Span connectionStatusSummary = new Span();
     private final Span comparisonProgressSummary = new Span();
     private final MenuBar accountMenu = new MenuBar();
     private Grid<CommandCatalogEntry> commandSelectionGrid;
@@ -368,11 +367,10 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("padding-right", "var(--lumo-space-s .5em)")
                 .set("margin-left", "auto");
 
-        connectionStatusState.getElement().setAttribute("data-testid", "connection-status-state");
-        connectionStatusState.getStyle().set("font-weight", "600");
-        connectionStatusSummary.getElement().setAttribute("data-testid", "connection-status-summary");
         comparisonProgressSummary.getElement().setAttribute("data-testid", "comparison-progress-summary");
-        statusPanel.add(connectionStatusState, connectionStatusSummary, comparisonProgressSummary);
+        comparisonProgressSummary.getStyle().set("padding", "0.15rem 0.5rem");
+        comparisonProgressSummary.getStyle().set("border-radius", "var(--lumo-border-radius-s)");
+        statusPanel.add(comparisonProgressSummary);
 
         footer.add(connectionDetails, statusPanel);
         return footer;
@@ -455,6 +453,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         tableFilter.setWidthFull();
         tableFilter.addValueChangeListener(event -> {
             tableFilterValue = event.getValue();
+            clearComparisonProgressStatus();
             applySelectionFilters();
         });
 
@@ -462,6 +461,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         selectedOnlyFilter.setValue(selectionState.isSelectedOnly());
         selectedOnlyFilter.addValueChangeListener(event -> {
             selectionState.setSelectedOnly(Boolean.TRUE.equals(event.getValue()));
+            clearComparisonProgressStatus();
             applySelectionFilters();
         });
 
@@ -509,6 +509,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             checkbox.addValueChangeListener(event -> {
                 focusedBusinessTable = entry.table();
                 selectionState.updateSelection(entry.table(), event.getValue());
+                clearComparisonProgressStatus();
                 selectionDataProvider.refreshAll();
                 refreshActionButtons();
             });
@@ -564,6 +565,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             checkbox.addValueChangeListener(event -> {
                 focusedCommandInteractionId = entry.interactionId();
                 commandSelectionState.updateSelection(entry.interactionId(), event.getValue());
+                clearComparisonProgressStatus();
                 applyCommandDrivenSelection();
             });
             return checkbox;
@@ -598,12 +600,14 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         final TextField memberFilter = filterField("Member", "command-filter-member-id", value -> {
             commandMemberFilterValue = value;
+            clearComparisonProgressStatus();
             applyCommandFilters();
         });
         filterHeader.getCell(memberColumn).setComponent(memberFilter);
 
         final TextField interactionFilter = filterField("Interaction", "command-filter-interaction-id", value -> {
             commandInteractionFilterValue = value;
+            clearComparisonProgressStatus();
             applyCommandFilters();
         });
         filterHeader.getCell(interactionColumn).setComponent(interactionFilter);
@@ -627,6 +631,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 } else {
                     commandReplayStateFilters.remove(replayState);
                 }
+                clearComparisonProgressStatus();
                 applyCommandFilters();
             });
             replayFilterLayout.add(replayStateCheckbox);
@@ -750,6 +755,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         focusedBusinessTable = null;
         commandSelectionState.clearSelections();
         selectionState.clearSelections();
+        clearComparisonProgressStatus();
         selectedOnlyFilter.setValue(selectionState.isSelectedOnly());
         commandSelectionDataProvider.refreshAll();
         applyCommandDrivenSelection();
@@ -765,6 +771,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         }
         final boolean nextSelected = !commandSelectionState.isSelected(interactionId);
         commandSelectionState.updateSelection(interactionId, nextSelected);
+        clearComparisonProgressStatus();
         commandSelectionDataProvider.refreshAll();
         applyCommandDrivenSelection();
     }
@@ -779,6 +786,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         final TableRef tableRef = focusedEntry.table();
         final boolean nextSelected = !selectionState.isSelected(tableRef);
         selectionState.updateSelection(tableRef, nextSelected);
+        clearComparisonProgressStatus();
         selectionDataProvider.refreshAll();
         refreshActionButtons();
     }
@@ -826,13 +834,13 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         compareButton.setEnabled(false);
         comparisonError.setText("");
-        comparisonProgressSummary.setText("Comparison running...");
+        showComparisonProgress("Comparison running...", PROGRESS_STYLE_NEUTRAL);
 
         try {
             latestOutcome = comparisonExecutionService.compare(
                     MultiTableComparisonRequest.forTables(selectedTables),
                     this::onComparisonProgress);
-            comparisonProgressSummary.setText("Comparison complete.");
+            showComparisonProgress("Comparison complete.", PROGRESS_STYLE_SUCCESS);
             downloadFormatSelect.setValue(DownloadFormat.JSON);
             resultActions.setVisible(true);
             refreshDownloadLinks();
@@ -842,7 +850,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             resultActions.setVisible(false);
             comparisonResultsContainer.removeAll();
             comparisonError.setText(safeError(ex));
-            comparisonProgressSummary.setText("Comparison failed.");
+            showComparisonProgress("Comparison failed.", PROGRESS_STYLE_FAILURE);
             renderEmptyComparisonState();
         } finally {
             compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
@@ -1110,6 +1118,23 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         return value == null || value.isBlank() ? "not configured" : value;
     }
 
+    private void showComparisonProgress(final String message, final String styleClass) {
+        comparisonProgressSummary.setText(message == null ? "" : message);
+        applyComparisonProgressStyle(styleClass);
+    }
+
+    private void clearComparisonProgressStatus() {
+        comparisonProgressSummary.setText("");
+        applyComparisonProgressStyle(null);
+    }
+
+    private void applyComparisonProgressStyle(final String styleClass) {
+        comparisonProgressSummary.removeClassNames(PROGRESS_STYLE_NEUTRAL, PROGRESS_STYLE_SUCCESS, PROGRESS_STYLE_FAILURE);
+        if (styleClass != null && !styleClass.isBlank()) {
+            comparisonProgressSummary.addClassName(styleClass);
+        }
+    }
+
     private void configureLoginDialog() {
         loginDialog.setModal(true);
         loginDialog.setCloseOnEsc(false);
@@ -1137,6 +1162,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         authenticationService.logout();
         latestOutcome = null;
         comparisonError.setText("");
+        clearComparisonProgressStatus();
         resultActions.setVisible(false);
         renderEmptyComparisonState();
         clearTableCatalog();
@@ -1207,20 +1233,24 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
     private void onComparisonProgress(final ComparisonProgressEvent event) {
         if (event.phase() == ComparisonProgressPhase.TABLE_STARTED) {
-            comparisonProgressSummary.setText("Comparing %s (%d/%d)".formatted(
-                    event.table().displayName(),
-                    event.completedTables() + 1,
-                    event.totalTables()));
+            showComparisonProgress(
+                    "Comparing %s (%d/%d)".formatted(
+                            event.table().displayName(),
+                            event.completedTables() + 1,
+                            event.totalTables()),
+                    PROGRESS_STYLE_NEUTRAL);
             return;
         }
         if (event.phase() == ComparisonProgressPhase.TABLE_COMPLETED) {
-            comparisonProgressSummary.setText("Compared %s (%d/%d)".formatted(
-                    event.table().displayName(),
-                    event.completedTables(),
-                    event.totalTables()));
+            showComparisonProgress(
+                    "Compared %s (%d/%d)".formatted(
+                            event.table().displayName(),
+                            event.completedTables(),
+                            event.totalTables()),
+                    PROGRESS_STYLE_NEUTRAL);
             return;
         }
-        comparisonProgressSummary.setText("Comparison failed on %s".formatted(event.table().displayName()));
+        showComparisonProgress("Comparison failed on %s".formatted(event.table().displayName()), PROGRESS_STYLE_FAILURE);
     }
 
     private void refreshConnectionFooter() {
@@ -1235,14 +1265,6 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         });
 
         connectionDatabases.setText(safe(context.leftDatabase()) + " ↔ " + safe(context.rightDatabase()));
-
-        final ConnectionValidationStatus status = statusHolder.current();
-        connectionStatusState.setText("Status: " + status.state());
-        final boolean showSummary = status.state() == ConnectionValidationState.FAILED
-                && status.summary() != null
-                && !status.summary().isBlank();
-        connectionStatusSummary.setVisible(showSummary);
-        connectionStatusSummary.setText(showSummary ? status.summary() : "");
     }
 
     private void refreshAuthUiState() {

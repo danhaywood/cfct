@@ -25,6 +25,21 @@
   gap: var(--lumo-space-s);
 }
 
+.comparison-progress-summary-neutral {
+  background-color: var(--lumo-contrast-5pct);
+  color: var(--lumo-body-text-color);
+}
+
+.comparison-progress-summary-success {
+  background-color: #03a63e;
+  color: #ffffff;
+}
+
+.comparison-progress-summary-failure {
+  background-color: #d10707;
+  color: #ffffff;
+}
+
 .comparison-result-tab-different {
   color: #b45309;
   font-weight: 700;
