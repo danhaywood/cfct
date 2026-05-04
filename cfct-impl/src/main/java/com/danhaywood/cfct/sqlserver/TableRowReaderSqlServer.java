@@ -6,15 +6,10 @@ import com.danhaywood.cfct.model.RowKey;
 import com.danhaywood.cfct.model.TableMetadata;
 import com.danhaywood.cfct.spi.TableRowReader;
 
-import java.math.BigDecimal;
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,11 +42,11 @@ public final class TableRowReaderSqlServer implements TableRowReader {
                 final List<String> keyValues = new ArrayList<>();
                 int columnIndex = 1;
                 for (int i = 0; i < metadata.keyColumns().size(); i++) {
-                    keyValues.add(formatValue(resultSet.getObject(columnIndex++)));
+                    keyValues.add(SqlServerValueFormatter.formatValue(resultSet.getObject(columnIndex++)));
                 }
                 final Map<ColumnRef, String> values = new LinkedHashMap<>();
                 for (final ColumnRef column : metadata.comparedColumns()) {
-                    values.put(column, formatValue(resultSet.getObject(columnIndex++)));
+                    values.put(column, SqlServerValueFormatter.formatValue(resultSet.getObject(columnIndex++)));
                 }
                 rows.put(new RowKey(keyValues), values);
             }
@@ -61,22 +56,4 @@ public final class TableRowReaderSqlServer implements TableRowReader {
         }
     }
 
-    private static String formatValue(final Object value) {
-        if (value == null) {
-            return "NULL";
-        }
-        if (value instanceof BigDecimal bigDecimal) {
-            return bigDecimal.toPlainString();
-        }
-        if (value instanceof Timestamp timestamp) {
-            return timestamp.toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
-        }
-        if (value instanceof Date date) {
-            return date.toLocalDate().toString();
-        }
-        if (value instanceof Time time) {
-            return time.toLocalTime().toString();
-        }
-        return value.toString();
-    }
 }

@@ -104,6 +104,36 @@ class CoreSingleTableComparisonIT {
     }
 
     @Test
+    void executesDiffQueryWhenDatabasesUseCompatibilityLevel100() throws Exception {
+        initializeFixture("purchase-order");
+        setCompatibilityLevel(DatabaseSide.LEFT, 100);
+        setCompatibilityLevel(DatabaseSide.RIGHT, 100);
+
+        try {
+            final TableComparisonResult result = comparePurchaseOrders();
+
+            assertThat(result.rowsOnlyInLeft()).containsExactly(new RowKey(java.util.List.of("PO-003")));
+            assertThat(result.rowsOnlyInRight()).containsExactly(new RowKey(java.util.List.of("PO-004")));
+            assertThat(result.differingRows()).extracting(RowDifference::key)
+                    .containsExactly(
+                            new RowKey(java.util.List.of("PO-002")),
+                            new RowKey(java.util.List.of("PO-005")));
+        } finally {
+            setCompatibilityLevel(DatabaseSide.LEFT, 160);
+            setCompatibilityLevel(DatabaseSide.RIGHT, 160);
+        }
+    }
+
+    @Test
+    void excludesMatchingRowsFromClientPayloadWhenUsingDatabaseSideDiff() throws Exception {
+        initializeFixture("purchase-order");
+
+        final TableComparisonResult result = comparePurchaseOrders();
+
+        assertThat(result.matchingRowsValues()).isEmpty();
+    }
+
+    @Test
     void failsClearlyWhenBusinessKeyIndexIsMissing() {
         initializeFixture("purchase-order-without-business-key");
 
@@ -236,6 +266,10 @@ class CoreSingleTableComparisonIT {
 
     private static void initializeSchema(final DatabaseSide side, final String fixtureName) {
         harness.initializeFromResource(side, "/sql/fixtures/%s/schema.sql".formatted(fixtureName));
+    }
+
+    private static void setCompatibilityLevel(final DatabaseSide side, final int level) {
+        harness.executeScript(side, "ALTER DATABASE [" + side.databaseName() + "] SET COMPATIBILITY_LEVEL = " + level);
     }
 
     private static List<IgnoreColumnAdvisor> defaultAdvisors(final boolean extendedPropertiesEnabled) {

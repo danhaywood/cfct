@@ -561,6 +561,15 @@ Examples include `CliComparisonExecutorSqlServer`, `TableMetadataReaderSqlServer
 
 Default comparison behavior discovers business-key objects (unique indexes or unique constraints) using the `_PK` suffix.
 By default, technical identifier columns are ignored for value comparison, including identity-backed columns, columns named `guid` or `uuid`, and SQL Server `UNIQUEIDENTIFIER` columns.
+For SQL Server-backed runs on the same server instance, CFCT executes one database-side diff query per table and returns only left-only, right-only, and value-different rows.
+Generated SQL is intentionally compatibility-level-100-safe and avoids post-2008 syntax such as `OFFSET/FETCH`, `IIF`, `TRY_CONVERT`, `CONCAT`, and `STRING_AGG`.
+
+=== Query plan and indexing expectations
+
+Add or verify a unique index or unique constraint ending in `_PK` on every compared business table.
+Ensure `_PK` key columns are selective and indexed so key joins and `EXCEPT` branches can seek instead of scanning.
+For large tables, keep compared columns narrow where possible because wider compared projections increase sort and memory pressure in SQL Server execution plans.
+If a table is frequently compared, monitor execution plans for hash/sort spills and add supporting nonclustered indexes that cover the `_PK` keys plus high-churn compared columns.
 
 === Ignored columns
 
