@@ -107,7 +107,6 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Select<DownloadFormat> downloadFormatSelect = new Select<>();
     private final HorizontalLayout resultActions = new HorizontalLayout();
 
-    private final Span connectionServer = new Span();
     private final Span connectionDatabases = new Span();
     private final Span connectionStatusState = new Span();
     private final Span connectionStatusSummary = new Span();
@@ -312,6 +311,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         accountMenu.getElement().setAttribute("data-testid", "account-menu");
 
         final MenuItem accountItem = accountMenu.addItem("Account");
+        accountItem.getElement().setAttribute("data-testid", "account-menu-label");
         final MenuItem logoutItem = accountItem.getSubMenu().addItem("Logout", event -> handleLogout());
         logoutItem.getElement().setAttribute("data-testid", "logout-menu-item");
 
@@ -330,8 +330,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("display", "flex")
                 .set("flex-wrap", "wrap")
                 .set("align-items", "center")
-                .set("gap", "var(--lumo-space-xl)")
-                //.set("padding", "var(--lumo-space-m) var(--lumo-space-l)")
+                .set("gap", "var(--lumo-space-l, 1em)")
+                .set("padding", "var(--lumo-space-s, 1em) var(--lumo-space-l, 1em)")
                 .set("background", "var(--lumo-base-color)")
                 .set("border-top", "1px solid var(--lumo-contrast-10pct)")
                 .set("font-size", "var(--lumo-font-size-s)");
@@ -343,9 +343,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("align-items", "center")
                 .set("gap", "var(--lumo-space-m)");
 
-        connectionServer.getElement().setAttribute("data-testid", "connection-server");
         connectionDatabases.getElement().setAttribute("data-testid", "connection-database-pair");
-        connectionDetails.add(connectionServer, connectionDatabases);
+        connectionDetails.add(connectionDatabases);
 
         final Div statusPanel = new Div();
         statusPanel.getElement().setAttribute("data-testid", "connection-status-panel");
@@ -353,8 +352,9 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("display", "inline-flex")
                 .set("justify-content", "flex-end")
                 .set("align-items", "center")
-                .set("gap", "var(--lumo-space-m)")
-                .set("padding-left", "var(--lumo-space-m)")
+                .set("gap", "var(--lumo-space-l)")
+                .set("padding-left", "var(--lumo-space-l)")
+                .set("padding-right", "var(--lumo-space-s)")
                 .set("margin-left", "auto");
 
         connectionStatusState.getElement().setAttribute("data-testid", "connection-status-state");
@@ -392,6 +392,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         layout.getStyle()
                 .set("gap", "var(--lumo-space-m)")
                 .set("height", "100%")
+                .set("padding-bottom", "4.5rem")
                 .set("overflow", "auto");
 
         final Div topSpacer = new Div();
@@ -441,7 +442,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .setZIndex(3)
                 .setBackground("var(--lumo-base-color)")
                 .setPaddingTop("var(--lumo-space-m, .3em)")
-                .set("padding-bottom", "var(--lumo-space-xs)")
+                .set("padding-bottom", "calc(var(--lumo-space-m) + 3.2rem)")
                 .set("margin-top", "var(--lumo-space-xs)");
 
         compareButton.getElement().setAttribute("data-testid", "compare-button");
@@ -1167,7 +1168,6 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                     properties.getConnection().getRightDatabase());
         });
 
-        connectionServer.setText(safe(context.jdbcUrl()));
         connectionDatabases.setText(safe(context.leftDatabase()) + " ↔ " + safe(context.rightDatabase()));
 
         final ConnectionValidationStatus status = statusHolder.current();
@@ -1182,6 +1182,17 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private void refreshAuthUiState() {
         final boolean authenticated = authenticatedContextHolder.isAuthenticated();
         accountMenu.setVisible(authenticated);
+        if (authenticated) {
+            accountMenu.removeAll();
+            final String username = authenticatedContextHolder.current()
+                    .map(AuthenticatedConnectionContext::username)
+                    .filter(value -> value != null && !value.isBlank())
+                    .orElse("Account");
+            final MenuItem accountItem = accountMenu.addItem(username);
+            accountItem.getElement().setAttribute("data-testid", "account-menu-label");
+            final MenuItem logoutItem = accountItem.getSubMenu().addItem("Logout", event -> handleLogout());
+            logoutItem.getElement().setAttribute("data-testid", "logout-menu-item");
+        }
         refreshActionButtons();
         if (!authenticated) {
             rebuildLoginDialogForm();

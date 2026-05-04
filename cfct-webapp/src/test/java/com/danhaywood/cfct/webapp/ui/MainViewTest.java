@@ -91,6 +91,8 @@ class MainViewTest {
         final Span navbarBrand = (Span) findByTestId(view, "navbar-branding-name").orElseThrow();
         assertThat(navbarBrand.getText()).isEqualTo("CFCT");
         assertThat(findByTestId(view, "account-menu")).isPresent();
+        final Component accountLabel = findByTestId(view, "account-menu-label").orElseThrow();
+        assertThat(accountLabel.getElement().getText()).isEqualTo("sa");
         assertThat(findByTestId(view, "logout-button")).isEmpty();
 
         final Span status = (Span) findByTestId(view, "connection-status-state").orElseThrow();
@@ -283,7 +285,8 @@ class MainViewTest {
 
         final String footerText = textOf(footer);
 
-        assertThat(footerText).contains("localhost:1433", "left_db", "right_db", "Status: OK");
+        assertThat(footerText).contains("left_db", "right_db", "Status: OK");
+        assertThat(footerText).doesNotContain("localhost:1433", "jdbc:sqlserver");
         assertThat(footerText).doesNotContain("super-secret-password", "SQL connectivity status");
     }
 

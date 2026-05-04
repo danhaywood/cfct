@@ -156,14 +156,15 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
 
             assertThat(page.locator("[data-testid='hamburger-menu']").count()).isEqualTo(1);
             final String footerText = page.locator("[data-testid='connection-details-footer']").innerText();
-            assertThat(footerText).contains(PlaywrightSqlServerFixture.jdbcUrl(), LEFT_DB, RIGHT_DB, "Status: OK");
-            assertThat(footerText).doesNotContain(PlaywrightSqlServerFixture.password(), "SQL connectivity status");
+            assertThat(footerText).contains(LEFT_DB, RIGHT_DB, "Status: OK");
+            assertThat(footerText).doesNotContain(PlaywrightSqlServerFixture.jdbcUrl(), PlaywrightSqlServerFixture.password(), "SQL connectivity status");
 
             assertThat(page.locator("[data-testid='selected-table-feedback']").count()).isZero();
             assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isDisabled()).isTrue();
             assertThat(page.locator("[data-testid='clear-selections-button']").isDisabled()).isTrue();
             assertThat(page.locator("[data-testid='apply-table-filter']").count()).isZero();
             assertThat(page.locator("[data-testid='account-menu']").count()).isEqualTo(1);
+            assertThat(page.locator("[data-testid='account-menu-label']").innerText()).contains(PlaywrightSqlServerFixture.username());
             assertThat(page.locator("[data-testid='logout-button']").count()).isZero();
 
             assertThat(page.locator("[data-testid='command-selection-spacer']").count()).isEqualTo(1);
