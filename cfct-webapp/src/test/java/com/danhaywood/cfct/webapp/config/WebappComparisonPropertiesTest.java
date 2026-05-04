@@ -23,13 +23,10 @@ class WebappComparisonPropertiesTest {
                         "spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver",
                         "spring.datasource.username=sa",
                         "spring.datasource.password=secret",
-                        "cfct.webapp.comparison.left-database=left_db",
-                        "cfct.webapp.comparison.right-database=right_db",
-                        "cfct.webapp.comparison.env-file=demo/.env",
-                        "cfct.webapp.comparison.output.format=json",
-                        "cfct.webapp.comparison.output.file=comparison.json",
-                        "cfct.webapp.comparison.validation.enabled=false",
-                        "cfct.webapp.comparison.validation.fail-fast=false")
+                        "cfct.webapp.connection.left-database=left_db",
+                        "cfct.webapp.connection.right-database=right_db",
+                        "cfct.webapp.validation.enabled=false",
+                        "cfct.webapp.validation.fail-fast=false")
                 .run(context -> {
                     assertThat(context).hasNotFailed();
                     final WebappComparisonProperties properties = context.getBean(WebappComparisonProperties.class);
@@ -37,11 +34,8 @@ class WebappComparisonPropertiesTest {
                     assertThat(properties.getDatasourceDriverClassName()).isEqualTo("com.microsoft.sqlserver.jdbc.SQLServerDriver");
                     assertThat(properties.getDatasourceUsername()).isEqualTo("sa");
                     assertThat(properties.getDatasourcePassword()).isEqualTo("secret");
-                    assertThat(properties.getLeftDatabase()).isEqualTo("left_db");
-                    assertThat(properties.getRightDatabase()).isEqualTo("right_db");
-                    assertThat(properties.getEnvFile()).isEqualTo("demo/.env");
-                    assertThat(properties.getOutput().getFormat()).isEqualTo("json");
-                    assertThat(properties.getOutput().getFile()).isEqualTo("comparison.json");
+                    assertThat(properties.getConnection().getLeftDatabase()).isEqualTo("left_db");
+                    assertThat(properties.getConnection().getRightDatabase()).isEqualTo("right_db");
                     assertThat(properties.getValidation().isEnabled()).isFalse();
                     assertThat(properties.getValidation().isFailFast()).isFalse();
                 });

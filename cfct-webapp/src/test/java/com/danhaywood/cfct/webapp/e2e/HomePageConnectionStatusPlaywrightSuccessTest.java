@@ -20,8 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
-                "cfct.webapp.comparison.validation.enabled=true",
-                "cfct.webapp.comparison.validation.fail-fast=true"
+                "cfct.webapp.validation.enabled=true",
+                "cfct.webapp.validation.fail-fast=true"
         })
 @EnabledIfSystemProperty(named = "playwright", matches = "true")
 class HomePageConnectionStatusPlaywrightSuccessTest {
@@ -42,8 +42,8 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
         registry.add("spring.datasource.driver-class-name", () -> "com.microsoft.sqlserver.jdbc.SQLServerDriver");
         registry.add("spring.datasource.username", PlaywrightSqlServerFixture::username);
         registry.add("spring.datasource.password", PlaywrightSqlServerFixture::password);
-        registry.add("cfct.webapp.comparison.left-database", () -> LEFT_DB);
-        registry.add("cfct.webapp.comparison.right-database", () -> RIGHT_DB);
+        registry.add("cfct.webapp.connection.left-database", () -> LEFT_DB);
+        registry.add("cfct.webapp.connection.right-database", () -> RIGHT_DB);
     }
 
     @Test

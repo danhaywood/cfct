@@ -451,36 +451,32 @@ Configuration property reference:
 |change-me
 |Default login password shown in the webapp login form.
 
-|cfct.webapp.comparison.left-database
+|cfct.webapp.connection.left-database
 |left_db
 |Default source database name used for the left-hand comparison side.
 
-|cfct.webapp.comparison.right-database
+|cfct.webapp.connection.right-database
 |right_db
 |Default target database name used for the right-hand comparison side.
 
-|cfct.webapp.comparison.env-file
-|.env
-|Path to dotenv-style values used by comparison execution defaults.
-
-|cfct.webapp.comparison.output.format
-|text
-|Default comparison output format.
-
-|cfct.webapp.comparison.output.file
-|empty
-|Optional output file path.
-If empty, output is rendered without writing a file.
-
-|cfct.webapp.comparison.validation.enabled
+|cfct.webapp.validation.enabled
 |true
 |Enables login-time connectivity and required-object validation.
 
-|cfct.webapp.comparison.validation.fail-fast
+|cfct.webapp.validation.fail-fast
 |true
 |Stops login flow immediately when validation fails.
 |===
 
+Migration note for older configs:
+
+* `cfct.webapp.comparison.connection.left-database` -> `cfct.webapp.connection.left-database`
+* `cfct.webapp.comparison.connection.right-database` -> `cfct.webapp.connection.right-database`
+* `cfct.webapp.comparison.validation.enabled` -> `cfct.webapp.validation.enabled`
+* `cfct.webapp.comparison.validation.fail-fast` -> `cfct.webapp.validation.fail-fast`
+* `cfct.webapp.comparison.env-file` removed (CLI concern)
+* `cfct.webapp.comparison.output.format` removed (CLI concern)
+* `cfct.webapp.comparison.output.file` removed (CLI concern)
 
 Happy-path connectivity check with the demo fixture SQL Server:
 
@@ -496,7 +492,7 @@ scripts/fixture-sqlserver.sh start
 [source,bash]
 ----
 mvn -pl cfct-webapp -am spring-boot:run \
-  -Dspring-boot.run.arguments="--spring.datasource.url=jdbc:sqlserver://localhost:14333;encrypt=false;trustServerCertificate=true --spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver --spring.datasource.username=sa --spring.datasource.password=Str0ng_password!123 --cfct.webapp.comparison.left-database=left_db --cfct.webapp.comparison.right-database=right_db"
+  -Dspring-boot.run.arguments="--spring.datasource.url=jdbc:sqlserver://localhost:14333;encrypt=false;trustServerCertificate=true --spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver --spring.datasource.username=sa --spring.datasource.password=Str0ng_password!123 --cfct.webapp.connection.left-database=left_db --cfct.webapp.connection.right-database=right_db"
 ----
 +
 Or use the one-liner helper script that starts the fixture and runs the webapp with the same happy-path settings:
@@ -537,7 +533,7 @@ Login should fail with a clear missing-system-objects validation message.
 scripts/fixture-sqlserver.sh stop
 ----
 
-The webapp reads login defaults and shared execution defaults from `cfct-webapp/src/main/resources/application.yml` using `cfct.webapp.comparison.*` keys.
+The webapp reads login defaults and validation defaults from `cfct-webapp/src/main/resources/application.yml` using `cfct.webapp.connection.*` and `cfct.webapp.validation.*` keys.
 
 These keys map to CLI concepts as follows:
 
@@ -545,11 +541,10 @@ These keys map to CLI concepts as follows:
 * `spring.datasource.driver-class-name` ↔ `--jdbc-driver`
 * `spring.datasource.username` ↔ `-U` / `--username`
 * `spring.datasource.password` ↔ `-P` / `--password`
-* `cfct.webapp.comparison.left-database` ↔ `-l` / `--left-database`
-* `cfct.webapp.comparison.right-database` ↔ `-r` / `--right-database`
-* `env-file` ↔ `-e` / `--env-file`
-* `output.format` ↔ `-f` / `--output-format`
-* `output.file` ↔ `-o` / `--output-file`
+* `cfct.webapp.connection.left-database` ↔ `-l` / `--left-database`
+* `cfct.webapp.connection.right-database` ↔ `-r` / `--right-database`
+* `cfct.webapp.validation.enabled` ↔ login-time validation switch
+* `cfct.webapp.validation.fail-fast` ↔ login failure behavior
 
 Ignore-column advisor toggles are also typesafe configuration properties.
 All default to `true`.
@@ -769,7 +764,7 @@ cfct:
 The webapp uses a login-first flow.
 SQL connectivity, database existence, and required target-system object presence are validated when the user submits the login form.
 Required target-system objects may be either tables or views.
-The login form is pre-populated from `spring.datasource.*` plus `cfct.webapp.comparison.left-database` and `cfct.webapp.comparison.right-database` configuration values, and every field remains editable.
+The login form is pre-populated from `spring.datasource.*` plus `cfct.webapp.connection.left-database` and `cfct.webapp.connection.right-database` configuration values, and every field remains editable.
 
 
 

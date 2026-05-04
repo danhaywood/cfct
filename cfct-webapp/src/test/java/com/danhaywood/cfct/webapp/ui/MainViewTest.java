@@ -859,8 +859,8 @@ class MainViewTest {
         properties.setDatasourceUrl("jdbc:sqlserver://localhost:1433;encrypt=false;trustServerCertificate=true");
         properties.setDatasourceUsername("sa");
         properties.setDatasourcePassword("super-secret-password");
-        properties.setLeftDatabase("left_db");
-        properties.setRightDatabase("right_db");
+        properties.getConnection().setLeftDatabase("left_db");
+        properties.getConnection().setRightDatabase("right_db");
         return properties;
     }
 

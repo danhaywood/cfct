@@ -33,8 +33,8 @@ public class WebappAuthenticationService {
                 properties.getDatasourceDriverClassName(),
                 properties.getDatasourceUsername(),
                 properties.getDatasourcePassword(),
-                properties.getLeftDatabase(),
-                properties.getRightDatabase());
+                properties.getConnection().getLeftDatabase(),
+                properties.getConnection().getRightDatabase());
     }
 
     public void authenticate(final ConnectionLoginRequest request) {

@@ -1026,8 +1026,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                     properties.getDatasourceDriverClassName(),
                     properties.getDatasourceUsername(),
                     properties.getDatasourcePassword(),
-                    properties.getLeftDatabase(),
-                    properties.getRightDatabase());
+                    properties.getConnection().getLeftDatabase(),
+                    properties.getConnection().getRightDatabase());
         });
 
         connectionServer.setText(safe(context.jdbcUrl()));

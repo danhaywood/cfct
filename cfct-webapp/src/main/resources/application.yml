@@ -7,13 +7,9 @@ spring:
 
 cfct:
   webapp:
-    comparison:
+    connection:
       left-database: left_db
       right-database: right_db
-      env-file: .env
-      output:
-        format: text
-        file:
-      validation:
-        enabled: true
-        fail-fast: true
+    validation:
+      enabled: true
+      fail-fast: true

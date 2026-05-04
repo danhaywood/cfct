@@ -105,8 +105,8 @@ class WebappAuthenticationServiceTest {
         properties.setDatasourceDriverClassName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
         properties.setDatasourceUsername("sa");
         properties.setDatasourcePassword("change-me");
-        properties.setLeftDatabase("left_db");
-        properties.setRightDatabase("right_db");
+        properties.getConnection().setLeftDatabase("left_db");
+        properties.getConnection().setRightDatabase("right_db");
         return properties;
     }
 }

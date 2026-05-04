@@ -6,10 +6,7 @@ import org.springframework.validation.annotation.Validated;
 
 import jakarta.validation.Valid;
 
-/**
- * Maps shared Spring configuration to CLI-equivalent execution options.
- */
-@ConfigurationProperties(prefix = "cfct.webapp.comparison")
+@ConfigurationProperties(prefix = "cfct.webapp")
 @Validated
 public class WebappComparisonProperties {
 
@@ -26,14 +23,10 @@ public class WebappComparisonProperties {
     private String datasourcePassword;
 
     @Valid
-    private Output output = new Output();
+    private Connection connection = new Connection();
 
     @Valid
     private Validation validation = new Validation();
-
-    private String envFile;
-    private String leftDatabase;
-    private String rightDatabase;
 
     public String getDatasourceUrl() {
         return datasourceUrl;
@@ -67,12 +60,12 @@ public class WebappComparisonProperties {
         this.datasourcePassword = datasourcePassword;
     }
 
-    public Output getOutput() {
-        return output;
+    public Connection getConnection() {
+        return connection;
     }
 
-    public void setOutput(final Output output) {
-        this.output = output;
+    public void setConnection(final Connection connection) {
+        this.connection = connection;
     }
 
     public Validation getValidation() {
@@ -83,48 +76,24 @@ public class WebappComparisonProperties {
         this.validation = validation;
     }
 
-    public String getEnvFile() {
-        return envFile;
-    }
+    public static class Connection {
+        private String leftDatabase;
+        private String rightDatabase;
 
-    public void setEnvFile(final String envFile) {
-        this.envFile = envFile;
-    }
-
-    public String getLeftDatabase() {
-        return leftDatabase;
-    }
-
-    public void setLeftDatabase(final String leftDatabase) {
-        this.leftDatabase = leftDatabase;
-    }
-
-    public String getRightDatabase() {
-        return rightDatabase;
-    }
-
-    public void setRightDatabase(final String rightDatabase) {
-        this.rightDatabase = rightDatabase;
-    }
-
-    public static class Output {
-        private String format;
-        private String file;
-
-        public String getFormat() {
-            return format;
+        public String getLeftDatabase() {
+            return leftDatabase;
         }
 
-        public void setFormat(final String format) {
-            this.format = format;
+        public void setLeftDatabase(final String leftDatabase) {
+            this.leftDatabase = leftDatabase;
         }
 
-        public String getFile() {
-            return file;
+        public String getRightDatabase() {
+            return rightDatabase;
         }
 
-        public void setFile(final String file) {
-            this.file = file;
+        public void setRightDatabase(final String rightDatabase) {
+            this.rightDatabase = rightDatabase;
         }
     }
 
