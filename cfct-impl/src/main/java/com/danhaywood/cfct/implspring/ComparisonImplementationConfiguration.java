@@ -33,7 +33,7 @@ import org.springframework.context.annotation.Configuration;
 import java.util.List;
 
 @Configuration
-@EnableConfigurationProperties(IgnoreColumnAdvisorsProperties.class)
+@EnableConfigurationProperties({IgnoreColumnAdvisorsProperties.class, SqlTraceProperties.class})
 public class ComparisonImplementationConfiguration {
 
     @Bean

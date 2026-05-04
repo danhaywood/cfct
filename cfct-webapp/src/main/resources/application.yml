@@ -6,6 +6,9 @@ spring:
     password: Str0ng_password!123
 
 cfct:
+  sql:
+    trace:
+      enabled: false
   webapp:
     connection:
       left-database: left_db

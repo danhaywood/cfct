@@ -1,5 +1,6 @@
 package com.danhaywood.cfct.webapp.config;
 
+import com.danhaywood.cfct.implspring.SqlTraceProperties;
 import com.danhaywood.cfct.sql.TracingDataSourceProxyFactory;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
 import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
@@ -13,6 +14,12 @@ import java.util.regex.Pattern;
 @Component
 public class WebappDataSourceConfiguration {
 
+    private final boolean sqlTraceEnabled;
+
+    public WebappDataSourceConfiguration(final SqlTraceProperties sqlTraceProperties) {
+        this.sqlTraceEnabled = sqlTraceProperties.isEnabled();
+    }
+
     public WebappDataSources dataSourcesFor(final AuthenticatedConnectionContext context) {
         return new WebappDataSources(
                 sqlServerDataSource(context.jdbcUrl(), context.jdbcDriver(), context.username(), context.password(), "master", "webapp-master"),
@@ -20,16 +27,7 @@ public class WebappDataSourceConfiguration {
                 sqlServerDataSource(context.jdbcUrl(), context.jdbcDriver(), context.username(), context.password(), context.rightDatabase(), "webapp-right"));
     }
 
-    public static DataSource sqlServerDataSource(
-            final String jdbcUrl,
-            final String jdbcDriver,
-            final String username,
-            final String password,
-            final String databaseName) {
-        return sqlServerDataSource(jdbcUrl, jdbcDriver, username, password, databaseName, "webapp-" + databaseName);
-    }
-
-    private static DataSource sqlServerDataSource(
+    private DataSource sqlServerDataSource(
             final String jdbcUrl,
             final String jdbcDriver,
             final String username,
@@ -43,16 +41,7 @@ public class WebappDataSourceConfiguration {
         if (jdbcDriver != null && !jdbcDriver.isBlank()) {
             dataSource.setSelectMethod("direct");
         }
-        return TracingDataSourceProxyFactory.wrapIfEnabled(dataSource, dataSourceName);
-    }
-
-    public static DataSource sqlServerDataSource(final WebappComparisonProperties properties, final String databaseName) {
-        return sqlServerDataSource(
-                properties.getDatasourceUrl(),
-                properties.getDatasourceDriverClassName(),
-                properties.getDatasourceUsername(),
-                properties.getDatasourcePassword(),
-                databaseName);
+        return TracingDataSourceProxyFactory.wrapIfEnabled(dataSource, dataSourceName, sqlTraceEnabled);
     }
 
     private static void applyJdbcUrl(final SQLServerDataSource dataSource, final String jdbcUrl, final String databaseName) {

@@ -1,5 +1,6 @@
 package com.danhaywood.cfct.cli;
 
+import com.danhaywood.cfct.implspring.SqlTraceProperties;
 import com.danhaywood.cfct.model.TableRef;
 import com.danhaywood.cfct.request.ComparisonOptions;
 import com.danhaywood.cfct.request.MultiTableComparisonRequest;
@@ -30,14 +31,17 @@ public class CliComparisonExecutorSqlServer implements CliComparisonExecutor {
     private final MultiTableComparisonService comparer;
     private final CliComparisonReportRenderer renderer;
     private final CommandAuditTouchedTableResolver touchedTableResolver;
+    private final boolean sqlTraceEnabled;
 
     public CliComparisonExecutorSqlServer(
             final MultiTableComparisonService comparer,
             final CliComparisonReportRenderer renderer,
-            final CommandAuditTouchedTableResolver touchedTableResolver) {
+            final CommandAuditTouchedTableResolver touchedTableResolver,
+            final SqlTraceProperties sqlTraceProperties) {
         this.comparer = comparer;
         this.renderer = renderer;
         this.touchedTableResolver = touchedTableResolver;
+        this.sqlTraceEnabled = sqlTraceProperties.isEnabled();
     }
 
     @Override
@@ -89,7 +93,8 @@ public class CliComparisonExecutorSqlServer implements CliComparisonExecutor {
         sqlServerDataSource.setPassword(password);
         final DataSource dataSource = TracingDataSourceProxyFactory.wrapIfEnabled(
                 sqlServerDataSource,
-                "cli-" + Integer.toHexString(jdbcUrl.hashCode()));
+                "cli-" + Integer.toHexString(jdbcUrl.hashCode()),
+                sqlTraceEnabled);
         return dataSource.getConnection();
     }
 

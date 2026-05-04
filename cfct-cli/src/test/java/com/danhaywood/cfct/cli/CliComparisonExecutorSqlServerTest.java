@@ -1,5 +1,6 @@
 package com.danhaywood.cfct.cli;
 
+import com.danhaywood.cfct.implspring.SqlTraceProperties;
 import com.danhaywood.cfct.model.MultiTableComparisonResult;
 import com.danhaywood.cfct.model.TableRef;
 import com.danhaywood.cfct.request.MultiTableComparisonRequest;
@@ -42,7 +43,11 @@ class CliComparisonExecutorSqlServerTest {
         when(renderer.render(any(), any())).thenReturn(CliExecutionOutput.text("ok"));
         final CommandAuditTouchedTableResolver touchedTableResolver = mock(CommandAuditTouchedTableResolver.class);
 
-        final CliComparisonExecutor executor = new CliComparisonExecutorSqlServer(comparisonService, renderer, touchedTableResolver) {
+        final CliComparisonExecutor executor = new CliComparisonExecutorSqlServer(
+                comparisonService,
+                renderer,
+                touchedTableResolver,
+                sqlTraceDisabled()) {
             @Override
             protected Connection openConnection(final String jdbcUrl, final String username, final String password) {
                 return mock(Connection.class);
@@ -74,7 +79,11 @@ class CliComparisonExecutorSqlServerTest {
         when(touchedTableResolver.resolveTouchedQualifiedTableNames(any(Connection.class), any()))
                 .thenReturn(new java.util.TreeSet<>(List.of("dbo.Product", "dbo.Supplier")));
 
-        final CliComparisonExecutorSqlServer executor = new CliComparisonExecutorSqlServer(comparisonService, renderer, touchedTableResolver) {
+        final CliComparisonExecutorSqlServer executor = new CliComparisonExecutorSqlServer(
+                comparisonService,
+                renderer,
+                touchedTableResolver,
+                sqlTraceDisabled()) {
             @Override
             protected Connection openConnection(final String jdbcUrl, final String username, final String password) {
                 return mock(Connection.class);
@@ -110,7 +119,11 @@ class CliComparisonExecutorSqlServerTest {
         final CliComparisonReportRenderer renderer = mock(CliComparisonReportRenderer.class);
         final CommandAuditTouchedTableResolver touchedTableResolver = mock(CommandAuditTouchedTableResolver.class);
 
-        final CliComparisonExecutorSqlServer executor = new CliComparisonExecutorSqlServer(comparisonService, renderer, touchedTableResolver) {
+        final CliComparisonExecutorSqlServer executor = new CliComparisonExecutorSqlServer(
+                comparisonService,
+                renderer,
+                touchedTableResolver,
+                sqlTraceDisabled()) {
             @Override
             protected Connection openConnection(final String jdbcUrl, final String username, final String password) {
                 return mock(Connection.class);
@@ -133,5 +146,11 @@ class CliComparisonExecutorSqlServerTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> executor.execute(arguments))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("No commands found");
+    }
+
+    private static SqlTraceProperties sqlTraceDisabled() {
+        final SqlTraceProperties properties = new SqlTraceProperties();
+        properties.setEnabled(false);
+        return properties;
     }
 }

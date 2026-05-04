@@ -435,6 +435,10 @@ Configuration property reference:
 |cfct.webapp.validation.fail-fast
 |true
 |Stops login flow immediately when validation fails.
+
+|cfct.sql.trace.enabled
+|false
+|Enables datasource-proxy SQL statement logging for CLI and webapp datasource usage.
 |===
 
 Migration note for older configs:
@@ -564,7 +568,7 @@ By default, technical identifier columns are ignored for value comparison, inclu
 For SQL Server-backed runs on the same server instance, CFCT executes one database-side diff query per table and returns only left-only, right-only, and value-different rows.
 
 Generated SQL is intentionally compatibility-level-100-safe and avoids post-2008 syntax such as `OFFSET/FETCH`, `IIF`, `TRY_CONVERT`, `CONCAT`, and `STRING_AGG`.
-Set `CFCT_SQL_TRACE_ENABLED=true` (or JVM system property `-Dcfct.sql.trace.enabled=true`) to emit SQL statements before execution for verification and troubleshooting.
+Set `cfct.sql.trace.enabled=true` in Spring configuration to emit SQL statements before execution for verification and troubleshooting.
 
 === Query plan and indexing expectations
 

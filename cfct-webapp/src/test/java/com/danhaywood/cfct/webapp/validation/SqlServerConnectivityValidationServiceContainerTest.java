@@ -1,5 +1,6 @@
 package com.danhaywood.cfct.webapp.validation;
 
+import com.danhaywood.cfct.implspring.SqlTraceProperties;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
 import com.danhaywood.cfct.webapp.config.WebappDataSourceConfiguration;
 
@@ -124,7 +125,9 @@ class SqlServerConnectivityValidationServiceContainerTest {
     }
 
     private static SqlServerConnectivityValidationService service() {
-        return new SqlServerConnectivityValidationService(new WebappDataSourceConfiguration());
+        final SqlTraceProperties sqlTraceProperties = new SqlTraceProperties();
+        sqlTraceProperties.setEnabled(false);
+        return new SqlServerConnectivityValidationService(new WebappDataSourceConfiguration(sqlTraceProperties));
     }
 
     private static AuthenticatedConnectionContext context(
