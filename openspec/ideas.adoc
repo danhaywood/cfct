@@ -8,11 +8,15 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 == Candidate ideas
 
-* /opsx-propose: sometimes values are different only because of a timestamp.  Rather than completely ignoring the column for comparison, we could instead handle it by scrubbing the values, similar to approval/character tests.  To support this, let's add an SPI, ColumnValueNormalizer , and then have an implementation that looks for an extended property, 'cfct.normalizeMask'.  The value of this should be the mask to match for, and if it is a match then the value should be scrubbed to the mask.  For example, if the value is '2026-04-20T14:08:09.050 - VT - [RENT, RENT_FIXED] - 2026-06-01 - 2026-06-01/2026-07-01' and the mask is 'yyyy-MM-ddThh:MM.ss.SSS', then this value should be normalized to 'yyyy-MM-ddThh:MM.ss.SSS - VT - [RENT, RENT_FIXED] - 2026-06-01 - 2026-06-01/2026-07-01'.  Because this is most easily implemented using java functionality, this normalization should _NOT_ be performed in the SQL, instead the SQL will return non-matching values but the client-side Java code can then be applied (meaning the rows might end up being matching).
+* /opsx-propose: sometimes values are different only because of a timestamp.  Rather than completely ignoring the column for comparison, we could instead handle it by scrubbing the values, similar to approval/character tests.  To support this, let's add an SPI, ColumnValueNormalizer , and then have an implementation that looks for an extended property, 'cfct.normalizeMask'.  The value of this should be the mask to match for, and if it is a match then the value should be scrubbed to the mask.  For example, if the value is '2026-04-20T14:08:09.050 - VT - [RENT, RENT_FIXED] - 2026-06-01 - 2026-06-01/2026-07-01' and the mask is 'yyyy-MM-ddThh:MM.ss.SSS', then this value should be normalized to 'yyyy-MM-ddThh:MM.ss.SSS - VT - [RENT, RENT_FIXED] - 2026-06-01 - 2026-06-01/2026-07-01'.  Because this is most easily implemented using java functionality, this normalization should _NOT_ be performed in the SQL, instead the SQL will return non-matching values but the client-side Java code can then be applied (meaning the rows might end up being matching and therefore suppressed in the UI).
 
 === Cosmetic
 
 * /opsx-propose: extend the build to pick up the git commit; incorporate onto the status bar as a version number.
+
+* /opsx-propose: remove connectionStatusState and connectionStatusSummary, neither is required.  With comparisonProgressSummary, when either hit clear or change the selection parameters in either table in the nav drawer, then clear any previous status report.
+
+* /opsx-propose: when initially select on a command, the corresponding selected business tables aren't (always? sometimes?) shown ... I have to uncheck and re-check the 'Selected only' checkbox
 
 === New features
 
