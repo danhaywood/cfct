@@ -59,6 +59,12 @@ jobs:
         shell: bash
         run: mvn -B verify
 
+      - name: Verify packaged webapp includes Vaadin production index
+        shell: bash
+        run: |
+          set -euo pipefail
+          jar tf cfct-webapp/target/cfct-webapp-0.0.1-SNAPSHOT.jar | grep -q 'META-INF/VAADIN/webapp/index.html'
+
       - name: Validate Docker Hub credentials
         shell: bash
         env:

@@ -11,6 +11,11 @@ mvn -pl cfct-webapp -am package -DskipTests
 
 java -Djarmode=layertools -jar cfct-webapp/target/cfct-webapp-0.0.1-SNAPSHOT.jar list > /dev/null
 
+if ! jar tf cfct-webapp/target/cfct-webapp-0.0.1-SNAPSHOT.jar | grep -q 'META-INF/VAADIN/webapp/index.html'; then
+  echo "Layered image smoke test failed: packaged jar does not contain Vaadin production index.html" >&2
+  exit 1
+fi
+
 docker build -f cfct-webapp/Dockerfile -t "${IMAGE_NAME}" .
 
 CID="$(docker run -d -p 18080:8080 "${IMAGE_NAME}")"
@@ -26,7 +31,12 @@ for _ in {1..45}; do
     exit 1
   fi
 
-  if docker logs "${CID}" 2>&1 | grep -q "Started CfctWebApplication"; then
+  if curl -fsS "http://localhost:18080/" > /tmp/cfct-webapp-home.html; then
+    if grep -q "Unable to find index.html" /tmp/cfct-webapp-home.html; then
+      echo "Layered image smoke test failed: Vaadin index.html lookup error rendered in HTTP response" >&2
+      docker logs "${CID}" >&2 || true
+      exit 1
+    fi
     echo "Layered image smoke test passed"
     exit 0
   fi
@@ -34,6 +44,6 @@ for _ in {1..45}; do
   sleep 2
 done
 
-echo "Layered image smoke test failed: startup log marker not observed within timeout" >&2
+echo "Layered image smoke test failed: HTTP endpoint not reachable within timeout" >&2
 docker logs "${CID}" >&2 || true
 exit 1

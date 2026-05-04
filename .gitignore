@@ -4,3 +4,4 @@ target/
 **/*.received.*
 /.approval_tests_temp/
 *.xlsx
+cfct-webapp/src/main/bundles/*.bundle

@@ -675,12 +675,17 @@ Build and run the layered webapp Docker image from the repository root:
 [source,bash]
 ----
 mvn -pl cfct-webapp -am package -DskipTests
+jar tf cfct-webapp/target/cfct-webapp-0.0.1-SNAPSHOT.jar | grep 'META-INF/VAADIN/webapp/index.html'
 docker build -f cfct-webapp/Dockerfile -t cfct-webapp:local .
 docker run --rm -p 8080:8080 cfct-webapp:local
 ----
 
 This container build requires Docker and uses Spring Boot layertools layer metadata from the packaged webapp jar.
+The Maven package step runs the Vaadin production frontend build and packages `index.html` into the webapp jar.
+The `jar tf` check confirms the production `index.html` is present before image assembly.
 The webapp is reachable at http://localhost:8080 when the container is running.
+
+If browser access shows a whitelabel error and logs include `Unable to find index.html`, rebuild the jar with Maven package and recheck the classpath entry above before rebuilding the image.
 
 === Docker Hub publishing with GitHub Actions
 
