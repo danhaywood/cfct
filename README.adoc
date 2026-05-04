@@ -334,6 +334,236 @@ java -jar cfct-cli/target/cfct-cli-0.0.1-SNAPSHOT.jar \
 ----
 
 
+== Deployment Guide
+
+Before first real-world use, ensure the target database provides these required objects as either tables or views:
+
+* `causewayExtCommandLog.CommandLogEntry`
+* `causewayExtAuditTrail.AuditTrailEntry`
+* `util.LogicalTypeTableMapping`
+
+Expected structure for these objects is:
+
+[cols="2m,2m",options="header"]
+.causewayExtCommandLog.CommandLogEntry
+|===
+|Column |SQL Server type
+
+|interactionId
+|UNIQUEIDENTIFIER (PK)
+
+|executeIn
+|VARCHAR(10)
+
+|logicalMemberIdentifier
+|VARCHAR(255)
+
+|timestamp
+|DATETIME2
+
+|target
+|VARCHAR(1500)
+
+|replayState
+|VARCHAR(20)
+|===
+
+[cols="2m,2m",options="header"]
+.causewayExtAuditTrail.AuditTrailEntry
+|===
+|Column |SQL Server type
+
+|interactionId
+|UNIQUEIDENTIFIER +
+(FK to CommandLogEntry.interactionId)
+
+|sequence
+|INT
+
+|target
+|VARCHAR(1500)
+
+|propertyId
+|VARCHAR(100)
+|===
+
+[cols="2m,2m",options="header"]
+.util.LogicalTypeTableMapping
+|===
+|Column |SQL Server type
+
+|logicalTypeName
+|NVARCHAR(255)
+
+|qualifiedName
+|NVARCHAR(255)
+|===
+
+For business tables you compare, CFCT requires a unique index or unique constraint whose name ends with `_PK`.
+CFCT uses this `_PK`-suffixed object to resolve business row identity during comparison.
+
+=== Configuration reference (`application.yml`)
+
+The webapp reads defaults from `cfct.webapp.*` properties.
+Use this as a deployer reference for supported keys:
+
+[source,yaml]
+.application.yml
+----
+cfct:
+  webapp:
+    comparison:
+      connection:
+        server: localhost:14333
+        username: sa
+        password: change-me
+        left-database: left_db
+        right-database: right_db
+      env-file: .env
+      output:
+        format: text
+        file:
+      validation:
+        enabled: true
+        fail-fast: true
+    selection-plan:
+      explicit:
+        tables:
+          - dbo.Supplier
+----
+
+Configuration property reference:
+
+[cols="2m,1m,3",options="header"]
+|===
+|Property |Default |Description
+
+|cfct.webapp.comparison.connection.server
+|localhost:14333
+|SQL Server host and port shown as the default login server.
+
+|cfct.webapp.comparison.connection.username
+|sa
+|Default login username shown in the webapp login form.
+
+|cfct.webapp.comparison.connection.password
+|change-me
+|Default login password shown in the webapp login form.
+
+|cfct.webapp.comparison.connection.left-database
+|left_db
+|Default source database name used for the left-hand comparison side.
+
+|cfct.webapp.comparison.connection.right-database
+|right_db
+|Default target database name used for the right-hand comparison side.
+
+|cfct.webapp.comparison.env-file
+|.env
+|Path to dotenv-style values used by comparison execution defaults.
+
+|cfct.webapp.comparison.output.format
+|text
+|Default comparison output format.
+
+|cfct.webapp.comparison.output.file
+|empty
+|Optional output file path.
+If empty, output is rendered without writing a file.
+
+|cfct.webapp.comparison.validation.enabled
+|true
+|Enables login-time connectivity and required-object validation.
+
+|cfct.webapp.comparison.validation.fail-fast
+|true
+|Stops login flow immediately when validation fails.
+
+|cfct.webapp.selection-plan.explicit.tables
+|[dbo.Supplier]
+|Default explicit table list used by the webapp selection plan.
+|===
+
+Happy-path connectivity check with the demo fixture SQL Server:
+
+. Start the fixture SQL Server container and load demo data.
++
+[source,bash]
+----
+scripts/fixture-sqlserver.sh start
+----
+
+. Start the webapp with fixture credentials and fixture databases.
++
+[source,bash]
+----
+mvn -pl cfct-webapp -am spring-boot:run \
+  -Dspring-boot.run.arguments="--cfct.webapp.comparison.connection.server=localhost:14333 --cfct.webapp.comparison.connection.username=sa --cfct.webapp.comparison.connection.password=Str0ng_password!123 --cfct.webapp.comparison.connection.left-database=left_db --cfct.webapp.comparison.connection.right-database=right_db"
+----
++
+Or use the one-liner helper script that starts the fixture and runs the webapp with the same happy-path settings:
++
+[source,bash]
+----
+scripts/check-webapp-happy-path.sh
+----
+
+. Open `http://localhost:8080` and click `Login` (or edit defaults first, then login).
+
+. Confirm successful startup by checking that the app reports successful startup.
+
+. Optional manual negative-path check for invalid target database.
++
+[source,bash]
++
+----
+scripts/fixture-sqlserver.sh restart --invalid-target-db
+----
++
+Login should fail with a clear validation message.
+
+. Optional manual negative-path check for missing required target system objects.
++
+[source,bash]
+----
+scripts/fixture-sqlserver.sh restart --missing-system-tables
+----
++
+In this mode, the target database exists but required system objects are removed.
+Login should fail with a clear missing-system-objects validation message.
+
+. Stop the fixture when done.
++
+[source,bash]
+----
+scripts/fixture-sqlserver.sh stop
+----
+
+The webapp reads login defaults and shared execution defaults from `cfct-webapp/src/main/resources/application.yml` using `cfct.webapp.comparison.*` keys.
+
+These keys map to CLI concepts as follows:
+
+* `connection.server` ↔ `-S` / `--server`
+* `connection.username` ↔ `-U` / `--username`
+* `connection.password` ↔ `-P` / `--password`
+* `connection.left-database` ↔ `-l` / `--left-database`
+* `connection.right-database` ↔ `-r` / `--right-database`
+* `env-file` ↔ `-e` / `--env-file`
+* `output.format` ↔ `-f` / `--output-format`
+* `output.file` ↔ `-o` / `--output-file`
+
+Ignore-column advisor toggles are also typesafe configuration properties.
+All default to `true`.
+
+- `cfct.comparison.ignore-column-advisors.identity-enabled`
+- `cfct.comparison.ignore-column-advisors.uuid-enabled`
+- `cfct.comparison.ignore-column-advisors.timestamps-enabled`
+- `cfct.comparison.ignore-column-advisors.extended-properties-enabled`
+
+For extended-property based ignores, set a column-level SQL Server extended property named `cfct.ignored`.
+Truthy values are interpreted case-insensitively and include: `true`, `1`, `yes`, `y`, `on`.
+The local `customer-address` fixture now demonstrates this by marking `dbo.CustomerAddress.postcode` as `cfct.ignored` via `sp_addextendedproperty`.
+
 == Developer guide
 
 The tool consistss of a reusable comparison API, an implementation module, a Spring Boot CLI, a Vaadin webapp scaffold, a root comparison wrapper script, and a Docker-backed integration-test fixture.
@@ -540,84 +770,5 @@ SQL connectivity, database existence, and required target-system object presence
 Required target-system objects may be either tables or views.
 The login form is pre-populated from `cfct.webapp.comparison.connection.*` configuration values, and every field remains editable.
 
-Happy-path connectivity check with the demo fixture SQL Server:
-
-. Start the fixture SQL Server container and load demo data.
-+
-[source,bash]
-----
-scripts/fixture-sqlserver.sh start
-----
-
-. Start the webapp with fixture credentials and fixture databases.
-+
-[source,bash]
-----
-mvn -pl cfct-webapp -am spring-boot:run \
-  -Dspring-boot.run.arguments="--cfct.webapp.comparison.connection.server=localhost:14333 --cfct.webapp.comparison.connection.username=sa --cfct.webapp.comparison.connection.password=Str0ng_password!123 --cfct.webapp.comparison.connection.left-database=left_db --cfct.webapp.comparison.connection.right-database=right_db"
-----
-+
-Or use the one-liner helper script that starts the fixture and runs the webapp with the same happy-path settings:
-+
-[source,bash]
-----
-scripts/check-webapp-happy-path.sh
-----
-
-. Open `http://localhost:8080` and click `Login` (or edit defaults first, then login).
-
-. Confirm successful startup by checking that the app reports successful startup.
-
-. Optional manual negative-path check for invalid target database.
-+
-[source,bash]
-+
-----
-scripts/fixture-sqlserver.sh restart --invalid-target-db
-----
-+
-Login should fail with a clear validation message.
-
-. Optional manual negative-path check for missing required target system objects.
-+
-[source,bash]
-----
-scripts/fixture-sqlserver.sh restart --missing-system-tables
-----
-+
-In this mode, the target database exists but required system objects are removed.
-Login should fail with a clear missing-system-objects validation message.
-
-. Stop the fixture when done.
-+
-[source,bash]
-----
-scripts/fixture-sqlserver.sh stop
-----
-
-The webapp reads login defaults and shared execution defaults from `cfct-webapp/src/main/resources/application.yml` using `cfct.webapp.comparison.*` keys.
-
-These keys map to CLI concepts as follows:
-
-* `connection.server` ↔ `-S` / `--server`
-* `connection.username` ↔ `-U` / `--username`
-* `connection.password` ↔ `-P` / `--password`
-* `connection.left-database` ↔ `-l` / `--left-database`
-* `connection.right-database` ↔ `-r` / `--right-database`
-* `env-file` ↔ `-e` / `--env-file`
-* `output.format` ↔ `-f` / `--output-format`
-* `output.file` ↔ `-o` / `--output-file`
-
-Ignore-column advisor toggles are also typesafe configuration properties.
-All default to `true`.
-
-- `cfct.comparison.ignore-column-advisors.identity-enabled`
-- `cfct.comparison.ignore-column-advisors.uuid-enabled`
-- `cfct.comparison.ignore-column-advisors.timestamps-enabled`
-- `cfct.comparison.ignore-column-advisors.extended-properties-enabled`
-
-For extended-property based ignores, set a column-level SQL Server extended property named `cfct.ignored`.
-Truthy values are interpreted case-insensitively and include: `true`, `1`, `yes`, `y`, `on`.
-The local `customer-address` fixture now demonstrates this by marking `dbo.CustomerAddress.postcode` as `cfct.ignored` via `sp_addextendedproperty`.
 
 
