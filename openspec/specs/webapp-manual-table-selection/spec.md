@@ -18,6 +18,11 @@ The schema column SHALL auto-size to fit visible schema values.
 The selection control column SHALL be center-aligned.
 The selection control column header SHALL be blank and SHALL NOT render `Select` text.
 The manual selection state SHALL be available as input to the later comparison-execution stage.
+The business table selection section SHALL provide a `Selected only` checkbox control.
+The `Selected only` checkbox SHALL be checked by default.
+When `Selected only` is checked, the table grid SHALL show only currently selected business table rows.
+When `Selected only` is unchecked, the table grid SHALL show selected and unselected business table rows subject to existing table-identity filters.
+Toggling `Selected only` SHALL change row visibility only and SHALL NOT directly change underlying row selection state.
 
 #### Scenario: Catalog lists candidate tables
 - **WHEN** the home page initializes table-selection data
@@ -59,6 +64,16 @@ The manual selection state SHALL be available as input to the later comparison-e
 - **WHEN** command selection and manual table selection sections are both visible
 - **THEN** the manual table-selection grid is rendered below the command-selection grid
 
+#### Scenario: Selected only filter defaults to checked
+- **WHEN** the business table selection section is first rendered
+- **THEN** the `Selected only` checkbox is checked
+- **AND** only selected business table rows are visible
+
+#### Scenario: User reveals all business tables by unchecking selected only
+- **WHEN** the user unchecks `Selected only`
+- **THEN** the grid shows both selected and unselected business table rows
+- **AND** previously selected rows remain selected
+
 ### Requirement: Manual selection supports future auto-selection overlays
 The manual selection model SHALL support future auto-selection defaults with user include and exclude overrides.
 The model SHALL preserve deterministic final selected-table output after applying overrides.
@@ -88,6 +103,8 @@ Excluded system support tables SHALL not appear in manual table-grid filtering o
 The manual table grid SHALL accept programmatic selection updates from command footprint resolution.
 Programmatic updates SHALL only affect rows that are present in the visible business table catalog.
 Programmatic updates SHALL not fail when touched tables are unmapped or absent from the catalog.
+When `Selected only` is checked, command-driven programmatic selections SHALL update visible grid rows so newly selected matches become visible.
+When command-driven recomputation deselects rows while `Selected only` is checked, those rows SHALL no longer remain visible.
 
 #### Scenario: Command-driven selections apply only to visible business rows
 - **WHEN** command footprint resolution returns a touched table set
@@ -102,6 +119,16 @@ Programmatic updates SHALL not fail when touched tables are unmapped or absent f
 #### Scenario: Compare readiness reflects command-driven selected tables
 - **WHEN** command-driven updates select one or more eligible business table rows
 - **THEN** compare readiness is evaluated using the updated selected table set
+
+#### Scenario: Command-driven selected rows stay visible with selected-only enabled
+- **WHEN** `Selected only` is checked
+- **AND** command selection changes produce a new touched-table union
+- **THEN** rows that are newly selected by the command-driven update are visible in the business table grid
+
+#### Scenario: Command-driven deselected rows are hidden with selected-only enabled
+- **WHEN** `Selected only` is checked
+- **AND** command deselection recomputation removes previously selected business rows
+- **THEN** those rows are no longer visible in the business table grid
 
 ### Requirement: Manual table selection state supports full reset from command section
 The manual table selection state SHALL support clearing all selected business tables from a command-section clear action.
