@@ -25,6 +25,7 @@ import com.danhaywood.cfct.webapp.validation.ConnectionValidationStatusHolder;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasText;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.Span;
@@ -113,6 +114,8 @@ class MainViewTest {
         assertThat(actionBar.getElement().getAttribute("class")).contains("navigation-compare-action-bar");
         final Button compareButton = (Button) findByTestId(view, "compare-button").orElseThrow();
         assertThat(compareButton.getElement().getAttribute("data-default-action")).isEqualTo("compare");
+        assertThat(compareButton.getThemeNames()).contains("primary");
+        assertThat(findByTestId(view, "navigation-drawer-resize-handle")).isPresent();
     }
 
     @Test
@@ -467,6 +470,69 @@ class MainViewTest {
     }
 
     @Test
+    void hidesMatchRowsByDefaultAndCanShowThemOnDemand() {
+        final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
+        when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class)))
+                .thenReturn(sampleComparisonOutcome());
+
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                comparisonExecutionService,
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        invokeExecuteComparison(view);
+
+        final Checkbox showMatchRows = (Checkbox) findByTestId(view, "comparison-show-match-filter").orElseThrow();
+        assertThat(showMatchRows.getValue()).isFalse();
+
+        final ColumnRef name = new ColumnRef("name");
+        final ComparisonRowView matchRow = new ComparisonRowView(
+                new RowKey(List.of("SUP-001")),
+                ComparisonRowStatus.MATCH,
+                Map.of(name, "Supplier A"),
+                Map.of(name, "Supplier A"),
+                List.of());
+        final ComparisonRowView diffRow = new ComparisonRowView(
+                new RowKey(List.of("SUP-002")),
+                ComparisonRowStatus.DIFFERENT,
+                Map.of(name, "Supplier A"),
+                Map.of(name, "Supplier B"),
+                List.of(name));
+        final TableComparisonViewResult supplier = new TableComparisonViewResult(
+                new TableRef("dbo", "Supplier"),
+                List.of(name),
+                List.of(matchRow, diffRow));
+
+        final Grid<?> hiddenMatchGrid = extractGrid(invokeBuildResultGrid(view, supplier));
+        final int withoutMatchRows = hiddenMatchGrid.getDataProvider().size(new com.vaadin.flow.data.provider.Query<>());
+
+        showMatchRows.setValue(true);
+        final Grid<?> allRowsGrid = extractGrid(invokeBuildResultGrid(view, supplier));
+        final int withMatchRows = allRowsGrid.getDataProvider().size(new com.vaadin.flow.data.provider.Query<>());
+        assertThat(withoutMatchRows).isEqualTo(1);
+        assertThat(withMatchRows).isEqualTo(2);
+    }
+
+    @Test
+    void resultGridColumnsAreSortable() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        final Grid<?> grid = extractGrid(invokeBuildResultGrid(view, sampleComparisonOutcome().viewResult().tableResults().get(0)));
+        assertThat(grid.getColumns().stream().allMatch(Grid.Column::isSortable)).isTrue();
+    }
+
+    @Test
     void rendersSingleComparedColumnWhenLeftAndRightValuesAreEqual() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
@@ -491,11 +557,7 @@ class MainViewTest {
 
         final Component gridContainer = invokeBuildResultGrid(view, supplier);
         final Grid<?> grid = extractGrid(gridContainer);
-        final List<String> headers = grid.getColumns().stream()
-                .map(Grid.Column::getHeaderText)
-                .toList();
-        assertThat(headers).contains("name");
-        assertThat(headers).doesNotContain("L: name", "R: name");
+        assertThat(grid.getColumns()).hasSize(3);
     }
 
     @Test

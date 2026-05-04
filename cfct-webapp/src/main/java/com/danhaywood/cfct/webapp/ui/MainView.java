@@ -31,6 +31,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -69,6 +70,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 @Route("")
 @CssImport("./styles/comparison-grid.css")
@@ -99,6 +102,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Div comparisonResultsContainer = new Div();
     private final TextField comparedTableFilter = new TextField();
     private final Checkbox differencesOnlyFilter = new Checkbox("Diffs only");
+    private final Checkbox showMatchRowsFilter = new Checkbox("Show MATCH rows");
     private final Anchor downloadAction = new Anchor();
     private final Select<DownloadFormat> downloadFormatSelect = new Select<>();
     private final HorizontalLayout resultActions = new HorizontalLayout();
@@ -114,6 +118,9 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private TableRef focusedBusinessTable;
 
     private WebappComparisonExecutionService.ComparisonExecutionOutcome latestOutcome;
+    private int drawerWidthPx = 512;
+    private static final int MIN_DRAWER_WIDTH_PX = 360;
+    private static final int MAX_DRAWER_WIDTH_PX = 860;
 
     public MainView(
             final ConnectionValidationStatusHolder statusHolder,
@@ -268,6 +275,11 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         differencesOnlyFilter.getStyle().setAlignSelf(Style.AlignSelf.CENTER);
         differencesOnlyFilter.addValueChangeListener(event -> renderComparisonTabs());
 
+        showMatchRowsFilter.getElement().setAttribute("data-testid", "comparison-show-match-filter");
+        showMatchRowsFilter.setValue(false);
+        showMatchRowsFilter.getStyle().setAlignSelf(Style.AlignSelf.CENTER);
+        showMatchRowsFilter.addValueChangeListener(event -> renderComparisonTabs());
+
         downloadFormatSelect.setItems(DownloadFormat.JSON, DownloadFormat.YAML, DownloadFormat.EXCEL);
         downloadFormatSelect.setItemLabelGenerator(DownloadFormat::label);
         downloadFormatSelect.setValue(DownloadFormat.JSON);
@@ -280,7 +292,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         resultActions.getElement().setAttribute("data-testid", "comparison-result-actions");
         resultActions.addClassName("comparison-result-actions");
-        resultActions.add(comparedTableFilter, differencesOnlyFilter, downloadFormatSelect, downloadAction);
+        resultActions.add(comparedTableFilter, differencesOnlyFilter, showMatchRowsFilter, downloadFormatSelect, downloadAction);
         resultActions.expand(comparedTableFilter);
         resultActions.setVisible(false);
         resultActions.setPadding(true);
@@ -366,11 +378,13 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .addEventData("event.target.tagName")
                 .addEventData("event.target.getAttribute('type')");
         panel.getStyle()
-                .set("width", "32rem")
+                .set("width", drawerWidthPx + "px")
+                .set("min-width", MIN_DRAWER_WIDTH_PX + "px")
+                .set("max-width", MAX_DRAWER_WIDTH_PX + "px")
                 .set("max-width", "100%")
-                //.set("padding", "var(--lumo-space-m)")
                 .set("box-sizing", "border-box")
-                .set("height", "100%");
+                .set("height", "100%")
+                .set("position", "relative");
 
         final VerticalLayout layout = new VerticalLayout();
         layout.setPadding(true);
@@ -424,7 +438,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .setWidth("100%")
                 .set("position", "sticky")
                 .set("bottom", "0")
-                .setZIndex(2)
+                .setZIndex(3)
                 .setBackground("var(--lumo-base-color)")
                 .setPaddingTop("var(--lumo-space-m, .3em)")
                 .set("padding-bottom", "var(--lumo-space-xs)")
@@ -433,6 +447,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         compareButton.getElement().setAttribute("data-testid", "compare-button");
         compareButton.getElement().setAttribute("data-default-action", "compare");
         compareButton.getElement().setAttribute("title", "Execute comparison for selected eligible tables.");
+        compareButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         compareButton.addClickListener(event -> executeComparison());
 
         clearSelectionsButton.getElement().setAttribute("data-testid", "clear-selections-button");
@@ -454,8 +469,13 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         final HorizontalLayout tableFilterRow = new HorizontalLayout(tableFilter);
         tableFilterRow.setPadding(true);
 
+        final Div resizeHandle = new Div();
+        resizeHandle.getElement().setAttribute("data-testid", "navigation-drawer-resize-handle");
+        resizeHandle.addClassName("navigation-drawer-resize-handle");
+        enableDrawerResize(panel, resizeHandle);
+
         layout.add(topSpacer, commandFilterRow, commandGrid, clearActionBar, tableFilterRow, tableGrid, actionBar);
-        panel.add(layout);
+        panel.add(layout, resizeHandle);
         return panel;
     }
 
@@ -463,7 +483,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         final Grid<TableCatalogEntry> grid = new Grid<>();
         grid.getElement().setAttribute("data-testid", "table-selection-grid");
         grid.getElement().setAttribute("tabindex", "0");
-        grid.setAllRowsVisible(true);
+        grid.setAllRowsVisible(false);
+        grid.setHeight("20rem");
         grid.setWidthFull();
         grid.setPartNameGenerator(entry -> entry.eligible() ? "eligible-table-row" : "ineligible-table-row");
         grid.setDataProvider(selectionDataProvider);
@@ -523,7 +544,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         grid.getElement().setAttribute("data-testid", "command-selection-grid");
         grid.getElement().setAttribute("data-testid-focus-target", "command-selection-grid");
         grid.getElement().setAttribute("tabindex", "0");
-        grid.setAllRowsVisible(true);
+        grid.setAllRowsVisible(false);
+        grid.setHeight("14rem");
         grid.setWidthFull();
         grid.setDataProvider(commandSelectionDataProvider);
 
@@ -569,6 +591,39 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         return grid;
     }
 
+    private void enableDrawerResize(final Div panel, final Div resizeHandle) {
+        resizeHandle.getElement().executeJs("""
+            const panel = this.parentElement;
+            const handle = this;
+            if (!panel || !handle || handle.__drawerResizeBound) return;
+            handle.__drawerResizeBound = true;
+            let active = false;
+            const onMove = (event) => {
+              if (!active) return;
+              const width = Math.max($1, Math.min($2, event.clientX - panel.getBoundingClientRect().left));
+              panel.style.width = `${width}px`;
+              $0.$server.onDrawerWidthChanged(Math.round(width));
+            };
+            const stop = () => {
+              active = false;
+              document.body.style.userSelect = '';
+            };
+            handle.addEventListener('pointerdown', (event) => {
+              active = true;
+              document.body.style.userSelect = 'none';
+              handle.setPointerCapture(event.pointerId);
+            });
+            handle.addEventListener('pointerup', stop);
+            window.addEventListener('pointermove', onMove);
+            window.addEventListener('pointerup', stop);
+            """, getElement(), MIN_DRAWER_WIDTH_PX, MAX_DRAWER_WIDTH_PX);
+    }
+
+    @com.vaadin.flow.component.ClientCallable
+    private void onDrawerWidthChanged(final int requestedWidthPx) {
+        drawerWidthPx = Math.max(MIN_DRAWER_WIDTH_PX, Math.min(MAX_DRAWER_WIDTH_PX, requestedWidthPx));
+    }
+
     private void applyCommandFilter(final String memberIdFilter, final String interactionIdFilter) {
         commandSelectionDataProvider.clearFilters();
         commandSelectionDataProvider.addFilter(entry -> commandSelectionState.matchesFilter(entry, memberIdFilter, interactionIdFilter));
@@ -592,6 +647,48 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         if (value != null && !value.isBlank()) {
             dataProvider.addFilter(entry -> selectionState.matchesFilter(entry, value));
         }
+    }
+
+    private TextField filterField(final String placeholder, final String testId, final Consumer<String> onValueChanged) {
+        final TextField filter = new TextField();
+        filter.setPlaceholder(placeholder);
+        filter.setClearButtonVisible(true);
+        filter.setValueChangeMode(ValueChangeMode.EAGER);
+        filter.getElement().setAttribute("data-testid", testId);
+        filter.setWidthFull();
+        filter.addValueChangeListener(event -> onValueChanged.accept(event.getValue()));
+        return filter;
+    }
+
+    private void applyResultGridFilters(
+            final ListDataProvider<ComparisonRowView> provider,
+            final String keyFilter,
+            final String statusFilter,
+            final Map<ColumnRef, AtomicReference<String>> valueFilters) {
+        provider.clearFilters();
+        provider.addFilter(row -> {
+            if (!containsIgnoreCase(row.key().display(), keyFilter)) {
+                return false;
+            }
+            if (!containsIgnoreCase(row.status().name(), statusFilter)) {
+                return false;
+            }
+            for (Map.Entry<ColumnRef, AtomicReference<String>> entry : valueFilters.entrySet()) {
+                final String left = row.leftValues().getOrDefault(entry.getKey(), "");
+                final String right = row.rightValues().getOrDefault(entry.getKey(), "");
+                if (!containsIgnoreCase(compactValue(row.status(), left, right), entry.getValue().get())) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }
+
+    private boolean containsIgnoreCase(final String source, final String filter) {
+        if (filter == null || filter.isBlank()) {
+            return true;
+        }
+        return source != null && source.toLowerCase(Locale.ROOT).contains(filter.toLowerCase(Locale.ROOT));
     }
 
     private void applyCommandDrivenSelection() {
@@ -801,30 +898,70 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     }
 
     private Component buildResultGrid(final TableComparisonViewResult tableResult) {
+        final List<ComparisonRowView> visibleRows = tableResult.rows().stream()
+                .filter(row -> Boolean.TRUE.equals(showMatchRowsFilter.getValue()) || row.status() != ComparisonRowStatus.MATCH)
+                .toList();
+
         final Grid<ComparisonRowView> grid = new Grid<>();
         grid.getElement().setAttribute("data-testid", "comparison-grid-" + selectorToken(tableResult.table()));
-        grid.setItems(tableResult.rows());
+        final ListDataProvider<ComparisonRowView> provider = new ListDataProvider<>(visibleRows);
+        grid.setDataProvider(provider);
         grid.setAllRowsVisible(true);
         grid.setWidth("max-content");
         grid.getStyle().set("min-width", "100%");
         grid.addThemeNames("column-borders", "compact");
 
-        grid.addColumn(row -> row.key().display())
+        final var keyColumn = grid.addColumn(row -> row.key().display())
                 .setHeader("Business Key")
                 .setAutoWidth(true)
-                .setFlexGrow(0);
+                .setFlexGrow(0)
+                .setSortable(true)
+                .setComparator(Comparator.comparing(row -> row.key().display(), String.CASE_INSENSITIVE_ORDER));
 
-        grid.addColumn(new ComponentRenderer<>(this::statusBadge))
+        final var statusColumn = grid.addColumn(row -> row.status().name())
                 .setHeader("Status")
                 .setAutoWidth(true)
-                .setFlexGrow(0);
+                .setFlexGrow(0)
+                .setSortable(true)
+                .setComparator(Comparator.comparing(row -> row.status().name(), String.CASE_INSENSITIVE_ORDER));
 
+        final Map<ColumnRef, Grid.Column<ComparisonRowView>> comparedColumns = new LinkedHashMap<>();
         for (ColumnRef column : tableResult.comparedColumns()) {
             final String columnName = column.name();
-            grid.addColumn(new ComponentRenderer<>(row -> valueCell(row, column)))
+            final Grid.Column<ComparisonRowView> gridColumn = grid.addColumn(new ComponentRenderer<>(row -> valueCell(row, column)))
                     .setHeader(columnName)
                     .setAutoWidth(true)
-                    .setTextAlign(ColumnTextAlign.START);
+                    .setTextAlign(ColumnTextAlign.START)
+                    .setSortable(true)
+                    .setComparator(Comparator.comparing(row -> compactValue(
+                                    row.status(),
+                                    row.leftValues().getOrDefault(column, ""),
+                                    row.rightValues().getOrDefault(column, "")),
+                            String.CASE_INSENSITIVE_ORDER));
+            comparedColumns.put(column, gridColumn);
+        }
+
+        final AtomicReference<String> keyFilter = new AtomicReference<>("");
+        final AtomicReference<String> statusFilter = new AtomicReference<>("");
+        final Map<ColumnRef, AtomicReference<String>> valueFilters = new LinkedHashMap<>();
+
+        final var headerRow = grid.appendHeaderRow();
+        headerRow.getCell(keyColumn).setComponent(filterField("Key", "comparison-grid-filter-key", value -> {
+            keyFilter.set(value);
+            applyResultGridFilters(provider, keyFilter.get(), statusFilter.get(), valueFilters);
+        }));
+        headerRow.getCell(statusColumn).setComponent(filterField("Status", "comparison-grid-filter-status", value -> {
+            statusFilter.set(value);
+            applyResultGridFilters(provider, keyFilter.get(), statusFilter.get(), valueFilters);
+        }));
+
+        for (Map.Entry<ColumnRef, Grid.Column<ComparisonRowView>> entry : comparedColumns.entrySet()) {
+            final AtomicReference<String> ref = new AtomicReference<>("");
+            valueFilters.put(entry.getKey(), ref);
+            headerRow.getCell(entry.getValue()).setComponent(filterField("Filter", "comparison-grid-filter-" + selectorToken(tableResult.table()) + "-" + entry.getKey().name(), value -> {
+                ref.set(value);
+                applyResultGridFilters(provider, keyFilter.get(), statusFilter.get(), valueFilters);
+            }));
         }
 
         final Div scrollContainer = new Div(grid);

@@ -4,6 +4,21 @@
 
 .navigation-compare-action-bar {
   margin-top: calc(var(--lumo-size-l) + var(--lumo-space-m));
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+.navigation-drawer-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 5;
+}
+
+.navigation-drawer-resize-handle:hover {
+  background: var(--lumo-primary-color-10pct);
 }
 
 .comparison-result-actions {
