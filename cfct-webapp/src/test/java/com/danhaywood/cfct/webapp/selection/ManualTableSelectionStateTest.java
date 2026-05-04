@@ -121,4 +121,31 @@ class ManualTableSelectionStateTest {
         assertThat(state.selectedCount()).isZero();
         assertThat(state.selectedTables()).isEmpty();
     }
+
+    @Test
+    void selectedOnlyDefaultsToTrueAndCanBeToggledWithoutMutatingSelection() {
+        final TableRef supplier = new TableRef("dbo", "Supplier");
+        final ManualTableSelectionState state = new ManualTableSelectionState(List.of(
+                TableCatalogEntry.eligible(supplier)));
+
+        assertThat(state.isSelectedOnly()).isTrue();
+
+        state.updateSelection(supplier, true);
+        state.setSelectedOnly(false);
+
+        assertThat(state.isSelectedOnly()).isFalse();
+        assertThat(state.selectedTables()).containsExactly(supplier);
+    }
+
+    @Test
+    void clearSelectionsResetsSelectedOnlyToDefaultTrue() {
+        final TableRef supplier = new TableRef("dbo", "Supplier");
+        final ManualTableSelectionState state = new ManualTableSelectionState(List.of(
+                TableCatalogEntry.eligible(supplier)));
+
+        state.setSelectedOnly(false);
+        state.clearSelections();
+
+        assertThat(state.isSelectedOnly()).isTrue();
+    }
 }

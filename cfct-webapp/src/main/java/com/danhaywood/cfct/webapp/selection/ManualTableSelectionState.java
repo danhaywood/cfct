@@ -17,6 +17,7 @@ public class ManualTableSelectionState {
     private final Set<TableRef> manualIncludedTables = new LinkedHashSet<>();
     private final Set<TableRef> manualExcludedTables = new LinkedHashSet<>();
     private final Set<TableRef> programmaticSelectedTables = new LinkedHashSet<>();
+    private boolean selectedOnly = true;
 
     public ManualTableSelectionState(final List<TableCatalogEntry> entries) {
         for (TableCatalogEntry entry : entries) {
@@ -81,6 +82,18 @@ public class ManualTableSelectionState {
                 .collect(Collectors.toList());
     }
 
+    public boolean isSelectedOnly() {
+        return selectedOnly;
+    }
+
+    public void setSelectedOnly(final boolean selectedOnly) {
+        this.selectedOnly = selectedOnly;
+    }
+
+    public boolean matchesSelectedVisibility(final TableCatalogEntry entry) {
+        return !selectedOnly || isSelected(entry.table());
+    }
+
     public List<TableCatalogEntry> entriesSortedByTableName(final String filter, final boolean ascending) {
         final Comparator<TableCatalogEntry> comparator = Comparator.comparing(
                 entry -> entry.table().displayName(),
@@ -108,6 +121,7 @@ public class ManualTableSelectionState {
         manualIncludedTables.clear();
         manualExcludedTables.clear();
         programmaticSelectedTables.clear();
+        selectedOnly = true;
         recomputeSelectionFlags();
     }
 

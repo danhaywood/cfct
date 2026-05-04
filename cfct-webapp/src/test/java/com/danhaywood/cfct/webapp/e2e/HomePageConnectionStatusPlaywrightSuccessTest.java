@@ -92,6 +92,7 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             fillLoginForm(page, LEFT_DB, RIGHT_DB);
             page.click("[data-testid='login-submit']");
             page.waitForSelector("[data-testid='table-selection-grid']");
+            setSelectedOnly(page, false);
 
             final String supplierCheckbox = "[data-testid='table-checkbox-dbo-supplier']";
             final String productCheckbox = "[data-testid='table-checkbox-dbo-product']";
@@ -192,9 +193,15 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             final double[] footerMetrics = footerStatusAlignmentMetrics(page);
             assertThat(footerMetrics[0]).isGreaterThan(footerMetrics[1]);
 
+            final CheckboxState selectedOnlyState = selectedOnlyState(page);
+            assertThat(selectedOnlyState.checked()).isTrue();
+
             final String initialGridText = page.locator("[data-testid='table-selection-grid']").innerText();
-            assertThat(initialGridText).doesNotContain("Eligibility", "Select");
+            assertThat(initialGridText).doesNotContain("Supplier", "Product", "PurchaseOrderWithoutBusinessKey");
             assertThat(initialGridText).doesNotContain("CommandLogEntry", "AuditTrailEntry", "LogicalTypeTableMapping");
+
+            setSelectedOnly(page, false);
+            page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('Supplier')");
             assertThat(page.locator("[data-testid='table-checkbox-dbo-purchaseorderwithoutbusinesskey']").getAttribute("disabled")).isNotNull();
             assertThat(page.locator("[data-testid='table-checkbox-dbo-purchaseorderwithoutbusinesskey']").getAttribute("title")).isNotBlank();
 
@@ -229,12 +236,11 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-product\"]').checked === true");
 
             page.click("[data-testid='clear-selections-button']");
-            page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-supplier\"]').checked !== true");
-            page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-product\"]').checked !== true");
             page.waitForFunction("() => document.querySelector('[data-testid=\"command-checkbox-11111111-1111-1111-1111-111111111111\"]').checked !== true");
             page.waitForFunction("() => document.querySelector('[data-testid=\"command-checkbox-22222222-2222-2222-2222-222222222222\"]').checked !== true");
             assertThat(page.locator("[data-testid='clear-selections-button']").isDisabled()).isTrue();
 
+            setSelectedOnly(page, false);
             setFilter(page, PlaywrightSqlServerFixture.ELIGIBLE_TABLE);
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('Supplier') && !document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PurchaseOrderWithoutBusinessKey')");
             final String filteredText = page.locator("[data-testid='table-selection-grid']").innerText();
@@ -305,6 +311,23 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
         page.keyboard().press("Tab");
     }
 
+    private void setSelectedOnly(final Page page, final boolean checked) {
+        final CheckboxState state = selectedOnlyState(page);
+        if (state.exists() && state.checked() != checked) {
+            toggleCheckbox(page, "[data-testid='selected-only-checkbox']");
+        }
+    }
+
+    private CheckboxState selectedOnlyState(final Page page) {
+        final Object evaluated = page.evaluate("() => { const host = document.querySelector('[data-testid=\"selected-only-checkbox\"]'); return host ? { exists: true, checked: !!host.checked } : { exists: false, checked: false }; }");
+        if (evaluated instanceof java.util.Map<?, ?> map) {
+            final boolean exists = Boolean.TRUE.equals(map.get("exists"));
+            final boolean checked = Boolean.TRUE.equals(map.get("checked"));
+            return new CheckboxState(exists, checked);
+        }
+        return new CheckboxState(false, false);
+    }
+
     private void setCommandMemberFilter(final Page page, final String value) {
         page.locator("[data-testid='command-filter-member-id'] input").fill(value);
         page.keyboard().press("Tab");
@@ -341,5 +364,8 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             array[i] = ((Number) values.get(i)).doubleValue();
         }
         return array;
+    }
+
+    private record CheckboxState(boolean exists, boolean checked) {
     }
 }

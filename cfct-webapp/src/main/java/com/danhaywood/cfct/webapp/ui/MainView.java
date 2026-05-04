@@ -103,6 +103,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final TextField comparedTableFilter = new TextField();
     private final Checkbox differencesOnlyFilter = new Checkbox("Diffs only");
     private final Checkbox showMatchRowsFilter = new Checkbox("Show MATCH rows");
+    private final Checkbox selectedOnlyFilter = new Checkbox("Selected only");
     private final Anchor downloadAction = new Anchor();
     private final Select<DownloadFormat> downloadFormatSelect = new Select<>();
     private final HorizontalLayout resultActions = new HorizontalLayout();
@@ -118,6 +119,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
     private WebappComparisonExecutionService.ComparisonExecutionOutcome latestOutcome;
     private int drawerWidthPx = 512;
+    private String tableFilterValue = "";
     private static final int MIN_DRAWER_WIDTH_PX = 360;
     private static final int MAX_DRAWER_WIDTH_PX = 860;
 
@@ -463,11 +465,30 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("justify-content", "flex-end")
                 .set("width", "100%");
 
-        final TextField tableFilter = filterField("Filter table", "table-filter-table", selectionDataProvider);
+        final TextField tableFilter = new TextField();
+        tableFilter.setPlaceholder("Filter table");
+        tableFilter.setClearButtonVisible(true);
+        tableFilter.setValueChangeMode(ValueChangeMode.EAGER);
+        tableFilter.getElement().setAttribute("data-testid", "table-filter-table");
         tableFilter.setWidthFull();
+        tableFilter.addValueChangeListener(event -> {
+            tableFilterValue = event.getValue();
+            applySelectionFilters();
+        });
+
+        selectedOnlyFilter.getElement().setAttribute("data-testid", "selected-only-checkbox");
+        selectedOnlyFilter.setValue(selectionState.isSelectedOnly());
+        selectedOnlyFilter.addValueChangeListener(event -> {
+            selectionState.setSelectedOnly(Boolean.TRUE.equals(event.getValue()));
+            applySelectionFilters();
+        });
+
         final Grid<TableCatalogEntry> tableGrid = buildSelectionGrid();
 
-        final HorizontalLayout tableFilterRow = new HorizontalLayout(tableFilter);
+        final HorizontalLayout tableFilterRow = new HorizontalLayout(tableFilter, selectedOnlyFilter);
+        tableFilterRow.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.END);
+        tableFilterRow.expand(tableFilter);
+        tableFilterRow.setWidthFull();
         tableFilterRow.setPadding(true);
 
         final Div resizeHandle = new Div();
@@ -477,6 +498,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         layout.add(topSpacer, commandFilterRow, commandGrid, clearActionBar, tableFilterRow, tableGrid, actionBar);
         panel.add(layout, resizeHandle);
+        applySelectionFilters();
         return panel;
     }
 
@@ -504,6 +526,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             checkbox.addValueChangeListener(event -> {
                 focusedBusinessTable = entry.table();
                 selectionState.updateSelection(entry.table(), event.getValue());
+                selectionDataProvider.refreshAll();
                 refreshActionButtons();
             });
             return checkbox;
@@ -630,24 +653,11 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         commandSelectionDataProvider.addFilter(entry -> commandSelectionState.matchesFilter(entry, memberIdFilter, interactionIdFilter));
     }
 
-    private TextField filterField(
-            final String placeholder,
-            final String testId,
-            final ListDataProvider<TableCatalogEntry> dataProvider) {
-        final TextField filter = new TextField();
-        filter.setPlaceholder(placeholder);
-        filter.setClearButtonVisible(true);
-        filter.setValueChangeMode(ValueChangeMode.EAGER);
-        filter.getElement().setAttribute("data-testid", testId);
-        filter.addValueChangeListener(event -> applyFilter(dataProvider, event.getValue()));
-        return filter;
-    }
-
-    private void applyFilter(final ListDataProvider<TableCatalogEntry> dataProvider, final String value) {
-        dataProvider.clearFilters();
-        if (value != null && !value.isBlank()) {
-            dataProvider.addFilter(entry -> selectionState.matchesFilter(entry, value));
-        }
+    private void applySelectionFilters() {
+        selectionDataProvider.clearFilters();
+        selectionDataProvider.addFilter(entry -> selectionState.matchesFilter(entry, tableFilterValue));
+        selectionDataProvider.addFilter(selectionState::matchesSelectedVisibility);
+        selectionDataProvider.refreshAll();
     }
 
     private TextField filterField(final String placeholder, final String testId, final Consumer<String> onValueChanged) {
@@ -705,8 +715,10 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         focusedBusinessTable = null;
         commandSelectionState.clearSelections();
         selectionState.clearSelections();
+        selectedOnlyFilter.setValue(selectionState.isSelectedOnly());
         commandSelectionDataProvider.refreshAll();
         applyCommandDrivenSelection();
+        applySelectionFilters();
     }
 
     private void toggleFocusedCommandSelection() {

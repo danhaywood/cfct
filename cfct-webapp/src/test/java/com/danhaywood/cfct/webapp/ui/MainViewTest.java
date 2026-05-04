@@ -212,6 +212,49 @@ class MainViewTest {
     }
 
     @Test
+    void selectedOnlyCheckboxDefaultsToCheckedAndCanRevealAllRows() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        final Checkbox selectedOnly = (Checkbox) findByTestId(view, "selected-only-checkbox").orElseThrow();
+        final Grid<?> tableGrid = (Grid<?>) findByTestId(view, "table-selection-grid").orElseThrow();
+
+        assertThat(selectedOnly.getValue()).isTrue();
+        assertThat(tableGrid.getDataProvider().size(new com.vaadin.flow.data.provider.Query<>())).isZero();
+
+        selectedOnly.setValue(false);
+
+        assertThat(tableGrid.getDataProvider().size(new com.vaadin.flow.data.provider.Query<>())).isEqualTo(3);
+    }
+
+    @Test
+    void clearSelectionsRestoresSelectedOnlyDefaultChecked() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithPreselectedEntries(),
+                commandDrivenSelectionServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        final Checkbox selectedOnly = (Checkbox) findByTestId(view, "selected-only-checkbox").orElseThrow();
+        selectedOnly.setValue(false);
+        assertThat(selectedOnly.getValue()).isFalse();
+
+        invokeClearAllSelections(view);
+
+        assertThat(selectedOnly.getValue()).isTrue();
+    }
+
+    @Test
     void exposesSelectedCommandInteractionIdsForStageOne() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
