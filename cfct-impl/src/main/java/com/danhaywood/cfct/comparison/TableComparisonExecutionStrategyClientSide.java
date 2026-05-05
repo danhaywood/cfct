@@ -1,11 +1,13 @@
 package com.danhaywood.cfct.comparison;
 
 import com.danhaywood.cfct.model.ColumnDifference;
+import com.danhaywood.cfct.model.ColumnMetadata;
 import com.danhaywood.cfct.model.ColumnRef;
 import com.danhaywood.cfct.model.RowDifference;
 import com.danhaywood.cfct.model.RowKey;
 import com.danhaywood.cfct.model.TableComparisonResult;
 import com.danhaywood.cfct.model.TableMetadata;
+import com.danhaywood.cfct.spi.ColumnValueNormalizer;
 import com.danhaywood.cfct.spi.TableRowReader;
 
 import java.sql.Connection;
@@ -17,9 +19,17 @@ import java.util.TreeSet;
 final class TableComparisonExecutionStrategyClientSide implements TableComparisonExecutionStrategy {
 
     private final TableRowReader rowReader;
+    private final ColumnValueNormalizationService normalizationService;
 
     TableComparisonExecutionStrategyClientSide(final TableRowReader rowReader) {
+        this(rowReader, java.util.List.of());
+    }
+
+    TableComparisonExecutionStrategyClientSide(
+            final TableRowReader rowReader,
+            final java.util.List<ColumnValueNormalizer> columnValueNormalizers) {
         this.rowReader = rowReader;
+        this.normalizationService = new ColumnValueNormalizationService(columnValueNormalizers);
     }
 
     @Override
@@ -35,6 +45,9 @@ final class TableComparisonExecutionStrategyClientSide implements TableCompariso
         final Map<RowKey, Map<ColumnRef, String>> leftRows = rowReader.readRows(leftConnection, metadata);
         final Map<RowKey, Map<ColumnRef, String>> rightRows = rowReader.readRows(rightConnection, metadata);
 
+        final Map<ColumnRef, ColumnMetadata> metadataByColumn = metadata.columns().stream()
+                .collect(java.util.stream.Collectors.toMap(ColumnMetadata::column, java.util.function.Function.identity()));
+
         final TreeSet<RowKey> allKeys = new TreeSet<>();
         allKeys.addAll(leftRows.keySet());
         allKeys.addAll(rightRows.keySet());
@@ -43,6 +56,7 @@ final class TableComparisonExecutionStrategyClientSide implements TableCompariso
         final var rowsOnlyInRight = new ArrayList<RowKey>();
         final var differingRows = new ArrayList<RowDifference>();
         final var matchingRows = new ArrayList<RowKey>();
+        final var matchingRowsValues = new LinkedHashMap<RowKey, Map<ColumnRef, String>>();
 
         for (final RowKey key : allKeys) {
             final Map<ColumnRef, String> leftValues = leftRows.get(key);
@@ -55,18 +69,27 @@ final class TableComparisonExecutionStrategyClientSide implements TableCompariso
                 rowsOnlyInLeft.add(key);
                 continue;
             }
+            final var normalizedLeftValues = new LinkedHashMap<ColumnRef, String>();
+            final var normalizedRightValues = new LinkedHashMap<ColumnRef, String>();
             final var columnDifferences = new ArrayList<ColumnDifference>();
             for (final ColumnRef column : metadata.comparedColumns()) {
                 final String leftValue = leftValues.get(column);
                 final String rightValue = rightValues.get(column);
-                if (!java.util.Objects.equals(leftValue, rightValue)) {
-                    columnDifferences.add(new ColumnDifference(column, leftValue, rightValue));
+                final ColumnMetadata columnMetadata = metadataByColumn.getOrDefault(
+                        column,
+                        new ColumnMetadata(column, false, null));
+                final var normalized = normalizationService.normalize(columnMetadata, leftValue, rightValue);
+                normalizedLeftValues.put(column, normalized.leftValue());
+                normalizedRightValues.put(column, normalized.rightValue());
+                if (!java.util.Objects.equals(normalized.leftValue(), normalized.rightValue())) {
+                    columnDifferences.add(new ColumnDifference(column, normalized.leftValue(), normalized.rightValue()));
                 }
             }
             if (!columnDifferences.isEmpty()) {
-                differingRows.add(new RowDifference(key, leftValues, rightValues, columnDifferences));
+                differingRows.add(new RowDifference(key, normalizedLeftValues, normalizedRightValues, columnDifferences));
             } else {
                 matchingRows.add(key);
+                matchingRowsValues.put(key, normalizedLeftValues);
             }
         }
 
@@ -80,7 +103,7 @@ final class TableComparisonExecutionStrategyClientSide implements TableCompariso
                 differingRows,
                 valuesFor(rowsOnlyInLeft, leftRows),
                 valuesFor(rowsOnlyInRight, rightRows),
-                valuesFor(matchingRows, leftRows));
+                valuesFor(matchingRows, matchingRowsValues));
     }
 
     private Map<RowKey, Map<ColumnRef, String>> valuesFor(

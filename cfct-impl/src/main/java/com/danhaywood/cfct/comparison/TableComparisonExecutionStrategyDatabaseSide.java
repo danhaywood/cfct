@@ -2,12 +2,14 @@ package com.danhaywood.cfct.comparison;
 
 import com.danhaywood.cfct.exception.ComparisonException;
 import com.danhaywood.cfct.model.ColumnDifference;
+import com.danhaywood.cfct.model.ColumnMetadata;
 import com.danhaywood.cfct.model.ColumnRef;
 import com.danhaywood.cfct.model.DiffRowKind;
 import com.danhaywood.cfct.model.RowDifference;
 import com.danhaywood.cfct.model.RowKey;
 import com.danhaywood.cfct.model.TableComparisonResult;
 import com.danhaywood.cfct.model.TableMetadata;
+import com.danhaywood.cfct.spi.ColumnValueNormalizer;
 import com.danhaywood.cfct.sqlserver.SqlServerTableDiffQueryBuilder;
 import com.danhaywood.cfct.sqlserver.SqlServerValueFormatter;
 
@@ -27,13 +29,25 @@ import java.util.stream.Collectors;
 final class TableComparisonExecutionStrategyDatabaseSide implements TableComparisonExecutionStrategy {
 
     private final SqlServerTableDiffQueryBuilder queryBuilder;
+    private final ColumnValueNormalizationService normalizationService;
 
     TableComparisonExecutionStrategyDatabaseSide() {
-        this(new SqlServerTableDiffQueryBuilder());
+        this(java.util.List.of());
+    }
+
+    TableComparisonExecutionStrategyDatabaseSide(final java.util.List<ColumnValueNormalizer> columnValueNormalizers) {
+        this(new SqlServerTableDiffQueryBuilder(), columnValueNormalizers);
     }
 
     TableComparisonExecutionStrategyDatabaseSide(final SqlServerTableDiffQueryBuilder queryBuilder) {
+        this(queryBuilder, java.util.List.of());
+    }
+
+    TableComparisonExecutionStrategyDatabaseSide(
+            final SqlServerTableDiffQueryBuilder queryBuilder,
+            final java.util.List<ColumnValueNormalizer> columnValueNormalizers) {
         this.queryBuilder = queryBuilder;
+        this.normalizationService = new ColumnValueNormalizationService(columnValueNormalizers);
     }
 
     @Override
@@ -76,6 +90,9 @@ final class TableComparisonExecutionStrategyDatabaseSide implements TableCompari
         final Map<RowKey, Map<ColumnRef, String>> rowsOnlyInLeftValues = new LinkedHashMap<>();
         final Map<RowKey, Map<ColumnRef, String>> rowsOnlyInRightValues = new LinkedHashMap<>();
 
+        final Map<ColumnRef, ColumnMetadata> metadataByColumn = metadata.columns().stream()
+                .collect(Collectors.toMap(ColumnMetadata::column, java.util.function.Function.identity()));
+
         while (resultSet.next()) {
             final DiffRowKind kind = DiffRowKind.fromSqlMarker(resultSet.getString("diff_kind"));
             final RowKey key = rowKey(metadata, resultSet);
@@ -91,11 +108,29 @@ final class TableComparisonExecutionStrategyDatabaseSide implements TableCompari
                     rowsOnlyInRight.add(key);
                     rowsOnlyInRightValues.put(key, rightValues);
                 }
-                case DIFFERENT -> differingRows.add(new RowDifference(
-                        key,
-                        leftValues,
-                        rightValues,
-                        differences(metadata.comparedColumns(), leftValues, rightValues)));
+                case DIFFERENT -> {
+                    final Map<ColumnRef, String> normalizedLeftValues = new LinkedHashMap<>();
+                    final Map<ColumnRef, String> normalizedRightValues = new LinkedHashMap<>();
+                    for (final ColumnRef column : metadata.comparedColumns()) {
+                        final var normalized = normalizationService.normalize(
+                                metadataByColumn.getOrDefault(column, new ColumnMetadata(column, false, null)),
+                                leftValues.get(column),
+                                rightValues.get(column));
+                        normalizedLeftValues.put(column, normalized.leftValue());
+                        normalizedRightValues.put(column, normalized.rightValue());
+                    }
+                    final List<ColumnDifference> differences = differences(
+                            metadata.comparedColumns(),
+                            normalizedLeftValues,
+                            normalizedRightValues);
+                    if (!differences.isEmpty()) {
+                        differingRows.add(new RowDifference(
+                                key,
+                                normalizedLeftValues,
+                                normalizedRightValues,
+                                differences));
+                    }
+                }
             }
         }
 

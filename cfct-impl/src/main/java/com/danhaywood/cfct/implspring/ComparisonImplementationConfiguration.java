@@ -13,10 +13,12 @@ import com.danhaywood.cfct.service.MultiTableComparisonReportFormatter;
 import com.danhaywood.cfct.service.MultiTableComparisonService;
 import com.danhaywood.cfct.service.MultiTableComparisonViewService;
 import com.danhaywood.cfct.service.TableComparisonService;
+import com.danhaywood.cfct.spi.ColumnValueNormalizer;
 import com.danhaywood.cfct.spi.CommandAuditTouchedTableResolver;
 import com.danhaywood.cfct.spi.IgnoreColumnAdvisor;
 import com.danhaywood.cfct.spi.TableMetadataReader;
 import com.danhaywood.cfct.spi.TableRowReader;
+import com.danhaywood.cfct.sqlserver.ColumnValueNormalizerUsingExtendedProperties;
 import com.danhaywood.cfct.sqlserver.CommandAuditTouchedTableResolverSqlServer;
 import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorForIdentityColumns;
 import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorForTimestamps;
@@ -76,6 +78,11 @@ public class ComparisonImplementationConfiguration {
     }
 
     @Bean
+    public ColumnValueNormalizer columnValueNormalizerUsingExtendedProperties() {
+        return new ColumnValueNormalizerUsingExtendedProperties();
+    }
+
+    @Bean
     public CommandAuditTouchedTableResolver commandAuditTouchedTableResolver() {
         return new CommandAuditTouchedTableResolverSqlServer();
     }
@@ -83,8 +90,9 @@ public class ComparisonImplementationConfiguration {
     @Bean
     public TableComparisonService tableComparisonService(
             final TableMetadataReader tableMetadataReader,
-            final TableRowReader tableRowReader) {
-        return new TableComparisonServiceDefault(tableMetadataReader, tableRowReader);
+            final TableRowReader tableRowReader,
+            final List<ColumnValueNormalizer> columnValueNormalizers) {
+        return new TableComparisonServiceDefault(tableMetadataReader, tableRowReader, columnValueNormalizers);
     }
 
     @Bean

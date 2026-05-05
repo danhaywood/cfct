@@ -199,6 +199,26 @@ class CoreSingleTableComparisonIT {
     }
 
     @Test
+    void suppressesTimestampOnlyDifferencesAfterNormalizeMaskScrubbing() throws Exception {
+        initializeFixture("normalized-timestamp-noise");
+
+        final TableComparisonResult result;
+        try (Connection left = harness.openConnection(DatabaseSide.LEFT);
+             Connection right = harness.openConnection(DatabaseSide.RIGHT)) {
+            result = comparer.compare(left, right,
+                    new TableComparisonRequest(new TableRef("dbo", "NormalizedTimestampNoise"), ComparisonOptions.defaults()));
+        }
+
+        assertThat(result.differingRows()).extracting(RowDifference::key)
+                .containsExactly(new RowKey(java.util.List.of("NTN-002")));
+        assertThat(result.differingRows().get(0).columnDifferences())
+                .containsExactly(new ColumnDifference(
+                        new ColumnRef("payload"),
+                        "yyyy-MM-ddThh:MM.ss.SSS - VT - [RENT, RENT_FIXED] - 2026-06-01 - 2026-06-01/2026-07-01",
+                        "yyyy-MM-ddThh:MM.ss.SSS - VT - [RENT, RENT_VARIABLE] - 2026-06-01 - 2026-06-01/2026-07-01"));
+    }
+
+    @Test
     void failsClearlyWhenBusinessKeyIndexIsAmbiguous() {
         initializeSchema("ambiguous-business-key");
 

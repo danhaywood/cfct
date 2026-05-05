@@ -4,8 +4,10 @@ import com.danhaywood.cfct.model.TableComparisonResult;
 import com.danhaywood.cfct.model.TableMetadata;
 import com.danhaywood.cfct.request.TableComparisonRequest;
 import com.danhaywood.cfct.service.TableComparisonService;
+import com.danhaywood.cfct.spi.ColumnValueNormalizer;
 import com.danhaywood.cfct.spi.TableMetadataReader;
 import com.danhaywood.cfct.spi.TableRowReader;
+import com.danhaywood.cfct.sqlserver.ColumnValueNormalizerUsingExtendedProperties;
 
 import java.sql.Connection;
 import java.util.List;
@@ -16,9 +18,16 @@ public final class TableComparisonServiceDefault implements TableComparisonServi
     private final List<TableComparisonExecutionStrategy> executionStrategies;
 
     public TableComparisonServiceDefault(final TableMetadataReader metadataReader, final TableRowReader rowReader) {
+        this(metadataReader, rowReader, List.of(new ColumnValueNormalizerUsingExtendedProperties()));
+    }
+
+    public TableComparisonServiceDefault(
+            final TableMetadataReader metadataReader,
+            final TableRowReader rowReader,
+            final List<ColumnValueNormalizer> columnValueNormalizers) {
         this(metadataReader, List.of(
-                new TableComparisonExecutionStrategyDatabaseSide(),
-                new TableComparisonExecutionStrategyClientSide(rowReader)));
+                new TableComparisonExecutionStrategyDatabaseSide(columnValueNormalizers),
+                new TableComparisonExecutionStrategyClientSide(rowReader, columnValueNormalizers)));
     }
 
     TableComparisonServiceDefault(

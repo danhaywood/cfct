@@ -69,16 +69,22 @@ public final class TableMetadataReaderSqlServer implements TableMetadataReader {
                 SELECT c.name,
                        c.is_identity,
                        ty.name AS sql_type_name,
-                       CONVERT(nvarchar(255), ep.value) AS ignored_extended_property_value
+                       CONVERT(nvarchar(255), ep_ignored.value) AS ignored_extended_property_value,
+                       CONVERT(nvarchar(255), ep_normalize.value) AS normalize_mask_extended_property_value
                 FROM sys.schemas s
                 JOIN sys.tables t ON s.schema_id = t.schema_id
                 JOIN sys.columns c ON t.object_id = c.object_id
                 JOIN sys.types ty ON c.user_type_id = ty.user_type_id
-                LEFT JOIN sys.extended_properties ep
-                       ON ep.class = 1
-                      AND ep.major_id = t.object_id
-                      AND ep.minor_id = c.column_id
-                      AND ep.name = 'cfct.ignored'
+                LEFT JOIN sys.extended_properties ep_ignored
+                       ON ep_ignored.class = 1
+                      AND ep_ignored.major_id = t.object_id
+                      AND ep_ignored.minor_id = c.column_id
+                      AND ep_ignored.name = 'cfct.ignored'
+                LEFT JOIN sys.extended_properties ep_normalize
+                       ON ep_normalize.class = 1
+                      AND ep_normalize.major_id = t.object_id
+                      AND ep_normalize.minor_id = c.column_id
+                      AND ep_normalize.name = 'cfct.normalizeMask'
                 WHERE s.name = ? AND t.name = ?
                 ORDER BY c.column_id
                 """;
@@ -92,7 +98,8 @@ public final class TableMetadataReaderSqlServer implements TableMetadataReader {
                             new ColumnRef(resultSet.getString("name")),
                             resultSet.getBoolean("is_identity"),
                             resultSet.getString("sql_type_name"),
-                            resultSet.getString("ignored_extended_property_value")));
+                            resultSet.getString("ignored_extended_property_value"),
+                            resultSet.getString("normalize_mask_extended_property_value")));
                 }
                 return columns;
             }
