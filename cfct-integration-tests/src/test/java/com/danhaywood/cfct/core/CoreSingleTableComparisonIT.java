@@ -200,20 +200,20 @@ class CoreSingleTableComparisonIT {
 
     @Test
     void suppressesTimestampOnlyDifferencesAfterNormalizeMaskScrubbing() throws Exception {
-        initializeFixture("normalized-timestamp-noise");
+        initializeFixture("purchase-order");
 
         final TableComparisonResult result;
         try (Connection left = harness.openConnection(DatabaseSide.LEFT);
              Connection right = harness.openConnection(DatabaseSide.RIGHT)) {
             result = comparer.compare(left, right,
-                    new TableComparisonRequest(new TableRef("dbo", "NormalizedTimestampNoise"), ComparisonOptions.defaults()));
+                    new TableComparisonRequest(new TableRef("dbo", "PurchaseOrderTimeline"), ComparisonOptions.defaults()));
         }
 
         assertThat(result.differingRows()).extracting(RowDifference::key)
-                .containsExactly(new RowKey(java.util.List.of("NTN-002")));
+                .containsExactly(new RowKey(java.util.List.of("POT-002")));
         assertThat(result.differingRows().get(0).columnDifferences())
                 .containsExactly(new ColumnDifference(
-                        new ColumnRef("payload"),
+                        new ColumnRef("audit_message"),
                         "yyyy-MM-ddThh:MM.ss.SSS - VT - [RENT, RENT_FIXED] - 2026-06-01 - 2026-06-01/2026-07-01",
                         "yyyy-MM-ddThh:MM.ss.SSS - VT - [RENT, RENT_VARIABLE] - 2026-06-01 - 2026-06-01/2026-07-01"));
     }

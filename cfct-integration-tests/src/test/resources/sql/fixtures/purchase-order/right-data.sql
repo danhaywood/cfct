@@ -84,6 +84,20 @@ INSERT INTO dbo.PurchaseOrderLine (
     (904, N'POL-004', N'PO-004', N'SKU-704', 2, 4.99, '2026-01-14T10:00:00.000');
 GO
 
+SET IDENTITY_INSERT dbo.PurchaseOrderTimeline ON;
+GO
+INSERT INTO dbo.PurchaseOrderTimeline (
+    id,
+    reference,
+    audit_message,
+    [version]
+) VALUES
+    (401, N'POT-001', N'2027-05-21T15:09:10.111 - VT - [RENT, RENT_FIXED] - 2026-06-01 - 2026-06-01/2026-07-01', '2026-01-11T09:00:00.000'),
+    (402, N'POT-002', N'2027-06-22T16:10:11.222 - VT - [RENT, RENT_VARIABLE] - 2026-06-01 - 2026-06-01/2026-07-01', '2026-01-12T09:00:00.000');
+GO
+SET IDENTITY_INSERT dbo.PurchaseOrderTimeline OFF;
+GO
+
 INSERT INTO causewayExtCommandLog.CommandLogEntry (
     interactionId,
     executeIn,

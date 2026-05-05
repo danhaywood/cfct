@@ -10,6 +10,8 @@ DROP TABLE IF EXISTS dbo.Customer;
 GO
 DROP TABLE IF EXISTS dbo.PurchaseOrder;
 GO
+DROP TABLE IF EXISTS dbo.PurchaseOrderTimeline;
+GO
 IF SCHEMA_ID('causewayExtCommandLog') IS NULL EXEC('CREATE SCHEMA causewayExtCommandLog');
 GO
 IF SCHEMA_ID('causewayExtAuditTrail') IS NULL EXEC('CREATE SCHEMA causewayExtAuditTrail');
@@ -78,6 +80,13 @@ CREATE TABLE dbo.PurchaseOrderLine (
     [version] DATETIME2(3) NOT NULL
 );
 GO
+CREATE TABLE dbo.PurchaseOrderTimeline (
+    id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PurchaseOrderTimeline PRIMARY KEY,
+    reference NVARCHAR(40) NOT NULL,
+    audit_message NVARCHAR(400) NOT NULL,
+    [version] DATETIME2(3) NOT NULL
+);
+GO
 CREATE TABLE causewayExtCommandLog.CommandLogEntry (
     interactionId UNIQUEIDENTIFIER NOT NULL,
     executeIn VARCHAR(10) NOT NULL,
@@ -118,4 +127,13 @@ GO
 CREATE UNIQUE INDEX PurchaseOrder_PK ON dbo.PurchaseOrder(reference);
 GO
 CREATE UNIQUE INDEX PurchaseOrderLine_PK ON dbo.PurchaseOrderLine(line_reference);
+GO
+CREATE UNIQUE INDEX PurchaseOrderTimeline_PK ON dbo.PurchaseOrderTimeline(reference);
+GO
+EXEC sys.sp_addextendedproperty
+    @name = N'cfct.normalizeMask',
+    @value = N'yyyy-MM-ddThh:MM.ss.SSS',
+    @level0type = N'SCHEMA', @level0name = N'dbo',
+    @level1type = N'TABLE',  @level1name = N'PurchaseOrderTimeline',
+    @level2type = N'COLUMN', @level2name = N'audit_message';
 GO
