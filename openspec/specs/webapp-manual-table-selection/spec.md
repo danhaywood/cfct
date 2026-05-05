@@ -104,6 +104,8 @@ The manual table grid SHALL accept programmatic selection updates from command f
 Programmatic updates SHALL only affect rows that are present in the visible business table catalog.
 Programmatic updates SHALL not fail when touched tables are unmapped or absent from the catalog.
 When `Selected only` is checked, command-driven programmatic selections SHALL update visible grid rows so newly selected matches become visible.
+When `Selected only` is checked, initial command selection and subsequent command selection changes SHALL refresh selection and visibility in the same update cycle.
+Users SHALL NOT need to toggle `Selected only` to make newly command-selected business rows visible.
 When command-driven recomputation deselects rows while `Selected only` is checked, those rows SHALL no longer remain visible.
 
 #### Scenario: Command-driven selections apply only to visible business rows
@@ -124,6 +126,12 @@ When command-driven recomputation deselects rows while `Selected only` is checke
 - **WHEN** `Selected only` is checked
 - **AND** command selection changes produce a new touched-table union
 - **THEN** rows that are newly selected by the command-driven update are visible in the business table grid
+
+#### Scenario: Initial command selection shows selected rows without selected-only toggle
+- **WHEN** `Selected only` is checked
+- **AND** the user selects a command row for the first time in the current session state
+- **THEN** corresponding selected business rows become visible immediately
+- **AND** the user does not need to uncheck and re-check `Selected only`
 
 #### Scenario: Command-driven deselected rows are hidden with selected-only enabled
 - **WHEN** `Selected only` is checked

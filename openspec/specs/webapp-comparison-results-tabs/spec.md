@@ -105,16 +105,16 @@ The compared-table filter SHALL be rendered in a separate content-controls row a
 
 ### Requirement: Result grid hides MATCH rows by default with explicit opt-in
 The comparison result grid SHALL exclude rows classified as `MATCH` by default when a comparison result tab is first shown.
-The comparison stage SHALL provide a `Show MATCH rows` checkbox that allows users to include MATCH rows on demand.
-The comparison stage SHALL apply the checkbox state to the active result view without requiring a new comparison execution.
+The comparison stage SHALL NOT render a `Show MATCH rows` checkbox in the results controls.
+The comparison stage SHALL keep MATCH-row visibility fixed to excluded in standard result exploration.
 
 #### Scenario: MATCH rows are hidden by default
 - **WHEN** a comparison run completes and a table result tab is opened
 - **THEN** rows classified as `MATCH` are not shown in the initial grid view
 
-#### Scenario: User enables MATCH rows
-- **WHEN** the user checks `Show MATCH rows`
-- **THEN** MATCH rows become visible in the current result grid view
+#### Scenario: Results controls omit MATCH visibility toggle
+- **WHEN** comparison succeeds and result controls are rendered
+- **THEN** no `Show MATCH rows` checkbox is visible in the results controls
 
 ### Requirement: Result grid supports sortable columns and value filtering
 The comparison result grid SHALL allow sorting on visible data columns in ascending and descending order.
