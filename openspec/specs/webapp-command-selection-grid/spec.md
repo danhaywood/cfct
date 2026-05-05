@@ -100,6 +100,7 @@ The webapp SHALL allow users to press Enter to execute compare immediately after
 ### Requirement: Clear control resets command and business selections
 The webapp SHALL render a Clear control below the command selection grid.
 The Clear control SHALL clear selected rows in the command grid and the business table grid.
+The Clear control SHALL clear any previously rendered comparison progress status report.
 The Clear control SHALL be disabled when no rows are selected in either grid.
 
 #### Scenario: Clear button appears below command grid
@@ -111,6 +112,7 @@ The Clear control SHALL be disabled when no rows are selected in either grid.
 - **AND** the user clicks Clear
 - **THEN** command selection becomes empty
 - **AND** business table selection becomes empty
+- **AND** any prior comparison status report is cleared
 
 #### Scenario: Clear button disablement reflects empty state
 - **WHEN** no command rows and no business table rows are selected
@@ -151,4 +153,19 @@ The `Compare` action SHALL remain fully visible and clickable while users intera
 #### Scenario: Compare remains accessible during selection changes
 - **WHEN** users scroll or resize within the selection area while table data is present
 - **THEN** the compare action remains visible and actionable without being covered by selection-grid content
+
+### Requirement: Command-grid selection parameter changes reset comparison status report
+The webapp SHALL clear any previously rendered comparison progress status report when command-grid selection parameters change.
+Command-grid selection parameters SHALL include command-row selection changes and command-grid filter changes.
+The webapp SHALL preserve command and table selection behavior while clearing only stale comparison status reporting.
+
+#### Scenario: Command selection change clears prior comparison status report
+- **WHEN** a prior comparison status report is visible in the footer
+- **AND** the user selects or deselects one or more command rows
+- **THEN** the prior comparison status report is cleared
+
+#### Scenario: Command filter change clears prior comparison status report
+- **WHEN** a prior comparison status report is visible in the footer
+- **AND** the user changes member, interactionId, or replay-state filter parameters
+- **THEN** the prior comparison status report is cleared
 
