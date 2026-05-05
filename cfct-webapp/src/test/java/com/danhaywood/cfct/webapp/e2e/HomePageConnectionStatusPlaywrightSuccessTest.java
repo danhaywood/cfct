@@ -285,15 +285,15 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             final String successProgressClass = (String) page.evaluate(
                     "() => document.querySelector('[data-testid=\"comparison-progress-summary\"]')?.getAttribute('class') ?? ''");
             assertThat(successProgressClass).contains("comparison-progress-summary-success");
-            assertThat(isCheckboxChecked(page, "[data-testid='comparison-differences-only-filter']")).isTrue();
-            assertThat(page.locator("[data-testid^='comparison-result-tab-']").count()).isEqualTo(2);
+            assertThat(isCheckboxChecked(page, "[data-testid='comparison-differences-only-filter']")).isFalse();
+            assertThat(page.locator("[data-testid^='comparison-result-tab-']").count()).isEqualTo(3);
             assertThat(page.locator("[data-testid='comparison-result-tab-dbo-supplier']").getAttribute("data-has-differences")).isEqualTo("true");
             assertThat(page.locator("[data-testid='comparison-result-tab-dbo-product']").getAttribute("data-has-differences")).isEqualTo("true");
             assertThat(page.locator("[data-testid='comparison-result-tab-dbo-customeraddress']").getAttribute("data-has-differences")).isEqualTo("false");
 
             toggleCheckbox(page, "[data-testid='comparison-differences-only-filter']");
-            page.waitForFunction("() => document.querySelectorAll('[data-testid^=\"comparison-result-tab-\"]').length === 3");
-            assertThat(page.locator("[data-testid='comparison-result-tab-dbo-customeraddress']").count()).isEqualTo(1);
+            page.waitForFunction("() => document.querySelectorAll('[data-testid^=\"comparison-result-tab-\"]').length === 2");
+            assertThat(page.locator("[data-testid='comparison-result-tab-dbo-customeraddress']").count()).isEqualTo(0);
 
             assertThat(page.locator("[data-testid^='comparison-grid-dbo-']").count()).isEqualTo(1);
             final String gridText = page.locator("[data-testid^='comparison-grid-dbo-']").first().innerText();

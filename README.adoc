@@ -95,7 +95,7 @@ If successful, the results are shown on the right hand side:
 +
 image:docs/images/webapp-selected.png[Webapp table comparison results in tabs]
 +
-Tabs for tables with differences are color-highlighted, and a `Diffs only` checkbox can hide unchanged tables.
+Tabs for tables with differences are color-highlighted, and a `Diffs only` checkbox (off by default) can hide unchanged tables.
 Differing values are shown on separate lines, with Excel-like status coloring.
 +
 Downloads are provided through one unified `Download` action with a format selector for `json`, `yaml`, or `excel` (the selector defaults to `json`).

@@ -246,6 +246,31 @@ class MainViewTest {
     }
 
     @Test
+    void commandSelectionImmediatelyShowsProgrammaticBusinessRowsWhileSelectedOnlyChecked() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                commandDrivenSelectionServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        final Checkbox selectedOnly = (Checkbox) findByTestId(view, "selected-only-checkbox").orElseThrow();
+        final Grid<?> tableGrid = (Grid<?>) findByTestId(view, "table-selection-grid").orElseThrow();
+
+        assertThat(selectedOnly.getValue()).isTrue();
+        assertThat(tableGrid.getDataProvider().size(new com.vaadin.flow.data.provider.Query<>())).isZero();
+
+        invokeToggleFocusedCommandSelection(view);
+
+        assertThat(tableGrid.getDataProvider().size(new com.vaadin.flow.data.provider.Query<>())).isEqualTo(1);
+        assertThat(view.selectedTablesForStageTwo()).containsExactly(new TableRef("dbo", "Supplier"));
+        assertThat(selectedOnly.getValue()).isTrue();
+    }
+
+    @Test
     void clearSelectionsRestoresSelectedOnlyDefaultChecked() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
@@ -487,7 +512,7 @@ class MainViewTest {
 
         final com.vaadin.flow.component.checkbox.Checkbox differencesOnly =
                 (com.vaadin.flow.component.checkbox.Checkbox) findByTestId(view, "comparison-differences-only-filter").orElseThrow();
-        assertThat(differencesOnly.getValue()).isTrue();
+        assertThat(differencesOnly.getValue()).isFalse();
 
         final TableComparisonViewResult supplier = outcome.viewResult().tableResults().get(0);
         final TableComparisonViewResult customerAddress = outcome.viewResult().tableResults().get(1);
@@ -496,11 +521,11 @@ class MainViewTest {
         assertThat(invokeHasDifferences(view, customerAddress)).isFalse();
 
         assertThat(invokeMatchesComparedTableFilter(view, supplier)).isTrue();
-        assertThat(invokeMatchesComparedTableFilter(view, customerAddress)).isFalse();
-
-        differencesOnly.setValue(false);
-        assertThat(invokeMatchesComparedTableFilter(view, supplier)).isTrue();
         assertThat(invokeMatchesComparedTableFilter(view, customerAddress)).isTrue();
+
+        differencesOnly.setValue(true);
+        assertThat(invokeMatchesComparedTableFilter(view, supplier)).isTrue();
+        assertThat(invokeMatchesComparedTableFilter(view, customerAddress)).isFalse();
     }
 
     @Test
@@ -617,7 +642,7 @@ class MainViewTest {
     }
 
     @Test
-    void hidesMatchRowsByDefaultAndCanShowThemOnDemand() {
+    void hidesMatchRowsByDefaultAndOmitsMatchRowsToggle() {
         final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
         when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class)))
                 .thenReturn(sampleComparisonOutcome());
@@ -633,8 +658,7 @@ class MainViewTest {
 
         invokeExecuteComparison(view);
 
-        final Checkbox showMatchRows = (Checkbox) findByTestId(view, "comparison-show-match-filter").orElseThrow();
-        assertThat(showMatchRows.getValue()).isFalse();
+        assertThat(findByTestId(view, "comparison-show-match-filter")).isEmpty();
 
         final ColumnRef name = new ColumnRef("name");
         final ComparisonRowView matchRow = new ComparisonRowView(
@@ -654,14 +678,9 @@ class MainViewTest {
                 List.of(name),
                 List.of(matchRow, diffRow));
 
-        final Grid<?> hiddenMatchGrid = extractGrid(invokeBuildResultGrid(view, supplier));
-        final int withoutMatchRows = hiddenMatchGrid.getDataProvider().size(new com.vaadin.flow.data.provider.Query<>());
-
-        showMatchRows.setValue(true);
-        final Grid<?> allRowsGrid = extractGrid(invokeBuildResultGrid(view, supplier));
-        final int withMatchRows = allRowsGrid.getDataProvider().size(new com.vaadin.flow.data.provider.Query<>());
-        assertThat(withoutMatchRows).isEqualTo(1);
-        assertThat(withMatchRows).isEqualTo(2);
+        final Grid<?> grid = extractGrid(invokeBuildResultGrid(view, supplier));
+        final int visibleRows = grid.getDataProvider().size(new com.vaadin.flow.data.provider.Query<>());
+        assertThat(visibleRows).isEqualTo(1);
     }
 
     @Test

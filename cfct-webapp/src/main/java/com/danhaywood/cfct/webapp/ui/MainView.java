@@ -107,7 +107,6 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Div comparisonResultsContainer = new Div();
     private final TextField comparedTableFilter = new TextField();
     private final Checkbox differencesOnlyFilter = new Checkbox("Diffs only");
-    private final Checkbox showMatchRowsFilter = new Checkbox("Show MATCH rows");
     private final Checkbox selectedOnlyFilter = new Checkbox("Selected only");
     private final Anchor downloadAction = new Anchor();
     private final Select<DownloadFormat> downloadFormatSelect = new Select<>();
@@ -277,16 +276,11 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         comparedTableFilter.addValueChangeListener(event -> renderComparisonTabs());
 
         differencesOnlyFilter.getElement().setAttribute("data-testid", "comparison-differences-only-filter");
-        differencesOnlyFilter.setValue(true);
+        differencesOnlyFilter.setValue(false);
         differencesOnlyFilter.getStyle().setPaddingLeft(".3em");
         differencesOnlyFilter.getStyle().setPaddingRight(".3em");
         differencesOnlyFilter.getStyle().setAlignSelf(Style.AlignSelf.CENTER);
         differencesOnlyFilter.addValueChangeListener(event -> renderComparisonTabs());
-
-        showMatchRowsFilter.getElement().setAttribute("data-testid", "comparison-show-match-filter");
-        showMatchRowsFilter.setValue(false);
-        showMatchRowsFilter.getStyle().setAlignSelf(Style.AlignSelf.CENTER);
-        showMatchRowsFilter.addValueChangeListener(event -> renderComparisonTabs());
 
         downloadFormatSelect.setItems(DownloadFormat.JSON, DownloadFormat.YAML, DownloadFormat.EXCEL);
         downloadFormatSelect.setItemLabelGenerator(DownloadFormat::label);
@@ -300,7 +294,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         resultActions.getElement().setAttribute("data-testid", "comparison-result-actions");
         resultActions.addClassName("comparison-result-actions");
-        resultActions.add(comparedTableFilter, differencesOnlyFilter, showMatchRowsFilter, downloadFormatSelect, downloadAction);
+        resultActions.add(comparedTableFilter, differencesOnlyFilter, downloadFormatSelect, downloadAction);
         resultActions.expand(comparedTableFilter);
         resultActions.setVisible(false);
         resultActions.setPadding(true);
@@ -746,7 +740,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         final List<String> selectedInteractionIds = commandSelectionState.selectedInteractionIds();
         final var touchedTables = commandDrivenTableSelectionService.resolveTouchedBusinessTables(selectedInteractionIds, tableCatalogEntries);
         selectionState.applyProgrammaticSelections(touchedTables);
-        selectionDataProvider.refreshAll();
+        applySelectionFilters();
         refreshActionButtons();
     }
 
@@ -759,7 +753,6 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         selectedOnlyFilter.setValue(selectionState.isSelectedOnly());
         commandSelectionDataProvider.refreshAll();
         applyCommandDrivenSelection();
-        applySelectionFilters();
     }
 
     private void toggleFocusedCommandSelection() {
@@ -955,7 +948,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
     private Component buildResultGrid(final TableComparisonViewResult tableResult) {
         final List<ComparisonRowView> visibleRows = tableResult.rows().stream()
-                .filter(row -> Boolean.TRUE.equals(showMatchRowsFilter.getValue()) || row.status() != ComparisonRowStatus.MATCH)
+                .filter(row -> row.status() != ComparisonRowStatus.MATCH)
                 .toList();
 
         final Grid<ComparisonRowView> grid = new Grid<>();
