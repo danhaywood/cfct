@@ -414,6 +414,9 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         compareProgressCounter.getElement().setAttribute("data-testid", "compare-progress-counter");
         compareProgressCounter.getStyle().set("color", "var(--lumo-secondary-text-color)");
+        compareProgressCounter.getStyle().set("display", "inline-flex");
+        compareProgressCounter.getStyle().set("align-items", "center");
+        compareProgressCounter.getStyle().set("padding-right", "var(--lumo-space-s)");
         compareProgressCounter.setVisible(false);
 
         final Div actionBar = new Div(compareProgressCounter, compareButton);
@@ -421,6 +424,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         actionBar.addClassName("navigation-compare-action-bar");
         actionBar.getStyle()
                 .setDisplay(Style.Display.FLEX)
+                .set("align-items", "center")
                 .setJustifyContent(Style.JustifyContent.FLEX_END)
                 .setWidth("100%")
                 .set("position", "sticky")
@@ -465,7 +469,6 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         selectedOnlyFilter.setValue(selectionState.isSelectedOnly());
         selectedOnlyFilter.addValueChangeListener(event -> {
             selectionState.setSelectedOnly(Boolean.TRUE.equals(event.getValue()));
-            clearComparisonProgressStatus();
             applySelectionFilters();
         });
 
