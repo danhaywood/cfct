@@ -31,10 +31,6 @@ See `native-image-failed` branch.
 
 * /opsx-propose: followed preferred programming style: clean up HomePageConnectionStatusPlaywrightSuccessTest, externalize DDL into a resources file. Do this elsewhere if necessary.
 
-* /opsx-propose: followed preferred programming style: convert PlaywrightSqlServerFixture to be a regular service/bean, don't use static methods
-
-* /opsx-propose: refactor the playwright tests to use page objects. Put the page objects into their own maven module, update maven module dependencies accordingly.
-
 * /opsx-propose: followed preferred programming style: use lombok @Getter, @Setter and @RequiredArgsConstructor to remove boilerplate. Don't use other lombok conventions, though.
 
 * /opsx-propose: Vaadin best practices.
