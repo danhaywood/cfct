@@ -15,8 +15,6 @@ Until then, ideas here are notes only and do not represent current system behavi
 
 === New features
 
-* /opsx-propose: extend the library so that it can perform comparisons multi-threaded, each table in its own thread, rather than one at a time. To support this, there will (I imagine) need to be a connection pool / DataSource. The size of this pool should be specified as a cli argument, or read from a config property
-
 * /opsx-propose: use spring native to compile the cli into an exe. Put this behind a profile, only built on demand (I believe it can take some time to run). Update README to explain how to build, using this profile. Update README to explain how to run (instead of using that shell script).
 +
 I attempted this, but failed to build.
@@ -31,6 +29,6 @@ See `native-image-failed` branch.
 
 * /opsx-propose: followed preferred programming style: clean up HomePageConnectionStatusPlaywrightSuccessTest, externalize DDL into a resources file. Do this elsewhere if necessary.
 
-* /opsx-propose: followed preferred programming style: use lombok @Getter, @Setter and @RequiredArgsConstructor to remove boilerplate. Don't use other lombok conventions, though.
+* /opsx-propose: use lombok @Getter, @Setter and @RequiredArgsConstructor to remove boilerplate. Don't use other lombok conventions, though.
 
 * /opsx-propose: Vaadin best practices.
