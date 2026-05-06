@@ -28,6 +28,7 @@ import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
@@ -72,6 +73,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -102,6 +104,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Dialog loginDialog = new Dialog();
 
     private final Button compareButton = new Button("Compare");
+    private final Span compareProgressCounter = new Span();
     private final Button clearSelectionsButton = new Button("Clear");
     private final Span comparisonError = new Span();
     private final Div comparisonResultsContainer = new Div();
@@ -116,12 +119,15 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Span comparisonProgressSummary = new Span();
     private final MenuBar accountMenu = new MenuBar();
     private Grid<CommandCatalogEntry> commandSelectionGrid;
+    private Grid<TableCatalogEntry> tableSelectionGrid;
     private String focusedCommandInteractionId;
     private TableRef focusedBusinessTable;
 
     private WebappComparisonExecutionService.ComparisonExecutionOutcome latestOutcome;
     private int drawerWidthPx = 512;
     private String tableFilterValue = "";
+    private final Set<TableRef> completedTablesInActiveRun = new LinkedHashSet<>();
+    private int compareProgressTotal;
     private String commandMemberFilterValue = "";
     private String commandInteractionFilterValue = "";
     private final Set<String> commandReplayStateFilters = new LinkedHashSet<>();
@@ -406,7 +412,11 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         final Grid<CommandCatalogEntry> commandGrid = buildCommandSelectionGrid();
 
-        final Div actionBar = new Div(compareButton);
+        compareProgressCounter.getElement().setAttribute("data-testid", "compare-progress-counter");
+        compareProgressCounter.getStyle().set("color", "var(--lumo-secondary-text-color)");
+        compareProgressCounter.setVisible(false);
+
+        final Div actionBar = new Div(compareProgressCounter, compareButton);
         actionBar.getElement().setAttribute("data-testid", "navigation-compare-action-bar");
         actionBar.addClassName("navigation-compare-action-bar");
         actionBar.getStyle()
@@ -486,7 +496,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         grid.setAllRowsVisible(false);
         grid.setHeight("6rem");
         grid.setWidthFull();
-        grid.setPartNameGenerator(entry -> entry.eligible() ? "eligible-table-row" : "ineligible-table-row");
+        this.tableSelectionGrid = grid;
+        grid.setPartNameGenerator(this::selectionRowPartName);
         grid.setDataProvider(selectionDataProvider);
 
         grid.addColumn(new ComponentRenderer<>(entry -> {
@@ -827,27 +838,50 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         compareButton.setEnabled(false);
         comparisonError.setText("");
+        clearRunVisualProgress();
+        compareProgressTotal = selectedTables.size();
+        compareProgressCounter.setText("0 of " + compareProgressTotal);
+        compareProgressCounter.setVisible(true);
         showComparisonProgress("Comparison running...", PROGRESS_STYLE_NEUTRAL);
 
-        try {
-            latestOutcome = comparisonExecutionService.compare(
-                    MultiTableComparisonRequest.forTables(selectedTables),
-                    this::onComparisonProgress);
-            showComparisonProgress("Comparison complete.", PROGRESS_STYLE_SUCCESS);
-            downloadFormatSelect.setValue(DownloadFormat.JSON);
-            resultActions.setVisible(true);
-            refreshDownloadLinks();
-            renderComparisonTabs();
-        } catch (RuntimeException ex) {
-            latestOutcome = null;
-            resultActions.setVisible(false);
-            comparisonResultsContainer.removeAll();
-            comparisonError.setText(safeError(ex));
-            showComparisonProgress("Comparison failed.", PROGRESS_STYLE_FAILURE);
-            renderEmptyComparisonState();
-        } finally {
-            compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
+        final UI ui = getUI().orElse(null);
+        if (ui == null) {
+            executeComparisonSynchronously(selectedTables);
+            return;
         }
+
+        final AuthenticatedConnectionContext authenticatedContext = authenticatedContextHolder.required();
+        ui.setPollInterval(200);
+        CompletableFuture
+                .supplyAsync(() -> comparisonExecutionService.compare(
+                        MultiTableComparisonRequest.forTables(selectedTables),
+                        event -> ui.access(() -> onComparisonProgress(event)),
+                        authenticatedContext))
+                .whenComplete((outcome, throwable) -> ui.access(() -> {
+                    try {
+                        if (throwable == null) {
+                            latestOutcome = outcome;
+                            showComparisonProgress("Comparison complete.", PROGRESS_STYLE_SUCCESS);
+                            downloadFormatSelect.setValue(DownloadFormat.JSON);
+                            resultActions.setVisible(true);
+                            refreshDownloadLinks();
+                            renderComparisonTabs();
+                        } else {
+                            latestOutcome = null;
+                            resultActions.setVisible(false);
+                            comparisonResultsContainer.removeAll();
+                            final RuntimeException runtimeException = throwable instanceof RuntimeException re
+                                    ? re
+                                    : new RuntimeException(throwable);
+                            comparisonError.setText(safeError(runtimeException));
+                            showComparisonProgress("Comparison failed.", PROGRESS_STYLE_FAILURE);
+                            renderEmptyComparisonState();
+                        }
+                    } finally {
+                        ui.setPollInterval(-1);
+                        compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
+                    }
+                }));
     }
 
     private void refreshDownloadLinks() {
@@ -1111,6 +1145,14 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         return value == null || value.isBlank() ? "not configured" : value;
     }
 
+    private String selectionRowPartName(final TableCatalogEntry entry) {
+        final String basePart = entry.eligible() ? "eligible-table-row" : "ineligible-table-row";
+        if (completedTablesInActiveRun.contains(entry.table())) {
+            return basePart + " comparison-completed-row";
+        }
+        return basePart;
+    }
+
     private void showComparisonProgress(final String message, final String styleClass) {
         comparisonProgressSummary.setText(message == null ? "" : message);
         applyComparisonProgressStyle(styleClass);
@@ -1119,6 +1161,17 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private void clearComparisonProgressStatus() {
         comparisonProgressSummary.setText("");
         applyComparisonProgressStyle(null);
+        clearRunVisualProgress();
+    }
+
+    private void clearRunVisualProgress() {
+        completedTablesInActiveRun.clear();
+        compareProgressTotal = 0;
+        compareProgressCounter.setText("");
+        compareProgressCounter.setVisible(false);
+        if (tableSelectionGrid != null) {
+            tableSelectionGrid.getDataProvider().refreshAll();
+        }
     }
 
     private void applyComparisonProgressStyle(final String styleClass) {
@@ -1224,7 +1277,32 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         refreshActionButtons();
     }
 
+    private void executeComparisonSynchronously(final List<TableRef> selectedTables) {
+        try {
+            latestOutcome = comparisonExecutionService.compare(
+                    MultiTableComparisonRequest.forTables(selectedTables),
+                    this::onComparisonProgress);
+            showComparisonProgress("Comparison complete.", PROGRESS_STYLE_SUCCESS);
+            downloadFormatSelect.setValue(DownloadFormat.JSON);
+            resultActions.setVisible(true);
+            refreshDownloadLinks();
+            renderComparisonTabs();
+        } catch (RuntimeException ex) {
+            latestOutcome = null;
+            resultActions.setVisible(false);
+            comparisonResultsContainer.removeAll();
+            comparisonError.setText(safeError(ex));
+            showComparisonProgress("Comparison failed.", PROGRESS_STYLE_FAILURE);
+            renderEmptyComparisonState();
+        } finally {
+            compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
+        }
+    }
+
     private void onComparisonProgress(final ComparisonProgressEvent event) {
+        if (event.totalTables() > 0) {
+            compareProgressTotal = event.totalTables();
+        }
         if (event.phase() == ComparisonProgressPhase.TABLE_STARTED) {
             showComparisonProgress(
                     "Comparing %s (%d/%d)".formatted(
@@ -1232,9 +1310,21 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                             event.completedTables() + 1,
                             event.totalTables()),
                     PROGRESS_STYLE_NEUTRAL);
+            compareProgressCounter.setVisible(compareProgressTotal > 0);
+            if (compareProgressTotal > 0) {
+                compareProgressCounter.setText(event.completedTables() + " of " + compareProgressTotal);
+            }
             return;
         }
         if (event.phase() == ComparisonProgressPhase.TABLE_COMPLETED) {
+            completedTablesInActiveRun.add(event.table());
+            if (tableSelectionGrid != null) {
+                tableSelectionGrid.getDataProvider().refreshAll();
+            }
+            compareProgressCounter.setVisible(compareProgressTotal > 0);
+            if (compareProgressTotal > 0) {
+                compareProgressCounter.setText(event.completedTables() + " of " + compareProgressTotal);
+            }
             showComparisonProgress(
                     "Compared %s (%d/%d)".formatted(
                             event.table().displayName(),
@@ -1242,6 +1332,14 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                             event.totalTables()),
                     PROGRESS_STYLE_NEUTRAL);
             return;
+        }
+        completedTablesInActiveRun.add(event.table());
+        if (tableSelectionGrid != null) {
+            tableSelectionGrid.getDataProvider().refreshAll();
+        }
+        compareProgressCounter.setVisible(compareProgressTotal > 0);
+        if (compareProgressTotal > 0) {
+            compareProgressCounter.setText(event.completedTables() + " of " + compareProgressTotal);
         }
         showComparisonProgress("Comparison failed on %s".formatted(event.table().displayName()), PROGRESS_STYLE_FAILURE);
     }

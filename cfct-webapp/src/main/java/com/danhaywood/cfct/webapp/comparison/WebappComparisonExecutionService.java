@@ -8,6 +8,7 @@ import com.danhaywood.cfct.request.MultiTableComparisonRequest;
 import com.danhaywood.cfct.service.ComparisonProgressListener;
 import com.danhaywood.cfct.service.MultiTableComparisonReportFormatter;
 import com.danhaywood.cfct.service.MultiTableComparisonService;
+import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContextHolder;
 import com.danhaywood.cfct.webapp.config.WebappDataSourceConfiguration;
 import com.danhaywood.cfct.webapp.config.WebappDataSources;
@@ -40,11 +41,19 @@ public class WebappComparisonExecutionService {
     public ComparisonExecutionOutcome compare(
             final MultiTableComparisonRequest request,
             final ComparisonProgressListener progressListener) {
-        final WebappDataSources dataSources = dataSourceConfiguration.dataSourcesFor(authenticatedContextHolder.required());
+        return compare(request, progressListener, authenticatedContextHolder.required());
+    }
+
+    public ComparisonExecutionOutcome compare(
+            final MultiTableComparisonRequest request,
+            final ComparisonProgressListener progressListener,
+            final AuthenticatedConnectionContext authenticatedContext) {
+        final WebappDataSources dataSources = dataSourceConfiguration.dataSourcesFor(authenticatedContext);
         final ComparisonOptions options = new ComparisonOptions(
                 request.options().businessKeyIndexSuffix(),
                 request.options().ignoredColumnNames(),
-                progressListener);
+                progressListener,
+                request.options().maxParallelComparisons());
         final MultiTableComparisonResult rawResult = comparisonService.compare(
                 dataSources.left(),
                 dataSources.right(),

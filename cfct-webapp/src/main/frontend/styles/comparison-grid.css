@@ -25,6 +25,10 @@
   gap: var(--lumo-space-s);
 }
 
+vaadin-grid::part(comparison-completed-row) {
+  background-color: #e6f7ef;
+}
+
 .comparison-progress-summary-neutral {
   background-color: var(--lumo-contrast-5pct);
   color: var(--lumo-body-text-color);

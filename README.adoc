@@ -91,6 +91,8 @@ NOTE: Tables that do not meet the `_PK` suffix requirement on a unique index or 
 * Click `compare` (or hit enter); this triggers the comparison.
 +
 During comparison, the footer/status bar also shows live table-by-table progress and a terminal completion or failure message.
+The Compare action bar shows a live `N of M` completion counter, and completed business-table rows are highlighted in the navigation grid as each table finishes.
+These visual cues are cleared automatically when `Clear` is pressed or when a new selection/filter workflow begins.
 If successful, the results are shown on the right hand side:
 +
 image:docs/images/webapp-selected.png[Webapp table comparison results in tabs]

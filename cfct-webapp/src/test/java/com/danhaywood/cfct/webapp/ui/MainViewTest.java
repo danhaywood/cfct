@@ -9,6 +9,8 @@ import com.danhaywood.cfct.model.RowKey;
 import com.danhaywood.cfct.model.TableComparisonViewResult;
 import com.danhaywood.cfct.model.TableRef;
 import com.danhaywood.cfct.request.MultiTableComparisonRequest;
+import com.danhaywood.cfct.service.ComparisonProgressEvent;
+import com.danhaywood.cfct.service.ComparisonProgressPhase;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContextHolder;
 import com.danhaywood.cfct.webapp.auth.WebappAuthenticationService;
@@ -444,6 +446,36 @@ class MainViewTest {
     }
 
     @Test
+    void completedProgressEventUpdatesCounterAndKeepsRowMarkedUntilReset() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                mock(WebappAuthenticationService.class));
+
+        invokeOnComparisonProgress(view, new ComparisonProgressEvent(
+                new TableRef("dbo", "Supplier"),
+                ComparisonProgressPhase.TABLE_COMPLETED,
+                1,
+                2,
+                "Compared dbo.Supplier"));
+
+        final Span counter = (Span) findByTestId(view, "compare-progress-counter").orElseThrow();
+        assertThat(counter.isVisible()).isTrue();
+        assertThat(counter.getText()).isEqualTo("1 of 2");
+
+        final Grid<TableCatalogEntry> tableGrid = castGrid(findByTestId(view, "table-selection-grid").orElseThrow());
+        final TableCatalogEntry supplier = tableGrid.getListDataView().getItems()
+                .filter(entry -> entry.table().equals(new TableRef("dbo", "Supplier")))
+                .findFirst()
+                .orElseThrow();
+        assertThat(tableGrid.getPartNameGenerator().apply(supplier)).contains("comparison-completed-row");
+    }
+
+    @Test
     void clearActionClearsAnyExistingComparisonProgressSummary() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
@@ -455,12 +487,22 @@ class MainViewTest {
                 mock(WebappAuthenticationService.class));
 
         invokeShowComparisonProgress(view, "Comparison complete.", "comparison-progress-summary-success");
+        invokeOnComparisonProgress(view, new ComparisonProgressEvent(
+                new TableRef("dbo", "Supplier"),
+                ComparisonProgressPhase.TABLE_COMPLETED,
+                1,
+                1,
+                "Compared dbo.Supplier"));
         final Span progress = (Span) findByTestId(view, "comparison-progress-summary").orElseThrow();
-        assertThat(progress.getText()).isEqualTo("Comparison complete.");
+        final Span counter = (Span) findByTestId(view, "compare-progress-counter").orElseThrow();
+        assertThat(progress.getText()).isEqualTo("Compared dbo.Supplier (1/1)");
+        assertThat(counter.getText()).isEqualTo("1 of 1");
 
         invokeClearAllSelections(view);
 
         assertThat(progress.getText()).isBlank();
+        assertThat(counter.getText()).isBlank();
+        assertThat(counter.isVisible()).isFalse();
         final String cssClass = progress.getElement().getAttribute("class");
         assertThat(cssClass == null ? "" : cssClass)
                 .doesNotContain("comparison-progress-summary-success", "comparison-progress-summary-failure", "comparison-progress-summary-neutral");
@@ -478,11 +520,20 @@ class MainViewTest {
                 mock(WebappAuthenticationService.class));
 
         invokeShowComparisonProgress(view, "Comparison complete.", "comparison-progress-summary-success");
+        invokeOnComparisonProgress(view, new ComparisonProgressEvent(
+                new TableRef("dbo", "Supplier"),
+                ComparisonProgressPhase.TABLE_COMPLETED,
+                1,
+                1,
+                "Compared dbo.Supplier"));
         final Span progress = (Span) findByTestId(view, "comparison-progress-summary").orElseThrow();
-        assertThat(progress.getText()).isEqualTo("Comparison complete.");
+        final Span counter = (Span) findByTestId(view, "compare-progress-counter").orElseThrow();
+        assertThat(progress.getText()).isEqualTo("Compared dbo.Supplier (1/1)");
+        assertThat(counter.getText()).isEqualTo("1 of 1");
 
         invokeToggleFocusedCommandSelection(view);
         assertThat(progress.getText()).isBlank();
+        assertThat(counter.getText()).isBlank();
 
         invokeShowComparisonProgress(view, "Comparison complete.", "comparison-progress-summary-success");
         assertThat(progress.getText()).isEqualTo("Comparison complete.");
@@ -914,6 +965,11 @@ class MainViewTest {
         return (Grid<?>) gridContainer.getChildren().findFirst().orElseThrow();
     }
 
+    @SuppressWarnings("unchecked")
+    private Grid<TableCatalogEntry> castGrid(final Component component) {
+        return (Grid<TableCatalogEntry>) component;
+    }
+
     private String invokeCompactValue(final MainView view, final ComparisonRowStatus status, final String left, final String right) {
         try {
             final var method = MainView.class.getDeclaredMethod("compactValue", ComparisonRowStatus.class, String.class, String.class);
@@ -999,6 +1055,16 @@ class MainViewTest {
             final var method = MainView.class.getDeclaredMethod("executeComparison");
             method.setAccessible(true);
             method.invoke(view);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void invokeOnComparisonProgress(final MainView view, final ComparisonProgressEvent event) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("onComparisonProgress", ComparisonProgressEvent.class);
+            method.setAccessible(true);
+            method.invoke(view, event);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
