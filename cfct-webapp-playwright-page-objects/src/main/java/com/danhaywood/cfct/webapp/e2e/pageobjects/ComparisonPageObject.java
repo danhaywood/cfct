@@ -14,8 +14,28 @@ public class ComparisonPageObject {
 
     public void waitForMainSelectionUi() {
         page.waitForSelector("[data-testid='comparison-progress-summary']");
+        waitForCommandSelectionGrid();
+        waitForTableSelectionGrid();
+    }
+
+    public void waitForCommandSelectionGrid() {
         page.waitForSelector("[data-testid='command-selection-grid']");
+    }
+
+    public void waitForTableSelectionGrid() {
         page.waitForSelector("[data-testid='table-selection-grid']");
+    }
+
+    public void waitForComparisonResultsTabs() {
+        page.waitForSelector("[data-testid='comparison-results-tabs']");
+    }
+
+    public void waitForComparisonResultTabCount(final int expectedCount) {
+        page.waitForFunction("(expectedCount) => document.querySelectorAll('[data-testid^=\"comparison-result-tab-\"]').length === expectedCount", expectedCount);
+    }
+
+    public void waitForAccountMenuVisible() {
+        page.waitForSelector("[data-testid='account-menu']");
     }
 
     public String commandCheckboxSelector(final String interactionId) {
@@ -31,7 +51,7 @@ public class ComparisonPageObject {
         page.waitForFunction("([s, checked]) => { const el = document.querySelector(s); return !!el && !!el.checked === checked; }", List.of(selector, checked));
     }
 
-    public void waitForTwoCheckboxStates(
+    private void waitForCheckboxPairState(
             final String firstSelector,
             final boolean firstChecked,
             final String secondSelector,
@@ -42,12 +62,69 @@ public class ComparisonPageObject {
                 List.of(firstSelector, firstChecked, secondSelector, secondChecked));
     }
 
+    public void waitForCommandSelectionState(
+            final String firstInteractionId,
+            final boolean firstSelected,
+            final String secondInteractionId,
+            final boolean secondSelected) {
+        waitForCheckboxPairState(
+                commandCheckboxSelector(firstInteractionId),
+                firstSelected,
+                commandCheckboxSelector(secondInteractionId),
+                secondSelected);
+    }
+
+    public void waitForTableSelectionState(
+            final String firstQualifiedTableNameLower,
+            final boolean firstSelected,
+            final String secondQualifiedTableNameLower,
+            final boolean secondSelected) {
+        waitForCheckboxPairState(
+                tableCheckboxSelector(firstQualifiedTableNameLower),
+                firstSelected,
+                tableCheckboxSelector(secondQualifiedTableNameLower),
+                secondSelected);
+    }
+
+    @Deprecated(forRemoval = false)
+    public void waitForTwoCheckboxStates(
+            final String firstSelector,
+            final boolean firstChecked,
+            final String secondSelector,
+            final boolean secondChecked) {
+        waitForCheckboxPairState(firstSelector, firstChecked, secondSelector, secondChecked);
+    }
+
     public void pressKey(final String key) {
         page.keyboard().press(key);
     }
 
     public void click(final String selector) {
         page.locator(selector).click();
+    }
+
+    public void clickCommandCheckbox(final String interactionId) {
+        click(commandCheckboxSelector(interactionId));
+    }
+
+    public void clickTableCheckbox(final String qualifiedTableNameLower) {
+        click(tableCheckboxSelector(qualifiedTableNameLower));
+    }
+
+    public void clickCompareButton() {
+        click("[data-testid='compare-button']");
+    }
+
+    public boolean isCompareButtonEnabled() {
+        return page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isEnabled();
+    }
+
+    public boolean isCompareButtonDisabled() {
+        return page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isDisabled();
+    }
+
+    public void waitForCompareButtonEnabled() {
+        page.waitForFunction("() => !document.querySelector('[data-testid=\"compare-button\"]').disabled");
     }
 
     public void setSelectedOnly(final boolean checked) {
@@ -92,6 +169,38 @@ public class ComparisonPageObject {
 
     public void waitForProgressMessageCleared() {
         page.waitForFunction("() => document.querySelector('[data-testid=\"comparison-progress-summary\"]').innerText.trim() === ''");
+    }
+
+    public void waitForTableGridContains(final String text) {
+        page.waitForFunction("(text) => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes(text)", text);
+    }
+
+    public void waitForTableGridContainsAndNotContains(final String containsText, final String excludedText) {
+        page.waitForFunction("([containsText, excludedText]) => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes(containsText) && !document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes(excludedText)", List.of(containsText, excludedText));
+    }
+
+    public void waitForCommandGridContainsAndNotContains(final String containsText, final String excludedText) {
+        page.waitForFunction("([containsText, excludedText]) => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes(containsText) && !document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes(excludedText)", List.of(containsText, excludedText));
+    }
+
+    public void waitForCommandGridContains(final String text) {
+        page.waitForFunction("(text) => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes(text)", text);
+    }
+
+    public String commandGridText() {
+        return page.locator("[data-testid='command-selection-grid']").innerText();
+    }
+
+    public String tableGridText() {
+        return page.locator("[data-testid='table-selection-grid']").innerText();
+    }
+
+    public void sortTableGridByTableColumn() {
+        click("vaadin-grid-sorter[aria-label='Sort by Table']");
+    }
+
+    public long comparisonResultTabCount() {
+        return page.locator("[data-testid^='comparison-result-tab-']").count();
     }
 
     public double[] positionOf(final String selector) {
