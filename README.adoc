@@ -697,6 +697,7 @@ mvn -pl cfct-webapp -am \
 ----
 +
 Playwright tests are headless and use Testcontainers-backed SQL Server settings to keep runs reproducible in local and CI environments.
+Reusable Playwright page objects now live in the dedicated `cfct-webapp-playwright-page-objects` Maven module and are consumed by the webapp browser tests.
 +
 * Run layered webapp Docker image smoke test (Docker required):
 +

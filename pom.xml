@@ -22,6 +22,7 @@
         <module>cfct-impl</module>
         <module>cfct-cli</module>
         <module>cfct-webapp</module>
+        <module>cfct-webapp-playwright-page-objects</module>
         <module>cfct-integration-tests</module>
     </modules>
 
@@ -55,6 +56,11 @@
             <dependency>
                 <groupId>com.danhaywood</groupId>
                 <artifactId>cfct-webapp</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.danhaywood</groupId>
+                <artifactId>cfct-webapp-playwright-page-objects</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

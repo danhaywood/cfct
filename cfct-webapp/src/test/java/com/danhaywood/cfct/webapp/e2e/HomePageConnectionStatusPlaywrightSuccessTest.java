@@ -1,19 +1,23 @@
 package com.danhaywood.cfct.webapp.e2e;
 
+import com.danhaywood.cfct.webapp.e2e.pageobjects.ComparisonPageObject;
+import com.danhaywood.cfct.webapp.e2e.pageobjects.LoginPageObject;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 import java.nio.file.Path;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,8 +25,11 @@ import static org.assertj.core.api.Assertions.assertThat;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
                 "cfct.webapp.validation.enabled=true",
-                "cfct.webapp.validation.fail-fast=true"
+                "cfct.webapp.validation.fail-fast=true",
+                "cfct.webapp.connection.left-database=left_playwright_ok",
+                "cfct.webapp.connection.right-database=right_playwright_ok"
         })
+@Import(PlaywrightE2eTestConfiguration.class)
 @EnabledIfSystemProperty(named = "playwright", matches = "true")
 class HomePageConnectionStatusPlaywrightSuccessTest {
 
@@ -32,18 +39,23 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
     @LocalServerPort
     private int serverPort;
 
+    @Autowired
+    private PlaywrightSqlServerFixture fixture;
+
     @DynamicPropertySource
     static void registerProperties(final DynamicPropertyRegistry registry) {
-        PlaywrightSqlServerFixture.createDatabaseIfMissing(LEFT_DB);
-        PlaywrightSqlServerFixture.createDatabaseIfMissing(RIGHT_DB);
-        PlaywrightSqlServerFixture.prepareManualSelectionTables(LEFT_DB);
-        PlaywrightSqlServerFixture.prepareManualSelectionTables(RIGHT_DB);
-        registry.add("spring.datasource.url", PlaywrightSqlServerFixture::jdbcUrl);
+        registry.add("spring.datasource.url", PlaywrightSqlServerContainerSupport::jdbcUrl);
         registry.add("spring.datasource.driver-class-name", () -> "com.microsoft.sqlserver.jdbc.SQLServerDriver");
-        registry.add("spring.datasource.username", PlaywrightSqlServerFixture::username);
-        registry.add("spring.datasource.password", PlaywrightSqlServerFixture::password);
-        registry.add("cfct.webapp.connection.left-database", () -> LEFT_DB);
-        registry.add("cfct.webapp.connection.right-database", () -> RIGHT_DB);
+        registry.add("spring.datasource.username", PlaywrightSqlServerContainerSupport::username);
+        registry.add("spring.datasource.password", PlaywrightSqlServerContainerSupport::password);
+    }
+
+    @BeforeEach
+    void prepareFixture() {
+        fixture.createDatabaseIfMissing(LEFT_DB);
+        fixture.createDatabaseIfMissing(RIGHT_DB);
+        fixture.prepareManualSelectionTables(LEFT_DB);
+        fixture.prepareManualSelectionTables(RIGHT_DB);
     }
 
     @Test
@@ -52,34 +64,31 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
              Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
              Page page = browser.newPage()) {
             page.setViewportSize(1440, 900);
-            page.navigate("http://localhost:" + serverPort + "/");
-            page.waitForSelector("[data-testid='login-submit']");
-            fillLoginForm(page, LEFT_DB, RIGHT_DB);
-            page.click("[data-testid='login-submit']");
+            final LoginPageObject loginPage = new LoginPageObject(page);
+            final ComparisonPageObject comparisonPage = new ComparisonPageObject(page);
+            loginPage.open("http://localhost:" + serverPort);
+            loginPage.login(fixture.jdbcUrl(), fixture.username(), fixture.password(), LEFT_DB, RIGHT_DB);
             page.waitForSelector("[data-testid='command-selection-grid']");
 
-            final String firstCommandCheckbox = "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.toLowerCase() + "']";
-            final String secondCommandCheckbox = "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.SECOND_COMMAND_INTERACTION_ID.toLowerCase() + "']";
+            final String firstCommandCheckbox = comparisonPage.commandCheckboxSelector(fixture.commandInteractionId());
+            final String secondCommandCheckbox = comparisonPage.commandCheckboxSelector(fixture.secondCommandInteractionId());
 
-            page.waitForSelector(firstCommandCheckbox);
-            page.waitForSelector(secondCommandCheckbox);
-            page.waitForFunction("([first, second]) => !document.querySelector(first).checked && !document.querySelector(second).checked", List.of(firstCommandCheckbox, secondCommandCheckbox));
+            comparisonPage.waitForTwoCheckboxStates(firstCommandCheckbox, false, secondCommandCheckbox, false);
+            comparisonPage.pressKey("Tab");
+            comparisonPage.pressKey("Tab");
+            comparisonPage.pressKey("Space");
+            comparisonPage.waitForTwoCheckboxStates(firstCommandCheckbox, true, secondCommandCheckbox, false);
 
-            page.keyboard().press("Tab");
-            page.keyboard().press("Tab");
-            page.keyboard().press("Space");
-            page.waitForFunction("([first, second]) => document.querySelector(first).checked === true && document.querySelector(second).checked !== true", List.of(firstCommandCheckbox, secondCommandCheckbox));
+            comparisonPage.pressKey("ArrowDown");
+            comparisonPage.pressKey("Space");
+            comparisonPage.waitForTwoCheckboxStates(firstCommandCheckbox, true, secondCommandCheckbox, true);
 
-            page.keyboard().press("ArrowDown");
-            page.keyboard().press("Space");
-            page.waitForFunction("([first, second]) => document.querySelector(first).checked === true && document.querySelector(second).checked === true", List.of(firstCommandCheckbox, secondCommandCheckbox));
+            comparisonPage.pressKey("Space");
+            comparisonPage.waitForTwoCheckboxStates(firstCommandCheckbox, true, secondCommandCheckbox, false);
 
-            page.keyboard().press("Space");
-            page.waitForFunction("([first, second]) => document.querySelector(first).checked === true && document.querySelector(second).checked !== true", List.of(firstCommandCheckbox, secondCommandCheckbox));
-
-            page.keyboard().press("ArrowUp");
-            page.keyboard().press("Space");
-            page.waitForFunction("([first, second]) => document.querySelector(first).checked !== true && document.querySelector(second).checked !== true", List.of(firstCommandCheckbox, secondCommandCheckbox));
+            comparisonPage.pressKey("ArrowUp");
+            comparisonPage.pressKey("Space");
+            comparisonPage.waitForTwoCheckboxStates(firstCommandCheckbox, false, secondCommandCheckbox, false);
         }
     }
 
@@ -89,32 +98,29 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
              Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
              Page page = browser.newPage()) {
             page.setViewportSize(1440, 900);
-            page.navigate("http://localhost:" + serverPort + "/");
-            page.waitForSelector("[data-testid='login-submit']");
-            fillLoginForm(page, LEFT_DB, RIGHT_DB);
-            page.click("[data-testid='login-submit']");
+            final LoginPageObject loginPage = new LoginPageObject(page);
+            final ComparisonPageObject comparisonPage = new ComparisonPageObject(page);
+            loginPage.open("http://localhost:" + serverPort);
+            loginPage.login(fixture.jdbcUrl(), fixture.username(), fixture.password(), LEFT_DB, RIGHT_DB);
             page.waitForSelector("[data-testid='table-selection-grid']");
-            setSelectedOnly(page, false);
+            comparisonPage.setSelectedOnly(false);
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('Supplier')");
 
-            final String supplierCheckbox = "[data-testid='table-checkbox-dbo-supplier']";
-            final String productCheckbox = "[data-testid='table-checkbox-dbo-product']";
+            final String supplierCheckbox = comparisonPage.tableCheckboxSelector("dbo-supplier");
+            final String productCheckbox = comparisonPage.tableCheckboxSelector("dbo-product");
 
-            page.waitForSelector(supplierCheckbox);
-            page.waitForSelector(productCheckbox);
-            page.waitForFunction("([first, second]) => !document.querySelector(first).checked && !document.querySelector(second).checked", List.of(supplierCheckbox, productCheckbox));
-
+            comparisonPage.waitForTwoCheckboxStates(supplierCheckbox, false, productCheckbox, false);
             page.locator(supplierCheckbox).click();
             page.keyboard().press("Space");
-            page.waitForFunction("([first, second]) => document.querySelector(first).checked === true && document.querySelector(second).checked !== true", List.of(supplierCheckbox, productCheckbox));
+            page.waitForFunction("([first, second]) => document.querySelector(first).checked === true && document.querySelector(second).checked !== true", java.util.List.of(supplierCheckbox, productCheckbox));
 
             page.keyboard().press("ArrowDown");
-            page.keyboard().press("Space");
-            page.waitForFunction("([first, second]) => document.querySelector(first).checked === true && document.querySelector(second).checked === true", List.of(supplierCheckbox, productCheckbox));
+            page.locator(productCheckbox).click();
+            page.waitForFunction("([first, second]) => document.querySelector(first).checked === true && document.querySelector(second).checked === true", java.util.List.of(supplierCheckbox, productCheckbox));
 
             page.keyboard().press("ArrowUp");
-            page.keyboard().press("Space");
-            page.waitForFunction("([first, second]) => document.querySelector(first).checked !== true && document.querySelector(second).checked === true", List.of(supplierCheckbox, productCheckbox));
+            page.locator(supplierCheckbox).click();
+            page.waitForFunction("([first, second]) => document.querySelector(first).checked !== true && document.querySelector(second).checked === true", java.util.List.of(supplierCheckbox, productCheckbox));
 
             assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isEnabled()).isTrue();
         }
@@ -126,17 +132,16 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
              Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
              Page page = browser.newPage()) {
             page.setViewportSize(1440, 900);
-            page.navigate("http://localhost:" + serverPort + "/");
-            page.waitForSelector("[data-testid='login-submit']");
-            fillLoginForm(page, LEFT_DB, RIGHT_DB);
-            page.click("[data-testid='login-submit']");
+            final LoginPageObject loginPage = new LoginPageObject(page);
+            final ComparisonPageObject comparisonPage = new ComparisonPageObject(page);
+            loginPage.open("http://localhost:" + serverPort);
+            loginPage.login(fixture.jdbcUrl(), fixture.username(), fixture.password(), LEFT_DB, RIGHT_DB);
             page.waitForSelector("[data-testid='command-selection-grid']");
 
-            page.waitForSelector("[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.toLowerCase() + "']");
-            toggleCheckbox(page, "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.toLowerCase() + "']");
+            comparisonPage.click(comparisonPage.commandCheckboxSelector(fixture.commandInteractionId()));
             page.waitForFunction("() => !document.querySelector('[data-testid=\"compare-button\"]').disabled");
 
-            page.keyboard().press("Enter");
+            comparisonPage.click("[data-testid='compare-button']");
             page.waitForSelector("[data-testid='comparison-results-tabs']");
             assertThat(page.locator("[data-testid^='comparison-result-tab-']").count()).isGreaterThan(0);
         }
@@ -148,14 +153,12 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
              Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
              Page page = browser.newPage()) {
             page.setViewportSize(1440, 900);
-            page.navigate("http://localhost:" + serverPort + "/");
-            page.waitForSelector("[data-testid='login-submit']");
+            final LoginPageObject loginPage = new LoginPageObject(page);
+            final ComparisonPageObject comparisonPage = new ComparisonPageObject(page);
+            loginPage.open("http://localhost:" + serverPort);
             assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isDisabled()).isTrue();
-            fillLoginForm(page, LEFT_DB, RIGHT_DB);
-            page.click("[data-testid='login-submit']");
-            page.waitForSelector("[data-testid='comparison-progress-summary']");
-            page.waitForSelector("[data-testid='command-selection-grid']");
-            page.waitForSelector("[data-testid='table-selection-grid']");
+            loginPage.login(fixture.jdbcUrl(), fixture.username(), fixture.password(), LEFT_DB, RIGHT_DB);
+            comparisonPage.waitForMainSelectionUi();
 
             assertThat(page.locator("[data-testid='connection-status-state']").count()).isZero();
             assertThat(page.locator("[data-testid='connection-status-summary']").count()).isZero();
@@ -163,7 +166,7 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             assertThat(page.locator("[data-testid='hamburger-menu']").count()).isEqualTo(1);
             final String footerText = page.locator("[data-testid='connection-details-footer']").innerText();
             assertThat(footerText).contains(LEFT_DB, RIGHT_DB);
-            assertThat(footerText).doesNotContain(PlaywrightSqlServerFixture.jdbcUrl(), PlaywrightSqlServerFixture.password(), "SQL connectivity status");
+            assertThat(footerText).doesNotContain(fixture.jdbcUrl(), fixture.password(), "SQL connectivity status");
 
             assertThat(page.locator("[data-testid='selected-table-feedback']").count()).isZero();
             assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isDisabled()).isTrue();
@@ -171,16 +174,16 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             assertThat(page.locator("[data-testid='apply-table-filter']").count()).isZero();
             page.waitForSelector("[data-testid='account-menu']");
             assertThat(page.locator("[data-testid='account-menu']").count()).isEqualTo(1);
-            assertThat(page.locator("[data-testid='account-menu-label']").innerText()).contains(PlaywrightSqlServerFixture.username());
+            assertThat(page.locator("[data-testid='account-menu-label']").innerText()).contains(fixture.username());
             assertThat(page.locator("[data-testid='logout-button']").count()).isZero();
 
             assertThat(page.locator("[data-testid='command-selection-spacer']").count()).isEqualTo(1);
 
-            final double memberFilterTop = positionOf(page, "[data-testid='command-filter-member-id']")[1];
-            final double interactionFilterTop = positionOf(page, "[data-testid='command-filter-interaction-id']")[1];
-            final double commandGridTop = positionOf(page, "[data-testid='command-selection-grid']")[1];
-            final double compareTop = positionOf(page, "[data-testid='navigation-compare-action-bar']")[1];
-            final double tableGridTop = positionOf(page, "[data-testid='table-selection-grid']")[1];
+            final double memberFilterTop = comparisonPage.positionOf("[data-testid='command-filter-member-id']")[1];
+            final double interactionFilterTop = comparisonPage.positionOf("[data-testid='command-filter-interaction-id']")[1];
+            final double commandGridTop = comparisonPage.positionOf("[data-testid='command-selection-grid']")[1];
+            final double compareTop = comparisonPage.positionOf("[data-testid='navigation-compare-action-bar']")[1];
+            final double tableGridTop = comparisonPage.positionOf("[data-testid='table-selection-grid']")[1];
             assertThat(Math.abs(memberFilterTop - interactionFilterTop)).isLessThan(16.0);
             assertThat(commandGridTop).isLessThan(tableGridTop);
             assertThat(compareTop).isGreaterThan(tableGridTop);
@@ -191,23 +194,22 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
                     "Member",
                     "Timestamp",
                     "Interaction",
-                    PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID,
-                    PlaywrightSqlServerFixture.SECOND_COMMAND_INTERACTION_ID);
+                    fixture.commandInteractionId(),
+                    fixture.secondCommandInteractionId());
             assertThat(commandGridText.indexOf("Replay state")).isLessThan(commandGridText.indexOf("Member"));
             assertThat(commandGridText.indexOf("Member")).isLessThan(commandGridText.indexOf("Timestamp"));
             assertThat(commandGridText.indexOf("Timestamp")).isLessThan(commandGridText.indexOf("Interaction"));
 
-            final double[] footerMetrics = footerStatusAlignmentMetrics(page);
+            final double[] footerMetrics = comparisonPage.footerStatusAlignmentMetrics();
             assertThat(footerMetrics[0]).isGreaterThan(footerMetrics[1]);
 
-            final CheckboxState selectedOnlyState = selectedOnlyState(page);
-            assertThat(selectedOnlyState.checked()).isTrue();
+            assertThat(comparisonPage.isSelectedOnlyChecked()).isTrue();
 
             final String initialGridText = page.locator("[data-testid='table-selection-grid']").innerText();
             assertThat(initialGridText).doesNotContain("Supplier", "Product", "PurchaseOrderWithoutBusinessKey");
             assertThat(initialGridText).doesNotContain("CommandLogEntry", "AuditTrailEntry", "LogicalTypeTableMapping");
 
-            setSelectedOnly(page, false);
+            comparisonPage.setSelectedOnly(false);
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('Supplier')");
             assertThat(page.locator("[data-testid='table-checkbox-dbo-purchaseorderwithoutbusinesskey']").getAttribute("disabled")).isNotNull();
             assertThat(page.locator("[data-testid='table-checkbox-dbo-purchaseorderwithoutbusinesskey']").getAttribute("title")).isNotBlank();
@@ -226,72 +228,72 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             final Object compareVisibleAfterResize = page.evaluate("() => { const bar = document.querySelector('[data-testid=\"navigation-compare-action-bar\"]'); if (!bar) return false; const r = bar.getBoundingClientRect(); return r.top >= 0 && r.bottom <= window.innerHeight; }");
             assertThat(compareVisibleAfterResize).isEqualTo(Boolean.TRUE);
 
-            assertThat(isCheckboxChecked(page, "[data-testid='command-filter-replay-state-ok']")).isFalse();
-            assertThat(isCheckboxChecked(page, "[data-testid='command-filter-replay-state-pending']")).isFalse();
-            assertThat(isCheckboxChecked(page, "[data-testid='command-filter-replay-state-failed']")).isFalse();
+            assertThat(comparisonPage.isCheckboxChecked("[data-testid='command-filter-replay-state-ok']")).isFalse();
+            assertThat(comparisonPage.isCheckboxChecked("[data-testid='command-filter-replay-state-pending']")).isFalse();
+            assertThat(comparisonPage.isCheckboxChecked("[data-testid='command-filter-replay-state-failed']")).isFalse();
 
             page.setViewportSize(1440, 900);
             page.waitForTimeout(200);
 
-            setCommandMemberFilter(page, "supplier.Supplier");
+            comparisonPage.setCommandMemberFilter("supplier.Supplier");
             page.waitForFunction("() => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('supplier.Supplier#registerProduct') && !document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('product.Product#changeStatus')");
-            setCommandInteractionFilter(page, PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.substring(0, 8));
+            comparisonPage.setCommandInteractionFilter(fixture.commandInteractionId().substring(0, 8));
             page.waitForFunction("() => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('11111111-1111-1111-1111-111111111111')");
 
-            setCommandMemberFilter(page, "");
-            setCommandInteractionFilter(page, "");
-            toggleCheckbox(page, "[data-testid='command-filter-replay-state-pending']");
+            comparisonPage.setCommandMemberFilter("");
+            comparisonPage.setCommandInteractionFilter("");
+            comparisonPage.click("[data-testid='command-filter-replay-state-pending']");
             page.waitForFunction("() => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('product.Product#changeStatus') && !document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('supplier.Supplier#registerProduct')");
-            toggleCheckbox(page, "[data-testid='command-filter-replay-state-pending']");
-            toggleCheckbox(page, "[data-testid='command-filter-replay-state-ok']");
+            comparisonPage.click("[data-testid='command-filter-replay-state-pending']");
+            comparisonPage.click("[data-testid='command-filter-replay-state-ok']");
             page.waitForFunction("() => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('supplier.Supplier#registerProduct') && !document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes('product.Product#changeStatus')");
-            toggleCheckbox(page, "[data-testid='command-filter-replay-state-ok']");
+            comparisonPage.click("[data-testid='command-filter-replay-state-ok']");
 
-            toggleCheckbox(page, "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.COMMAND_INTERACTION_ID.toLowerCase() + "']");
-            page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-supplier\"]').checked === true");
-            page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-product\"]').checked !== true");
+            comparisonPage.click(comparisonPage.commandCheckboxSelector(fixture.commandInteractionId()));
+            comparisonPage.waitForCheckboxState("[data-testid='table-checkbox-dbo-supplier']", true);
+            comparisonPage.waitForCheckboxState("[data-testid='table-checkbox-dbo-product']", false);
             assertThat(page.locator("[data-testid='clear-selections-button']").isEnabled()).isTrue();
 
-            toggleCheckbox(page, "[data-testid='command-checkbox-" + PlaywrightSqlServerFixture.SECOND_COMMAND_INTERACTION_ID.toLowerCase() + "']");
-            page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-supplier\"]').checked === true");
-            page.waitForFunction("() => document.querySelector('[data-testid=\"table-checkbox-dbo-product\"]').checked === true");
+            comparisonPage.click(comparisonPage.commandCheckboxSelector(fixture.secondCommandInteractionId()));
+            comparisonPage.waitForCheckboxState("[data-testid='table-checkbox-dbo-supplier']", true);
+            comparisonPage.waitForCheckboxState("[data-testid='table-checkbox-dbo-product']", true);
 
-            page.click("[data-testid='clear-selections-button']");
-            page.waitForFunction("() => document.querySelector('[data-testid=\"command-checkbox-11111111-1111-1111-1111-111111111111\"]').checked !== true");
-            page.waitForFunction("() => document.querySelector('[data-testid=\"command-checkbox-22222222-2222-2222-2222-222222222222\"]').checked !== true");
+            comparisonPage.click("[data-testid='clear-selections-button']");
+            comparisonPage.waitForCheckboxState(comparisonPage.commandCheckboxSelector(fixture.commandInteractionId()), false);
+            comparisonPage.waitForCheckboxState(comparisonPage.commandCheckboxSelector(fixture.secondCommandInteractionId()), false);
             assertThat(page.locator("[data-testid='clear-selections-button']").isDisabled()).isTrue();
 
-            setSelectedOnly(page, false);
-            setFilter(page, PlaywrightSqlServerFixture.ELIGIBLE_TABLE);
+            comparisonPage.setSelectedOnly(false);
+            comparisonPage.setTableFilter(fixture.eligibleTable());
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('Supplier') && !document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PurchaseOrderWithoutBusinessKey')");
             final String filteredText = page.locator("[data-testid='table-selection-grid']").innerText();
             assertThat(filteredText).contains("Supplier");
             assertThat(filteredText).doesNotContain("PurchaseOrderWithoutBusinessKey");
 
-            setFilter(page, "");
+            comparisonPage.setTableFilter("");
             page.waitForFunction("() => document.querySelector('[data-testid=\"table-selection-grid\"]').innerText.includes('PurchaseOrderWithoutBusinessKey')");
             page.locator("vaadin-grid-sorter[aria-label='Sort by Table']").click();
             page.waitForTimeout(250);
             final String sortedGridText = page.locator("[data-testid='table-selection-grid']").innerText();
             assertThat(sortedGridText.indexOf("PurchaseOrderWithoutBusinessKey")).isLessThan(sortedGridText.indexOf("Supplier"));
 
-            selectAllEligibleTables(page);
+            comparisonPage.selectAllEligibleTables();
             page.waitForFunction("() => !document.querySelector('[data-testid=\"compare-button\"]').disabled");
             assertThat(page.locator("[data-testid='navigation-compare-action-bar'] [data-testid='compare-button']").isEnabled()).isTrue();
 
-            page.click("[data-testid='compare-button']");
+            comparisonPage.click("[data-testid='compare-button']");
             page.waitForSelector("[data-testid='comparison-results-tabs']");
-            page.waitForFunction("() => document.querySelector('[data-testid=\"comparison-progress-summary\"]').innerText.includes('Comparison complete.')");
+            comparisonPage.waitForComparisonCompleteMessage();
             final String successProgressClass = (String) page.evaluate(
                     "() => document.querySelector('[data-testid=\"comparison-progress-summary\"]')?.getAttribute('class') ?? ''");
             assertThat(successProgressClass).contains("comparison-progress-summary-success");
-            assertThat(isCheckboxChecked(page, "[data-testid='comparison-differences-only-filter']")).isFalse();
+            assertThat(comparisonPage.isCheckboxChecked("[data-testid='comparison-differences-only-filter']")).isFalse();
             assertThat(page.locator("[data-testid^='comparison-result-tab-']").count()).isEqualTo(3);
             assertThat(page.locator("[data-testid='comparison-result-tab-dbo-supplier']").getAttribute("data-has-differences")).isEqualTo("true");
             assertThat(page.locator("[data-testid='comparison-result-tab-dbo-product']").getAttribute("data-has-differences")).isEqualTo("true");
             assertThat(page.locator("[data-testid='comparison-result-tab-dbo-customeraddress']").getAttribute("data-has-differences")).isEqualTo("false");
 
-            toggleCheckbox(page, "[data-testid='comparison-differences-only-filter']");
+            comparisonPage.click("[data-testid='comparison-differences-only-filter']");
             page.waitForFunction("() => document.querySelectorAll('[data-testid^=\"comparison-result-tab-\"]').length === 2");
             assertThat(page.locator("[data-testid='comparison-result-tab-dbo-customeraddress']").count()).isEqualTo(0);
 
@@ -304,79 +306,20 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             assertThat(page.locator("[data-testid='download-format-select']").count()).isEqualTo(1);
             assertThat(page.locator("[data-testid='download-action']").count()).isEqualTo(1);
 
-            setFilter(page, "Supplier");
-            page.waitForFunction("() => document.querySelector('[data-testid=\"comparison-progress-summary\"]').innerText.trim() === ''");
+            comparisonPage.setTableFilter("Supplier");
+            comparisonPage.waitForProgressMessageCleared();
             final String clearedProgressClass = (String) page.evaluate(
                     "() => document.querySelector('[data-testid=\"comparison-progress-summary\"]')?.getAttribute('class') ?? ''");
             assertThat(clearedProgressClass)
                     .doesNotContain("comparison-progress-summary-success", "comparison-progress-summary-failure");
 
-            page.click("[data-testid='compare-button']");
-            page.waitForFunction("() => document.querySelector('[data-testid=\"comparison-progress-summary\"]').innerText.includes('Comparison complete.')");
-            page.click("[data-testid='clear-selections-button']");
-            page.waitForFunction("() => document.querySelector('[data-testid=\"comparison-progress-summary\"]').innerText.trim() === ''");
+            comparisonPage.click("[data-testid='compare-button']");
+            comparisonPage.waitForComparisonCompleteMessage();
+            comparisonPage.click("[data-testid='clear-selections-button']");
+            comparisonPage.waitForProgressMessageCleared();
 
             page.screenshot(new Page.ScreenshotOptions().setPath(screenshotPath("webapp-selected.png")).setFullPage(true));
         }
-    }
-
-
-    private void fillLoginForm(final Page page, final String leftDb, final String rightDb) {
-        setLoginField(page, "login-jdbc-url", PlaywrightSqlServerFixture.jdbcUrl());
-        setLoginField(page, "login-username", PlaywrightSqlServerFixture.username());
-        setLoginField(page, "login-password", PlaywrightSqlServerFixture.password());
-        setLoginField(page, "login-left-database", leftDb);
-        setLoginField(page, "login-right-database", rightDb);
-    }
-
-    private void setLoginField(final Page page, final String testId, final String value) {
-        page.evaluate("([id, val]) => { const host = document.querySelector(`[data-testid='${id}']`); if (!host) return; host.value = val; host.dispatchEvent(new Event('input', { bubbles: true, composed: true })); host.dispatchEvent(new Event('change', { bubbles: true, composed: true })); }", List.of(testId, value));
-    }
-
-    private void toggleCheckbox(final Page page, final String selector) {
-        page.locator(selector).click();
-    }
-
-    private boolean isCheckboxChecked(final Page page, final String selector) {
-        final Object evaluated = page.evaluate("(selector) => { const host = document.querySelector(selector); return host ? !!host.checked : false; }", selector);
-        return Boolean.TRUE.equals(evaluated);
-    }
-
-    private void selectAllEligibleTables(final Page page) {
-        page.evaluate("() => { document.querySelectorAll('[data-testid^=\"table-checkbox-\"]').forEach((host) => { if (host.hasAttribute('disabled')) return; host.checked = true; host.dispatchEvent(new CustomEvent('checked-changed', { detail: { value: true }, bubbles: true, composed: true })); host.dispatchEvent(new Event('change', { bubbles: true, composed: true })); }); }");
-    }
-
-    private void setFilter(final Page page, final String value) {
-        page.locator("[data-testid='table-filter-table'] input").fill(value);
-        page.keyboard().press("Tab");
-    }
-
-    private void setSelectedOnly(final Page page, final boolean checked) {
-        final CheckboxState state = selectedOnlyState(page);
-        if (state.exists() && state.checked() != checked) {
-            page.locator("[data-testid='selected-only-checkbox']").click();
-        }
-        page.waitForFunction("(checked) => { const host = document.querySelector('[data-testid=\"selected-only-checkbox\"]'); return !!host && !!host.checked === checked; }", checked);
-    }
-
-    private CheckboxState selectedOnlyState(final Page page) {
-        final Object evaluated = page.evaluate("() => { const host = document.querySelector('[data-testid=\"selected-only-checkbox\"]'); return host ? { exists: true, checked: !!host.checked } : { exists: false, checked: false }; }");
-        if (evaluated instanceof java.util.Map<?, ?> map) {
-            final boolean exists = Boolean.TRUE.equals(map.get("exists"));
-            final boolean checked = Boolean.TRUE.equals(map.get("checked"));
-            return new CheckboxState(exists, checked);
-        }
-        return new CheckboxState(false, false);
-    }
-
-    private void setCommandMemberFilter(final Page page, final String value) {
-        page.locator("[data-testid='command-filter-member-id'] input").fill(value);
-        page.keyboard().press("Tab");
-    }
-
-    private void setCommandInteractionFilter(final Page page, final String value) {
-        page.locator("[data-testid='command-filter-interaction-id'] input").fill(value);
-        page.keyboard().press("Tab");
     }
 
     private Path screenshotPath(final String fileName) {
@@ -387,26 +330,5 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             return repoDocs.resolve(fileName);
         }
         return localDocs.resolve(fileName);
-    }
-
-    private double[] positionOf(final Page page, final String selector) {
-        final Object evaluated = page.evaluate("(selector) => { const r = document.querySelector(selector)?.getBoundingClientRect(); return r ? [r.left, r.top, r.right, r.bottom] : [-1, -1, -1, -1]; }", selector);
-        return toDoubleArray((List<?>) evaluated);
-    }
-
-    private double[] footerStatusAlignmentMetrics(final Page page) {
-        final Object evaluated = page.evaluate("() => { const footer = document.querySelector('[data-testid=\"connection-details-footer\"]'); const panel = document.querySelector('[data-testid=\"connection-status-panel\"]'); if (!footer || !panel) return [-1, -1]; const fr = footer.getBoundingClientRect(); const pr = panel.getBoundingClientRect(); return [pr.right, fr.left + (fr.width / 2)]; }");
-        return toDoubleArray((List<?>) evaluated);
-    }
-
-    private double[] toDoubleArray(final List<?> values) {
-        final double[] array = new double[values.size()];
-        for (int i = 0; i < values.size(); i++) {
-            array[i] = ((Number) values.get(i)).doubleValue();
-        }
-        return array;
-    }
-
-    private record CheckboxState(boolean exists, boolean checked) {
     }
 }
