@@ -471,6 +471,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         });
 
         selectedOnlyFilter.getElement().setAttribute("data-testid", "selected-only-checkbox");
+        selectedOnlyFilter.setWidth("7.5rem");
+        selectedOnlyFilter.getStyle().set("white-space", "nowrap");
         selectedOnlyFilter.setValue(selectionState.isSelectedOnly());
         selectedOnlyFilter.addValueChangeListener(event -> {
             selectionState.setSelectedOnly(Boolean.TRUE.equals(event.getValue()));
