@@ -19,11 +19,14 @@ The webapp module SHALL use a stable Vaadin Flow release line, selecting the lat
 
 ### Requirement: Webapp configuration models the same logical inputs as CLI
 The webapp SHALL use Spring datasource properties for connection defaults: `spring.datasource.url`, `spring.datasource.driver-class-name`, `spring.datasource.username`, and `spring.datasource.password`.
+The webapp SHALL bind these datasource defaults through typed `@ConfigurationProperties` models rather than field-level `@Value` injection.
 The webapp SHALL provide typed configuration properties for webapp execution preferences `cfct.webapp.connection.left-database`, `cfct.webapp.connection.right-database`, `cfct.webapp.validation.enabled`, and `cfct.webapp.validation.fail-fast`.
 The webapp SHALL NOT provide runtime configuration keys for CLI-only concerns such as env-file and output format/file selection.
 The webapp SHALL provide typed configuration properties for default ignore-column advisor enablement flags.
 The webapp SHALL allow independent enable or disable control for identity, uuid/guid, timestamp, and extended-properties ignore advisors.
 The webapp SHALL default each default ignore-column advisor enablement flag to enabled.
+All supported webapp runtime configuration keys consumed by application code SHALL be bound through `@ConfigurationProperties` types.
+The webapp SHALL NOT use field-level `@Value` injection for supported runtime configuration keys.
 The webapp SHALL use configured property values only as initial login defaults and SHALL allow users to edit any field before authentication.
 The webapp SHALL NOT require these properties to be present for interactive webapp use.
 The webapp SHALL document how runtime login inputs and configuration defaults map to equivalent CLI argument concepts.
@@ -48,6 +51,10 @@ The webapp SHALL treat table selection as a strategy concern and SHALL NOT requi
 #### Scenario: One ignore-column advisor can be disabled independently
 - **WHEN** deployment configuration disables one ignore-column advisor flag and leaves others enabled
 - **THEN** only that advisor stops contributing ignore decisions while other advisors continue to apply
+
+#### Scenario: Runtime configuration binding avoids field-level `@Value`
+- **WHEN** webapp runtime configuration classes are inspected for supported property keys
+- **THEN** datasource defaults and `cfct.webapp.*` settings are consumed through `@ConfigurationProperties` binding without field-level `@Value` injection
 
 ### Requirement: Webapp validates configured SQL Server connectivity and databases
 The webapp SHALL validate SQL Server connectivity and database reachability using runtime login credentials instead of startup-time static credentials.
