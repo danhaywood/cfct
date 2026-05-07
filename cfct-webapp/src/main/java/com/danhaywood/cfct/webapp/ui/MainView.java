@@ -116,7 +116,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Div comparisonResultsContainer = new Div();
     private final TextField comparedTableFilter = new TextField();
     private final Checkbox differencesOnlyFilter = new Checkbox("Diffs only");
-    private final Checkbox selectedOnlyFilter = new Checkbox("Selected only");
+    private final Checkbox selectedOnlyFilter = new Checkbox("Selected");
     private final Anchor downloadAction = new Anchor();
     private final Select<DownloadFormat> downloadFormatSelect = new Select<>();
     private final HorizontalLayout resultActions = new HorizontalLayout();
