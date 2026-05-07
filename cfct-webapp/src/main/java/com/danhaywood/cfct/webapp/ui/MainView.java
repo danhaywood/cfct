@@ -43,6 +43,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -66,6 +67,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -121,6 +123,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final MenuBar accountMenu = new MenuBar();
     private Grid<CommandCatalogEntry> commandSelectionGrid;
     private Grid<TableCatalogEntry> tableSelectionGrid;
+    private TextField commandBaselineFilterField;
     private String focusedCommandInteractionId;
     private TableRef focusedBusinessTable;
 
@@ -131,6 +134,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private int compareProgressTotal;
     private String commandMemberFilterValue = "";
     private String commandInteractionFilterValue = "";
+    private String commandBaselineFilterValue = "";
+    private LocalDateTime commandBaselineFilterTimestamp;
     private final Set<String> commandReplayStateFilters = new LinkedHashSet<>();
     private static final List<String> REPLAY_STATE_FILTER_OPTIONS = List.of("OK", "PENDING", "FAILED");
     private static final int MIN_DRAWER_WIDTH_PX = 360;
@@ -405,12 +410,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("padding-bottom", "4.5rem")
                 .set("overflow", "auto");
 
-        final Div topSpacer = new Div();
-        topSpacer.getElement().setAttribute("data-testid", "command-selection-spacer");
-        topSpacer.getStyle()
-                .set("height", "calc(var(--lumo-size-s, 1.45rem) + var(--lumo-space-m, 1.45rem))")
-                .set("width", "100%");
-
+        final TextField baselineFilter = buildCommandBaselineFilterField();
         final Grid<CommandCatalogEntry> commandGrid = buildCommandSelectionGrid();
 
         compareProgressCounter.getElement().setAttribute("data-testid", "compare-progress-counter");
@@ -486,7 +486,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         resizeHandle.addClassName("navigation-drawer-resize-handle");
         enableDrawerResize(panel, resizeHandle);
 
-        layout.add(topSpacer, commandGrid, clearActionBar, tableFilterRow, tableGrid, actionBar);
+        layout.add(baselineFilter, commandGrid, clearActionBar, tableFilterRow, tableGrid, actionBar);
         panel.add(layout, resizeHandle);
         applySelectionFilters();
         applyCommandFilters();
@@ -649,6 +649,10 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         grid.sort(List.of(new GridSortOrder<>(timestampColumn, com.vaadin.flow.data.provider.SortDirection.ASCENDING)));
 
+        final GridContextMenu<CommandCatalogEntry> contextMenu = grid.addContextMenu();
+        contextMenu.addItem("Set baseline from selected command", event ->
+                event.getItem().ifPresent(item -> setCommandBaselineFilter(item.timestamp())));
+
         grid.addItemClickListener(event -> focusedCommandInteractionId = event.getItem().interactionId());
         grid.addCellFocusListener(event -> event.getItem().ifPresent(item -> focusedCommandInteractionId = item.interactionId()));
         grid.getElement()
@@ -698,7 +702,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 entry,
                 commandMemberFilterValue,
                 commandInteractionFilterValue,
-                commandReplayStateFilters));
+                commandReplayStateFilters,
+                commandBaselineFilterTimestamp));
         commandSelectionDataProvider.refreshAll();
     }
 
@@ -718,6 +723,63 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         filter.setWidthFull();
         filter.addValueChangeListener(event -> onValueChanged.accept(event.getValue()));
         return filter;
+    }
+
+    private TextField buildCommandBaselineFilterField() {
+        final TextField baselineFilter = new TextField();
+        this.commandBaselineFilterField = baselineFilter;
+        baselineFilter.setPlaceholder("Baseline timestamp");
+        baselineFilter.getStyle().setPaddingTop(".25em");
+        baselineFilter.getStyle().setPaddingBottom(".55em");
+        baselineFilter.setClearButtonVisible(true);
+        baselineFilter.setValueChangeMode(ValueChangeMode.ON_CHANGE);
+        baselineFilter.setWidthFull();
+        baselineFilter.getElement().setAttribute("data-testid", "command-filter-baseline-timestamp");
+        baselineFilter.addValueChangeListener(event -> applyBaselineFilterValue(event.getValue(), baselineFilter));
+        return baselineFilter;
+    }
+
+    private void applyBaselineFilterValue(final String rawValue, final TextField sourceField) {
+        final String normalized = rawValue == null ? "" : rawValue.trim();
+        if (normalized.isBlank()) {
+            commandBaselineFilterValue = "";
+            commandBaselineFilterTimestamp = null;
+            sourceField.setInvalid(false);
+            sourceField.setErrorMessage(null);
+            clearComparisonProgressStatus();
+            applyCommandFilters();
+            return;
+        }
+
+        try {
+            final LocalDateTime parsed = LocalDateTime.parse(normalized);
+            commandBaselineFilterValue = normalized;
+            commandBaselineFilterTimestamp = parsed;
+            sourceField.setInvalid(false);
+            sourceField.setErrorMessage(null);
+            clearComparisonProgressStatus();
+            applyCommandFilters();
+        } catch (DateTimeParseException ex) {
+            sourceField.setInvalid(true);
+            sourceField.setErrorMessage("Enter an ISO timestamp such as 2026-04-05T10:30:00.000");
+        }
+    }
+
+    private void setCommandBaselineFilter(final String commandTimestamp) {
+        if (commandTimestamp == null || commandTimestamp.isBlank()) {
+            return;
+        }
+        commandBaselineFilterValue = commandTimestamp;
+        commandBaselineFilterTimestamp = LocalDateTime.parse(commandTimestamp);
+        clearComparisonProgressStatus();
+        applyCommandFilters();
+        if (commandBaselineFilterField != null) {
+            commandBaselineFilterField.setInvalid(false);
+            commandBaselineFilterField.setErrorMessage(null);
+            if (!commandTimestamp.equals(commandBaselineFilterField.getValue())) {
+                commandBaselineFilterField.setValue(commandTimestamp);
+            }
+        }
     }
 
     private void applyResultGridFilters(

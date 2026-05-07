@@ -2,6 +2,7 @@ package com.danhaywood.cfct.webapp.selection;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -36,12 +37,29 @@ class CommandSelectionStateTest {
                 "2026-04-05T10:00:00.000",
                 false);
 
-        assertThat(state.matchesFilter(entry, "supplier", "1111", Set.of())).isTrue();
-        assertThat(state.matchesFilter(entry, "invoice", "1111", Set.of())).isFalse();
-        assertThat(state.matchesFilter(entry, "supplier", "2222", Set.of())).isFalse();
-        assertThat(state.matchesFilter(entry, "supplier", "1111", Set.of("FAILED"))).isTrue();
-        assertThat(state.matchesFilter(entry, "supplier", "1111", Set.of("PENDING"))).isFalse();
-        assertThat(state.matchesFilter(entry, "", "", Set.of())).isTrue();
+        assertThat(state.matchesFilter(entry, "supplier", "1111", Set.of(), null)).isTrue();
+        assertThat(state.matchesFilter(entry, "invoice", "1111", Set.of(), null)).isFalse();
+        assertThat(state.matchesFilter(entry, "supplier", "2222", Set.of(), null)).isFalse();
+        assertThat(state.matchesFilter(entry, "supplier", "1111", Set.of("FAILED"), null)).isTrue();
+        assertThat(state.matchesFilter(entry, "supplier", "1111", Set.of("PENDING"), null)).isFalse();
+        assertThat(state.matchesFilter(entry, "", "", Set.of(), null)).isTrue();
+    }
+
+    @Test
+    void appliesStrictAfterBaselineFiltering() {
+        final CommandSelectionState state = new CommandSelectionState(List.of());
+        final CommandCatalogEntry entry = new CommandCatalogEntry(
+                "11111111-1111-1111-1111-111111111111",
+                "supplier.Supplier#registerProduct",
+                "supplier.Supplier:301",
+                "FAILED",
+                "FOREGROUND",
+                "2026-04-05T10:00:00.000",
+                false);
+
+        assertThat(state.matchesFilter(entry, "", "", Set.of(), LocalDateTime.parse("2026-04-05T09:59:59.999"))).isTrue();
+        assertThat(state.matchesFilter(entry, "", "", Set.of(), LocalDateTime.parse("2026-04-05T10:00:00.000"))).isFalse();
+        assertThat(state.matchesFilter(entry, "", "", Set.of(), LocalDateTime.parse("2026-04-05T10:00:00.001"))).isFalse();
     }
 
     @Test

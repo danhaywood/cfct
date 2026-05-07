@@ -227,6 +227,104 @@ class MainViewTest {
     }
 
     @Test
+    void baselineFieldRendersAboveCommandGridAndDefaultsToEmpty() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        final TextField baseline = (TextField) findByTestId(view, "command-filter-baseline-timestamp").orElseThrow();
+        assertThat(baseline.getValue()).isEmpty();
+
+        final List<String> testIdsInOrder = view.getChildren()
+                .flatMap(this::streamWithDescendants)
+                .map(component -> component.getElement().getAttribute("data-testid"))
+                .filter(id -> id != null && !id.isBlank())
+                .toList();
+
+        assertThat(testIdsInOrder.indexOf("command-filter-baseline-timestamp"))
+                .isLessThan(testIdsInOrder.indexOf("command-selection-grid"));
+    }
+
+    @Test
+    void baselineFieldFiltersCommandsAndClearsBackToFullList() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        final TextField baseline = (TextField) findByTestId(view, "command-filter-baseline-timestamp").orElseThrow();
+        final Grid<?> commandGrid = (Grid<?>) findByTestId(view, "command-selection-grid").orElseThrow();
+
+        baseline.setValue("2026-04-05T10:00:00.000");
+
+        final List<?> filtered = commandGrid.getListDataView().getItems().toList();
+        assertThat(filtered)
+                .extracting(item -> ((CommandCatalogEntry) item).interactionId())
+                .containsExactly("33333333-3333-3333-3333-333333333333");
+
+        baseline.clear();
+
+        final List<?> restored = commandGrid.getListDataView().getItems().toList();
+        assertThat(restored)
+                .extracting(item -> ((CommandCatalogEntry) item).interactionId())
+                .containsExactly("11111111-1111-1111-1111-111111111111", "33333333-3333-3333-3333-333333333333");
+    }
+
+    @Test
+    void invalidBaselineEditIsRejectedAndPreviousValidFilterStaysActive() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        final TextField baseline = (TextField) findByTestId(view, "command-filter-baseline-timestamp").orElseThrow();
+        final Grid<?> commandGrid = (Grid<?>) findByTestId(view, "command-selection-grid").orElseThrow();
+
+        baseline.setValue("2026-04-05T10:00:00.000");
+        baseline.setValue("not-a-timestamp");
+
+        assertThat(baseline.isInvalid()).isTrue();
+        assertThat(commandGrid.getListDataView().getItems().toList())
+                .extracting(item -> ((CommandCatalogEntry) item).interactionId())
+                .containsExactly("33333333-3333-3333-3333-333333333333");
+    }
+
+    @Test
+    void contextMenuBaselineActionUsesSelectedCommandTimestamp() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        invokeSetCommandBaselineFilter(view, "2026-04-05T10:00:00.000");
+
+        final TextField baseline = (TextField) findByTestId(view, "command-filter-baseline-timestamp").orElseThrow();
+        final Grid<?> commandGrid = (Grid<?>) findByTestId(view, "command-selection-grid").orElseThrow();
+
+        assertThat(baseline.getValue()).isEqualTo("2026-04-05T10:00:00.000");
+        assertThat(commandGrid.getListDataView().getItems().toList())
+                .extracting(item -> ((CommandCatalogEntry) item).interactionId())
+                .containsExactly("33333333-3333-3333-3333-333333333333");
+    }
+
+    @Test
     void selectedOnlyCheckboxDefaultsToCheckedAndCanRevealAllRows() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
@@ -541,6 +639,11 @@ class MainViewTest {
 
         final TextField tableFilter = (TextField) findByTestId(view, "table-filter-table").orElseThrow();
         tableFilter.setValue("Supplier");
+        assertThat(progress.getText()).isBlank();
+
+        invokeShowComparisonProgress(view, "Comparison complete.", "comparison-progress-summary-success");
+        final TextField baselineFilter = (TextField) findByTestId(view, "command-filter-baseline-timestamp").orElseThrow();
+        baselineFilter.setValue("2026-04-05T10:00:00.000");
         assertThat(progress.getText()).isBlank();
     }
 
@@ -1086,6 +1189,16 @@ class MainViewTest {
             final var method = MainView.class.getDeclaredMethod("clearAllSelections");
             method.setAccessible(true);
             method.invoke(view);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void invokeSetCommandBaselineFilter(final MainView view, final String timestamp) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("setCommandBaselineFilter", String.class);
+            method.setAccessible(true);
+            method.invoke(view, timestamp);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

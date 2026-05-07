@@ -1,5 +1,7 @@
 package com.danhaywood.cfct.webapp.selection;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -55,10 +57,28 @@ public class CommandSelectionState {
             final CommandCatalogEntry entry,
             final String memberIdFilter,
             final String interactionIdFilter,
-            final Set<String> replayStateFilters) {
+            final Set<String> replayStateFilters,
+            final LocalDateTime baselineTimestamp) {
         return matches(entry.logicalMemberIdentifier(), memberIdFilter)
                 && matches(entry.interactionId(), interactionIdFilter)
-                && matchesReplayState(entry.replayState(), replayStateFilters);
+                && matchesReplayState(entry.replayState(), replayStateFilters)
+                && matchesBaseline(entry.timestamp(), baselineTimestamp);
+    }
+
+    private boolean matchesBaseline(
+            final String commandTimestamp,
+            final LocalDateTime baselineTimestamp) {
+        if (baselineTimestamp == null) {
+            return true;
+        }
+        if (commandTimestamp == null || commandTimestamp.isBlank()) {
+            return false;
+        }
+        try {
+            return LocalDateTime.parse(commandTimestamp).isAfter(baselineTimestamp);
+        } catch (DateTimeParseException ex) {
+            return false;
+        }
     }
 
     private boolean matchesReplayState(
