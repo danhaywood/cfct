@@ -23,8 +23,6 @@ See `native-image-failed` branch.
 
 === Programming Style
 
-* /opsx-propose: followed preferred programming style: use @ConfigurationProperties for all config properties, so that these are typesafe.
-
 * /opsx-propose: followed preferred programming style: don't hardcode package names, as we see in '@SpringBootApplication(scanBasePackages = "com.danhaywood.cfct.cli")'. Instead, use an appropriate class (create one if necessary) and use the .class literal.
 
 * /opsx-propose: followed preferred programming style: clean up HomePageConnectionStatusPlaywrightSuccessTest, externalize DDL into a resources file. Do this elsewhere if necessary.
