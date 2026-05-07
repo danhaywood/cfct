@@ -11,8 +11,8 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Hyperlink;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -112,20 +112,25 @@ public final class ExcelMultiTableComparisonReportRenderer {
 
         int columnIndex = 1;
         for (ColumnRef keyColumn : keyColumns) {
-            final int leftColumnIndex = columnIndex++;
-            final int rightColumnIndex = columnIndex++;
-            writeCell(topHeaderRow, leftColumnIndex, keyColumn.name(), styles.header());
-            writeCell(topHeaderRow, rightColumnIndex, "", styles.header());
-            sheet.addMergedRegion(new CellRangeAddress(topHeaderRowIndex, topHeaderRowIndex, leftColumnIndex, rightColumnIndex));
-            writeCell(bottomHeaderRow, leftColumnIndex, "<<<", styles.header());
-            writeCell(bottomHeaderRow, rightColumnIndex, ">>>", styles.header());
+            final int keyColumnIndex = columnIndex++;
+            writeCell(topHeaderRow, keyColumnIndex, keyColumn.name(), styles.header());
+            writeCell(bottomHeaderRow, keyColumnIndex, "", styles.header());
+            sheet.addMergedRegion(new CellRangeAddress(topHeaderRowIndex, bottomHeaderRowIndex, keyColumnIndex, keyColumnIndex));
         }
 
         for (DisplayColumn comparedDisplayColumn : comparedDisplayColumns) {
-            final int sharedColumnIndex = columnIndex++;
-            writeCell(topHeaderRow, sharedColumnIndex, comparedDisplayColumn.column().name(), styles.header());
-            writeCell(bottomHeaderRow, sharedColumnIndex, "", styles.header());
-            sheet.addMergedRegion(new CellRangeAddress(topHeaderRowIndex, bottomHeaderRowIndex, sharedColumnIndex, sharedColumnIndex));
+            final int leftColumnIndex = columnIndex++;
+            writeCell(topHeaderRow, leftColumnIndex, comparedDisplayColumn.column().name(), styles.header());
+            if (comparedDisplayColumn.split()) {
+                final int rightColumnIndex = columnIndex++;
+                writeCell(topHeaderRow, rightColumnIndex, "", styles.header());
+                writeCell(bottomHeaderRow, leftColumnIndex, "<<<", styles.header());
+                writeCell(bottomHeaderRow, rightColumnIndex, ">>>", styles.header());
+                sheet.addMergedRegion(new CellRangeAddress(topHeaderRowIndex, topHeaderRowIndex, leftColumnIndex, rightColumnIndex));
+            } else {
+                writeCell(bottomHeaderRow, leftColumnIndex, "", styles.header());
+                sheet.addMergedRegion(new CellRangeAddress(topHeaderRowIndex, bottomHeaderRowIndex, leftColumnIndex, leftColumnIndex));
+            }
         }
 
         for (RowKey rowKey : result.rowsOnlyInLeft()) {
@@ -141,7 +146,7 @@ public final class ExcelMultiTableComparisonReportRenderer {
             writeRow(sheet, rowIndex, styles.present(), "No differences found");
         }
 
-        sheet.createFreezePane(1 + (keyColumns.size() * 2), bottomHeaderRowIndex + 1);
+        sheet.createFreezePane(1 + keyColumns.size(), bottomHeaderRowIndex + 1);
         autosizeColumnsExcept(sheet, columnIndex, DETAIL_COLUMN_TWO_INDEX);
         sheet.setColumnWidth(DETAIL_COLUMN_TWO_INDEX, sheet.getColumnWidth(DETAIL_COLUMN_THREE_INDEX));
     }
@@ -164,30 +169,66 @@ public final class ExcelMultiTableComparisonReportRenderer {
         int columnIndex = 1;
         for (int keyIndex = 0; keyIndex < keyColumns.size(); keyIndex++) {
             final String keyValue = keyIndex < rowKey.values().size() ? rowKey.values().get(keyIndex) : "";
-            writeCell(row, columnIndex++, leftValues == null ? "" : keyValue, leftValueStyle);
-            writeCell(row, columnIndex++, rightValues == null ? "" : keyValue, rightValueStyle);
+            final CellStyle keyStyle = leftValueStyle != null ? leftValueStyle : rightValueStyle;
+            writeCell(row, columnIndex++, keyValue, keyStyle);
         }
         for (DisplayColumn comparedDisplayColumn : comparedDisplayColumns) {
             final ColumnRef column = comparedDisplayColumn.column();
             final String leftValue = value(leftValues, column);
             final String rightValue = value(rightValues, column);
-            final boolean changed = !leftValue.equals(rightValue);
-            final boolean canHighlightChanges = leftValueStyle != null && rightValueStyle != null;
-            final CellStyle sharedStyle = (changed && canHighlightChanges)
-                    ? changedStyle
-                    : (leftValueStyle != null ? leftValueStyle : rightValueStyle);
-            writeCell(row, columnIndex++, compactValue(differenceType, leftValue, rightValue), sharedStyle);
+            if (comparedDisplayColumn.split()) {
+                writeSplitCells(row, differenceType, columnIndex, leftValueStyle, rightValueStyle, changedStyle, leftValue, rightValue);
+                columnIndex += 2;
+            } else {
+                final boolean changed = !leftValue.equals(rightValue);
+                final boolean canHighlightChanges = leftValueStyle != null && rightValueStyle != null;
+                final CellStyle sharedStyle = (changed && canHighlightChanges)
+                        ? changedStyle
+                        : (leftValueStyle != null ? leftValueStyle : rightValueStyle);
+                writeCell(row, columnIndex++, sharedValue(differenceType, leftValue, rightValue), sharedStyle);
+            }
         }
         return rowIndex + 1;
     }
 
+    private void writeSplitCells(
+            final Row row,
+            final String differenceType,
+            final int startColumnIndex,
+            final CellStyle leftValueStyle,
+            final CellStyle rightValueStyle,
+            final CellStyle changedStyle,
+            final String leftValue,
+            final String rightValue) {
+        if ("Only in left".equals(differenceType)) {
+            writeCell(row, startColumnIndex, leftValue, leftValueStyle);
+            writeCell(row, startColumnIndex + 1, "", null);
+            return;
+        }
+        if ("Only in right".equals(differenceType)) {
+            writeCell(row, startColumnIndex, "", null);
+            writeCell(row, startColumnIndex + 1, rightValue, rightValueStyle);
+            return;
+        }
+
+        final boolean changed = !leftValue.equals(rightValue);
+        final CellStyle style = changed ? changedStyle : leftValueStyle;
+        writeCell(row, startColumnIndex, leftValue, style);
+        writeCell(row, startColumnIndex + 1, rightValue, style);
+    }
+
     private List<DisplayColumn> comparisonDisplayColumns(final TableComparisonResult result) {
         return result.comparedColumns().stream()
-                .map(column -> new DisplayColumn(column))
+                .map(column -> new DisplayColumn(column, shouldSplitColumn(result, column)))
                 .toList();
     }
 
-    private String compactValue(final String differenceType, final String leftValue, final String rightValue) {
+    private boolean shouldSplitColumn(final TableComparisonResult result, final ColumnRef column) {
+        return result.differingRows().stream()
+                .anyMatch(rowDifference -> !value(rowDifference.leftValues(), column).equals(value(rowDifference.rightValues(), column)));
+    }
+
+    private String sharedValue(final String differenceType, final String leftValue, final String rightValue) {
         if (leftValue.equals(rightValue)) {
             return leftValue;
         }
@@ -198,12 +239,12 @@ public final class ExcelMultiTableComparisonReportRenderer {
             return rightValue;
         }
         if (leftValue.isBlank()) {
-            return rightValue.isBlank() ? "" : "R: " + rightValue;
+            return rightValue;
         }
         if (rightValue.isBlank()) {
-            return "L: " + leftValue;
+            return leftValue;
         }
-        return "L: " + leftValue + " | R: " + rightValue;
+        return leftValue + " | " + rightValue;
     }
 
     private String value(final Map<ColumnRef, String> values, final ColumnRef column) {
@@ -310,7 +351,7 @@ public final class ExcelMultiTableComparisonReportRenderer {
     private record TableSheet(TableComparisonResult result, String sheetName) {
     }
 
-    private record DisplayColumn(ColumnRef column) {
+    private record DisplayColumn(ColumnRef column, boolean split) {
     }
 
     private record Styles(

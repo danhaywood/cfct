@@ -135,10 +135,11 @@ class ConfiguredComparisonServiceIT {
             final var supplierSheet = workbook.getSheet("dbo.Supplier");
             assertThat(supplierSheet.getRow(6).getCell(0).getStringCellValue()).isEqualTo("Result");
             assertThat(supplierSheet.getRow(6).getCell(1).getStringCellValue()).isEqualTo("reference");
-            assertThat(supplierSheet.getRow(7).getCell(1).getStringCellValue()).isEqualTo("<<<");
-            assertThat(supplierSheet.getRow(7).getCell(2).getStringCellValue()).isEqualTo(">>>");
+            assertThat(supplierSheet.getRow(7).getCell(1).getStringCellValue()).isEmpty();
+            assertThat(supplierSheet.getRow(7).getCell(3).getStringCellValue()).isEqualTo("<<<");
+            assertThat(supplierSheet.getRow(7).getCell(4).getStringCellValue()).isEqualTo(">>>");
             assertThat(supplierSheet.getMergedRegions()).anyMatch(region -> region.formatAsString().equals("A7:A8"));
-            assertThat(supplierSheet.getMergedRegions()).anyMatch(region -> region.formatAsString().equals("B7:C7"));
+            assertThat(supplierSheet.getMergedRegions()).anyMatch(region -> region.formatAsString().equals("B7:B8"));
         }
     }
 
