@@ -412,7 +412,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("padding-bottom", "4.5rem")
                 .set("overflow", "auto");
 
-        final DateTimePicker baselineFilter = buildCommandBaselineFilterField();
+        final Component baselineFilter = buildCommandBaselineFilterField();
         final Grid<CommandCatalogEntry> commandGrid = buildCommandSelectionGrid();
 
         compareProgressCounter.getElement().setAttribute("data-testid", "compare-progress-counter");
@@ -753,16 +753,37 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         return filter;
     }
 
-    private DateTimePicker buildCommandBaselineFilterField() {
+    private Component buildCommandBaselineFilterField() {
         final DateTimePicker baselineFilter = new DateTimePicker();
         this.commandBaselineFilterField = baselineFilter;
-        baselineFilter.setLabel("Baseline timestamp");
         baselineFilter.getStyle().setPaddingTop(".25em");
         baselineFilter.getStyle().setPaddingBottom(".55em");
         baselineFilter.setWidthFull();
         baselineFilter.getElement().setAttribute("data-testid", "command-filter-baseline-timestamp");
         baselineFilter.addValueChangeListener(event -> applyBaselineFilterValue(event.getValue(), baselineFilter));
-        return baselineFilter;
+
+        final Button clearBaselineButton = new Button("[X]");
+        clearBaselineButton.getElement().setAttribute("data-testid", "command-filter-baseline-clear");
+        clearBaselineButton.getElement().setAttribute("title", "Clear baseline date/time filter");
+        clearBaselineButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+        clearBaselineButton.getStyle().set("margin-top", "auto");
+        clearBaselineButton.addClickListener(event -> {
+            if (commandBaselineFilterField != null && commandBaselineFilterField.getValue() != null) {
+                commandBaselineFilterField.clear();
+                return;
+            }
+            commandBaselineFilterTimestamp = null;
+            clearComparisonProgressStatus();
+            applyCommandFilters();
+        });
+
+        final HorizontalLayout baselineRow = new HorizontalLayout(baselineFilter, clearBaselineButton);
+        baselineRow.setWidthFull();
+        baselineRow.setPadding(false);
+        baselineRow.setSpacing(true);
+        baselineRow.setAlignItems(FlexComponent.Alignment.END);
+        baselineRow.expand(baselineFilter);
+        return baselineRow;
     }
 
     private void applyBaselineFilterValue(final LocalDateTime value, final DateTimePicker sourceField) {

@@ -282,6 +282,34 @@ class MainViewTest {
     }
 
     @Test
+    void baselineClearButtonClearsPickerValueAndRestoresRows() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        final DateTimePicker baseline = (DateTimePicker) findByTestId(view, "command-filter-baseline-timestamp").orElseThrow();
+        final Button clearBaseline = (Button) findByTestId(view, "command-filter-baseline-clear").orElseThrow();
+        final Grid<?> commandGrid = (Grid<?>) findByTestId(view, "command-selection-grid").orElseThrow();
+
+        baseline.setValue(LocalDateTime.parse("2026-04-05T10:00:00.000"));
+        assertThat(commandGrid.getListDataView().getItems().toList())
+                .extracting(item -> ((CommandCatalogEntry) item).interactionId())
+                .containsExactly("33333333-3333-3333-3333-333333333333");
+
+        clearBaseline.click();
+
+        assertThat(baseline.getValue()).isNull();
+        assertThat(commandGrid.getListDataView().getItems().toList())
+                .extracting(item -> ((CommandCatalogEntry) item).interactionId())
+                .containsExactly("11111111-1111-1111-1111-111111111111", "33333333-3333-3333-3333-333333333333");
+    }
+
+    @Test
     void contextMenuBaselineActionUsesSelectedCommandTimestamp() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
