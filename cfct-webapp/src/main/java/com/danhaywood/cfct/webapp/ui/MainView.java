@@ -43,6 +43,8 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -762,11 +764,11 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         baselineFilter.getElement().setAttribute("data-testid", "command-filter-baseline-timestamp");
         baselineFilter.addValueChangeListener(event -> applyBaselineFilterValue(event.getValue(), baselineFilter));
 
-        final Button clearBaselineButton = new Button("[X]");
+        final Button clearBaselineButton = new Button(new Icon(VaadinIcon.CLOSE_SMALL));
         clearBaselineButton.getElement().setAttribute("data-testid", "command-filter-baseline-clear");
-        clearBaselineButton.getElement().setAttribute("title", "Clear baseline date/time filter");
-        clearBaselineButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-        clearBaselineButton.getStyle().set("margin-top", "auto");
+        clearBaselineButton.getElement().setAttribute("title", "Clear baseline");
+        clearBaselineButton.getElement().setAttribute("aria-label", "Clear baseline");
+        clearBaselineButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_ICON);
         clearBaselineButton.addClickListener(event -> {
             if (commandBaselineFilterField != null && commandBaselineFilterField.getValue() != null) {
                 commandBaselineFilterField.clear();
@@ -781,7 +783,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         baselineRow.setWidthFull();
         baselineRow.setPadding(false);
         baselineRow.setSpacing(true);
-        baselineRow.setAlignItems(FlexComponent.Alignment.END);
+        baselineRow.setAlignItems(FlexComponent.Alignment.BASELINE);
         baselineRow.expand(baselineFilter);
         return baselineRow;
     }
