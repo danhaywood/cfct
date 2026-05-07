@@ -44,9 +44,14 @@ The command grid header row SHALL provide text filtering inputs for member and i
 The command grid header row SHALL provide three replay-state filter checkboxes for `OK`, `PENDING`, and `FAILED`.
 The replay-state checkboxes SHALL use compact labels `K`, `P`, and `F` mapped to `OK`, `PENDING`, and `FAILED` respectively.
 The replay-state checkbox group SHALL be left-aligned within the replayState header filter cell.
+The command selection section SHALL provide an optional baseline timestamp field above the command grid.
+The baseline timestamp field SHALL support direct user editing.
+The command grid SHALL provide a context menu action that sets baseline from the selected command row timestamp.
 Filtering SHALL narrow visible command rows without requiring a separate apply-filter action.
-The command grid SHALL combine member, interactionId, and replay-state filters when one or more replay-state checkboxes are selected.
+The command grid SHALL combine member, interactionId, replay-state, and baseline filters when a baseline is set or one or more replay-state checkboxes are selected.
 When no replay-state checkboxes are selected, replay-state filtering SHALL be inactive.
+When baseline is not set, baseline filtering SHALL be inactive.
+When baseline is set, only command rows with timestamp strictly after baseline SHALL remain visible.
 
 #### Scenario: User filters command rows by visible identity values
 - **WHEN** a user enters filter text for member or interactionId in the command-grid header row
@@ -67,6 +72,18 @@ When no replay-state checkboxes are selected, replay-state filtering SHALL be in
 #### Scenario: Replay-state filter combines with text filters
 - **WHEN** one or more replay-state checkboxes are selected and member or interactionId filters are also provided
 - **THEN** only rows matching all active text filters and any selected replay state remain visible
+
+#### Scenario: Baseline field appears above command grid
+- **WHEN** the command selection section is rendered
+- **THEN** a baseline timestamp field is visible above the command grid
+
+#### Scenario: Baseline context-menu action sets baseline timestamp
+- **WHEN** the user opens the context menu for a command row and chooses set baseline from selected command
+- **THEN** the baseline timestamp field is populated with the selected row timestamp
+
+#### Scenario: Baseline filter limits rows to commands after baseline
+- **WHEN** a baseline timestamp is set
+- **THEN** only command rows with timestamp strictly greater than baseline are visible
 
 ### Requirement: Command selection drives business table auto-selection
 The webapp SHALL evaluate touched business tables for the currently selected commands.
@@ -157,6 +174,7 @@ The `Compare` action SHALL remain fully visible and clickable while users intera
 ### Requirement: Command-grid selection parameter changes reset comparison status report
 The webapp SHALL clear any previously rendered comparison progress status report when command-grid selection parameters change.
 Command-grid selection parameters SHALL include command-row selection changes and command-grid filter changes.
+Command-grid filter changes SHALL include member, interactionId, replay-state, and baseline timestamp changes.
 The webapp SHALL preserve command and table selection behavior while clearing only stale comparison status reporting.
 
 #### Scenario: Command selection change clears prior comparison status report
@@ -166,6 +184,6 @@ The webapp SHALL preserve command and table selection behavior while clearing on
 
 #### Scenario: Command filter change clears prior comparison status report
 - **WHEN** a prior comparison status report is visible in the footer
-- **AND** the user changes member, interactionId, or replay-state filter parameters
+- **AND** the user changes member, interactionId, replay-state, or baseline filter parameters
 - **THEN** the prior comparison status report is cleared
 
