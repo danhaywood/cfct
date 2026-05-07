@@ -173,6 +173,14 @@ public class ComparisonPageObject {
         page.keyboard().press("Tab");
     }
 
+    public void setCommandBaselineDateTime(final String value) {
+        page.evaluate("(value) => { const host = document.querySelector('[data-testid=\"command-filter-baseline-timestamp\"]'); if (!host) return; host.value = value; host.dispatchEvent(new CustomEvent('value-changed', { detail: { value }, bubbles: true, composed: true })); host.dispatchEvent(new Event('change', { bubbles: true, composed: true })); }", value);
+    }
+
+    public void clearCommandBaselineDateTime() {
+        setCommandBaselineDateTime("");
+    }
+
     public void selectAllEligibleTables() {
         page.evaluate("() => { document.querySelectorAll('[data-testid^=\"table-checkbox-\"]').forEach((host) => { if (host.hasAttribute('disabled')) return; host.checked = true; host.dispatchEvent(new CustomEvent('checked-changed', { detail: { value: true }, bubbles: true, composed: true })); host.dispatchEvent(new Event('change', { bubbles: true, composed: true })); }); }");
     }
@@ -199,6 +207,10 @@ public class ComparisonPageObject {
 
     public void waitForCommandGridContains(final String text) {
         page.waitForFunction("(text) => document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes(text)", text);
+    }
+
+    public void waitForCommandGridNotContains(final String text) {
+        page.waitForFunction("(text) => !document.querySelector('[data-testid=\"command-selection-grid\"]').innerText.includes(text)", text);
     }
 
     public String commandGridText() {

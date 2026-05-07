@@ -52,6 +52,7 @@ import com.vaadin.flow.component.page.ColorScheme;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -123,7 +124,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final MenuBar accountMenu = new MenuBar();
     private Grid<CommandCatalogEntry> commandSelectionGrid;
     private Grid<TableCatalogEntry> tableSelectionGrid;
-    private TextField commandBaselineFilterField;
+    private DateTimePicker commandBaselineFilterField;
     private String focusedCommandInteractionId;
     private String commandRangeAnchorInteractionId;
     private String skipNextCommandCheckboxClientEventInteractionId;
@@ -136,7 +137,6 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private int compareProgressTotal;
     private String commandMemberFilterValue = "";
     private String commandInteractionFilterValue = "";
-    private String commandBaselineFilterValue = "";
     private LocalDateTime commandBaselineFilterTimestamp;
     private final Set<String> commandReplayStateFilters = new LinkedHashSet<>();
     private static final List<String> REPLAY_STATE_FILTER_OPTIONS = List.of("OK", "PENDING", "FAILED");
@@ -412,7 +412,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("padding-bottom", "4.5rem")
                 .set("overflow", "auto");
 
-        final TextField baselineFilter = buildCommandBaselineFilterField();
+        final DateTimePicker baselineFilter = buildCommandBaselineFilterField();
         final Grid<CommandCatalogEntry> commandGrid = buildCommandSelectionGrid();
 
         compareProgressCounter.getElement().setAttribute("data-testid", "compare-progress-counter");
@@ -753,60 +753,39 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         return filter;
     }
 
-    private TextField buildCommandBaselineFilterField() {
-        final TextField baselineFilter = new TextField();
+    private DateTimePicker buildCommandBaselineFilterField() {
+        final DateTimePicker baselineFilter = new DateTimePicker();
         this.commandBaselineFilterField = baselineFilter;
-        baselineFilter.setPlaceholder("Baseline timestamp");
+        baselineFilter.setLabel("Baseline timestamp");
         baselineFilter.getStyle().setPaddingTop(".25em");
         baselineFilter.getStyle().setPaddingBottom(".55em");
-        baselineFilter.setClearButtonVisible(true);
-        baselineFilter.setValueChangeMode(ValueChangeMode.ON_CHANGE);
         baselineFilter.setWidthFull();
         baselineFilter.getElement().setAttribute("data-testid", "command-filter-baseline-timestamp");
         baselineFilter.addValueChangeListener(event -> applyBaselineFilterValue(event.getValue(), baselineFilter));
         return baselineFilter;
     }
 
-    private void applyBaselineFilterValue(final String rawValue, final TextField sourceField) {
-        final String normalized = rawValue == null ? "" : rawValue.trim();
-        if (normalized.isBlank()) {
-            commandBaselineFilterValue = "";
-            commandBaselineFilterTimestamp = null;
-            sourceField.setInvalid(false);
-            sourceField.setErrorMessage(null);
-            clearComparisonProgressStatus();
-            applyCommandFilters();
-            return;
-        }
-
-        try {
-            final LocalDateTime parsed = LocalDateTime.parse(normalized);
-            commandBaselineFilterValue = normalized;
-            commandBaselineFilterTimestamp = parsed;
-            sourceField.setInvalid(false);
-            sourceField.setErrorMessage(null);
-            clearComparisonProgressStatus();
-            applyCommandFilters();
-        } catch (DateTimeParseException ex) {
-            sourceField.setInvalid(true);
-            sourceField.setErrorMessage("Enter an ISO timestamp such as 2026-04-05T10:30:00.000");
-        }
+    private void applyBaselineFilterValue(final LocalDateTime value, final DateTimePicker sourceField) {
+        commandBaselineFilterTimestamp = value;
+        sourceField.setInvalid(false);
+        sourceField.setErrorMessage(null);
+        clearComparisonProgressStatus();
+        applyCommandFilters();
     }
 
     private void setCommandBaselineFilter(final String commandTimestamp) {
         if (commandTimestamp == null || commandTimestamp.isBlank()) {
             return;
         }
-        commandBaselineFilterValue = commandTimestamp;
-        commandBaselineFilterTimestamp = LocalDateTime.parse(commandTimestamp);
+        try {
+            commandBaselineFilterTimestamp = LocalDateTime.parse(commandTimestamp);
+        } catch (DateTimeParseException ex) {
+            return;
+        }
         clearComparisonProgressStatus();
         applyCommandFilters();
-        if (commandBaselineFilterField != null) {
-            commandBaselineFilterField.setInvalid(false);
-            commandBaselineFilterField.setErrorMessage(null);
-            if (!commandTimestamp.equals(commandBaselineFilterField.getValue())) {
-                commandBaselineFilterField.setValue(commandTimestamp);
-            }
+        if (commandBaselineFilterField != null && !commandBaselineFilterTimestamp.equals(commandBaselineFilterField.getValue())) {
+            commandBaselineFilterField.setValue(commandBaselineFilterTimestamp);
         }
     }
 

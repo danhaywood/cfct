@@ -152,6 +152,31 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
     }
 
     @Test
+    void baselineDateTimePickerFiltersAndClearsCommandRows() {
+        try (Playwright playwright = Playwright.create();
+             Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+             Page page = browser.newPage()) {
+            page.setViewportSize(1440, 900);
+            final LoginPageObject loginPage = new LoginPageObject(page);
+            final ComparisonPageObject comparisonPage = new ComparisonPageObject(page);
+            loginPage.open("http://localhost:" + serverPort);
+            loginPage.login(fixture.jdbcUrl(), fixture.username(), fixture.password(), LEFT_DB, RIGHT_DB);
+            comparisonPage.waitForCommandSelectionGrid();
+
+            comparisonPage.waitForCommandGridContains("supplier.Supplier#registerProduct");
+            comparisonPage.waitForCommandGridContains("product.Product#changeStatus");
+
+            comparisonPage.setCommandBaselineDateTime("9999-12-31T23:59");
+            comparisonPage.waitForCommandGridNotContains("supplier.Supplier#registerProduct");
+            comparisonPage.waitForCommandGridNotContains("product.Product#changeStatus");
+
+            comparisonPage.clearCommandBaselineDateTime();
+            comparisonPage.waitForCommandGridContains("supplier.Supplier#registerProduct");
+            comparisonPage.waitForCommandGridContains("product.Product#changeStatus");
+        }
+    }
+
+    @Test
     void pressingEnterRunsCompareAfterCommandDrivenSelectionEnablesCompare() {
         try (Playwright playwright = Playwright.create();
              Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
