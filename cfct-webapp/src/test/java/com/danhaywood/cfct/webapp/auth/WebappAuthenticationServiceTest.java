@@ -1,6 +1,7 @@
 package com.danhaywood.cfct.webapp.auth;
 
 import com.danhaywood.cfct.webapp.config.WebappComparisonProperties;
+import com.danhaywood.cfct.webapp.config.WebappDatasourceProperties;
 import com.danhaywood.cfct.webapp.validation.ConnectionValidationState;
 import com.danhaywood.cfct.webapp.validation.ConnectionValidationStatusHolder;
 import com.danhaywood.cfct.webapp.validation.SqlServerConnectivityValidationException;
@@ -22,6 +23,7 @@ class WebappAuthenticationServiceTest {
         final ConnectionValidationStatusHolder statusHolder = new ConnectionValidationStatusHolder();
         final WebappAuthenticationService service = new WebappAuthenticationService(
                 propertiesWithDefaults(),
+                datasourcePropertiesWithDefaults(),
                 validationService,
                 authHolder,
                 statusHolder);
@@ -37,6 +39,7 @@ class WebappAuthenticationServiceTest {
     void failsAuthenticationWhenRequiredFieldMissing() {
         final WebappAuthenticationService service = new WebappAuthenticationService(
                 propertiesWithDefaults(),
+                datasourcePropertiesWithDefaults(),
                 mock(SqlServerConnectivityValidationService.class),
                 new AuthenticatedConnectionContextHolder(),
                 new ConnectionValidationStatusHolder());
@@ -55,6 +58,7 @@ class WebappAuthenticationServiceTest {
 
         final WebappAuthenticationService service = new WebappAuthenticationService(
                 propertiesWithDefaults(),
+                datasourcePropertiesWithDefaults(),
                 validationService,
                 new AuthenticatedConnectionContextHolder(),
                 new ConnectionValidationStatusHolder());
@@ -71,6 +75,7 @@ class WebappAuthenticationServiceTest {
         final ConnectionValidationStatusHolder statusHolder = new ConnectionValidationStatusHolder();
         final WebappAuthenticationService service = new WebappAuthenticationService(
                 propertiesWithDefaults(),
+                datasourcePropertiesWithDefaults(),
                 validationService,
                 authHolder,
                 statusHolder);
@@ -86,6 +91,7 @@ class WebappAuthenticationServiceTest {
     void exposesConfigPropertiesAsLoginDefaults() {
         final WebappAuthenticationService service = new WebappAuthenticationService(
                 propertiesWithDefaults(),
+                datasourcePropertiesWithDefaults(),
                 mock(SqlServerConnectivityValidationService.class),
                 new AuthenticatedConnectionContextHolder(),
                 new ConnectionValidationStatusHolder());
@@ -101,12 +107,17 @@ class WebappAuthenticationServiceTest {
 
     private WebappComparisonProperties propertiesWithDefaults() {
         final WebappComparisonProperties properties = new WebappComparisonProperties();
-        properties.setDatasourceUrl("jdbc:sqlserver://localhost:1433");
-        properties.setDatasourceDriverClassName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-        properties.setDatasourceUsername("sa");
-        properties.setDatasourcePassword("change-me");
         properties.getConnection().setLeftDatabase("left_db");
         properties.getConnection().setRightDatabase("right_db");
+        return properties;
+    }
+
+    private WebappDatasourceProperties datasourcePropertiesWithDefaults() {
+        final WebappDatasourceProperties properties = new WebappDatasourceProperties();
+        properties.setUrl("jdbc:sqlserver://localhost:1433");
+        properties.setDriverClassName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        properties.setUsername("sa");
+        properties.setPassword("change-me");
         return properties;
     }
 }

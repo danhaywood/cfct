@@ -10,6 +10,7 @@ import com.danhaywood.cfct.service.ComparisonProgressEvent;
 import com.danhaywood.cfct.service.ComparisonProgressPhase;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContextHolder;
+import com.danhaywood.cfct.webapp.auth.ConnectionLoginRequest;
 import com.danhaywood.cfct.webapp.auth.WebappAuthenticationService;
 import com.danhaywood.cfct.webapp.comparison.WebappComparisonExecutionService;
 import com.danhaywood.cfct.webapp.config.WebappComparisonProperties;
@@ -1349,13 +1350,14 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
     private void refreshConnectionFooter() {
         final AuthenticatedConnectionContext context = authenticatedContextHolder.current().orElseGet(() -> {
+            final ConnectionLoginRequest defaults = authenticationService.loginDefaults();
             return new AuthenticatedConnectionContext(
-                    properties.getDatasourceUrl(),
-                    properties.getDatasourceDriverClassName(),
-                    properties.getDatasourceUsername(),
-                    properties.getDatasourcePassword(),
-                    properties.getConnection().getLeftDatabase(),
-                    properties.getConnection().getRightDatabase());
+                    defaults.jdbcUrl(),
+                    defaults.jdbcDriver(),
+                    defaults.username(),
+                    defaults.password(),
+                    defaults.leftDatabase(),
+                    defaults.rightDatabase());
         });
 
         connectionDatabases.setText(safe(context.leftDatabase()) + " ↔ " + safe(context.rightDatabase()));

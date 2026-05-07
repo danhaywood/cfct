@@ -13,6 +13,7 @@ import com.danhaywood.cfct.service.ComparisonProgressEvent;
 import com.danhaywood.cfct.service.ComparisonProgressPhase;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContextHolder;
+import com.danhaywood.cfct.webapp.auth.ConnectionLoginRequest;
 import com.danhaywood.cfct.webapp.auth.WebappAuthenticationService;
 import com.danhaywood.cfct.webapp.comparison.WebappComparisonExecutionService;
 import com.danhaywood.cfct.webapp.config.WebappComparisonProperties;
@@ -61,7 +62,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 unauthenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         final BeforeEnterEvent event = mock(BeforeEnterEvent.class);
         view.beforeEnter(event);
@@ -84,7 +85,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         assertThat(view.getElement().getAttribute("data-testid")).isEqualTo("main-app-layout");
         assertThat(findByTestId(view, "hamburger-menu")).isPresent();
@@ -112,7 +113,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         final Component actionBar = findByTestId(view, "navigation-compare-action-bar").orElseThrow();
         assertThat(actionBar.getElement().getAttribute("class")).contains("navigation-compare-action-bar");
@@ -135,7 +136,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 comparisonExecutionService,
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         invokeHandleEnterShortcut(view, "DIV", null);
 
@@ -153,7 +154,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 comparisonExecutionService,
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         invokeHandleEnterShortcut(view, "DIV", null);
         invokeHandleEnterShortcut(view, "INPUT", "text");
@@ -170,7 +171,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         assertThat(findByTestId(view, "command-selection-spacer")).isPresent();
         assertThat(findByTestId(view, "command-selection-grid")).isPresent();
@@ -200,7 +201,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         final Grid<?> commandGrid = (Grid<?>) findByTestId(view, "command-selection-grid").orElseThrow();
         final List<String> columnKeys = commandGrid.getColumns().stream().map(Grid.Column::getKey).toList();
@@ -216,7 +217,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         final Grid<?> commandGrid = (Grid<?>) findByTestId(view, "command-selection-grid").orElseThrow();
         final List<?> items = commandGrid.getListDataView().getItems().toList();
@@ -234,7 +235,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         final Checkbox selectedOnly = (Checkbox) findByTestId(view, "selected-only-checkbox").orElseThrow();
         final Grid<?> tableGrid = (Grid<?>) findByTestId(view, "table-selection-grid").orElseThrow();
@@ -257,7 +258,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         final Checkbox selectedOnly = (Checkbox) findByTestId(view, "selected-only-checkbox").orElseThrow();
         final Grid<?> tableGrid = (Grid<?>) findByTestId(view, "table-selection-grid").orElseThrow();
@@ -282,7 +283,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         final Checkbox selectedOnly = (Checkbox) findByTestId(view, "selected-only-checkbox").orElseThrow();
         selectedOnly.setValue(false);
@@ -302,7 +303,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         assertThat(view.selectedCommandInteractionIdsForStageOne())
                 .containsExactly("11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222");
@@ -318,7 +319,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         assertThat(view.selectedTablesForStageTwo())
                 .containsExactly(new TableRef("dbo", "Supplier"), new TableRef("dbo", "Product"));
@@ -337,7 +338,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         assertThat(view.selectedCommandInteractionIdsForStageOne()).isNotEmpty();
         assertThat(view.selectedTablesForStageTwo()).isNotEmpty();
@@ -362,7 +363,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
         final Footer footer = (Footer) findByTestId(view, "connection-details-footer").orElseThrow();
 
         final String footerText = textOf(footer);
@@ -385,7 +386,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 comparisonExecutionService,
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         final Button compareButton = (Button) findByTestId(view, "compare-button").orElseThrow();
         assertThat(compareButton.isEnabled()).isTrue();
@@ -414,7 +415,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         invokeShowComparisonProgress(view, "Comparison complete.", "comparison-progress-summary-success");
 
@@ -436,7 +437,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 comparisonExecutionService,
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         invokeExecuteComparison(view);
 
@@ -454,7 +455,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         invokeOnComparisonProgress(view, new ComparisonProgressEvent(
                 new TableRef("dbo", "Supplier"),
@@ -484,7 +485,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         invokeShowComparisonProgress(view, "Comparison complete.", "comparison-progress-summary-success");
         invokeOnComparisonProgress(view, new ComparisonProgressEvent(
@@ -517,7 +518,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         invokeShowComparisonProgress(view, "Comparison complete.", "comparison-progress-summary-success");
         invokeOnComparisonProgress(view, new ComparisonProgressEvent(
@@ -557,7 +558,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 comparisonExecutionService,
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         invokeExecuteComparison(view);
 
@@ -589,7 +590,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 holder,
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         holder.set(new AuthenticatedConnectionContext("jdbc:sqlserver://localhost:1433", "com.microsoft.sqlserver.jdbc.SQLServerDriver", "sa", "super-secret-password", "left_db", "right_db"));
 
@@ -607,7 +608,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         final Component commandGrid = findByTestId(view, "command-selection-grid").orElseThrow();
         assertThat(commandGrid.getElement().getAttribute("data-testid-focus-target")).isEqualTo("command-selection-grid");
@@ -623,7 +624,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         assertThat(view.selectedCommandInteractionIdsForStageOne()).isEmpty();
         invokeToggleFocusedCommandSelection(view);
@@ -641,7 +642,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         assertThat(view.selectedTablesForStageTwo()).isEmpty();
         invokeToggleFocusedBusinessTableSelection(view);
@@ -659,7 +660,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         setFocusedBusinessTable(view, new TableRef("dbo", "PurchaseOrderWithoutBusinessKey"));
         invokeToggleFocusedBusinessTableSelection(view);
@@ -675,7 +676,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         setFocusedBusinessTable(view, new TableRef("dbo", "Supplier"));
         invokeToggleFocusedBusinessTableSelection(view);
@@ -705,7 +706,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 comparisonExecutionService,
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         invokeExecuteComparison(view);
 
@@ -743,7 +744,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         final Grid<?> grid = extractGrid(invokeBuildResultGrid(view, sampleComparisonOutcome().viewResult().tableResults().get(0)));
         assertThat(grid.getColumns().stream().allMatch(Grid.Column::isSortable)).isTrue();
@@ -758,7 +759,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         final ColumnRef name = new ColumnRef("name");
         final ComparisonRowView row = new ComparisonRowView(
@@ -790,7 +791,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 comparisonExecutionService,
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         invokeExecuteComparison(view);
 
@@ -808,7 +809,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         final ColumnRef name = new ColumnRef("name");
         final ComparisonRowView row = new ComparisonRowView(
@@ -836,7 +837,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         assertThat(invokeCompactValue(view, ComparisonRowStatus.ONLY_IN_LEFT, "Left-only supplier", ""))
                 .isEqualTo("Left-only supplier");
@@ -853,7 +854,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         final ColumnRef status = new ColumnRef("status");
         final ComparisonRowView row = new ComparisonRowView(
@@ -877,7 +878,7 @@ class MainViewTest {
                 propertiesWithDefaults(),
                 mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
-                mock(WebappAuthenticationService.class));
+                authenticationServiceWithDefaults());
 
         final ColumnRef name = new ColumnRef("name");
         final ComparisonRowView leftOnly = new ComparisonRowView(
@@ -1168,12 +1169,21 @@ class MainViewTest {
 
     private WebappComparisonProperties propertiesWithDefaults() {
         final WebappComparisonProperties properties = new WebappComparisonProperties();
-        properties.setDatasourceUrl("jdbc:sqlserver://localhost:1433;encrypt=false;trustServerCertificate=true");
-        properties.setDatasourceUsername("sa");
-        properties.setDatasourcePassword("super-secret-password");
         properties.getConnection().setLeftDatabase("left_db");
         properties.getConnection().setRightDatabase("right_db");
         return properties;
+    }
+
+    private WebappAuthenticationService authenticationServiceWithDefaults() {
+        final WebappAuthenticationService service = mock(WebappAuthenticationService.class);
+        when(service.loginDefaults()).thenReturn(new ConnectionLoginRequest(
+                "jdbc:sqlserver://localhost:1433;encrypt=false;trustServerCertificate=true",
+                "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+                "sa",
+                "super-secret-password",
+                "left_db",
+                "right_db"));
+        return service;
     }
 
     private WebappComparisonExecutionService.ComparisonExecutionOutcome sampleComparisonOutcome() {

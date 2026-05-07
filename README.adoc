@@ -509,6 +509,7 @@ scripts/fixture-sqlserver.sh stop
 ----
 
 The webapp reads login defaults and validation defaults from `cfct-webapp/src/main/resources/application.yml` using `cfct.webapp.connection.*` and `cfct.webapp.validation.*` keys.
+The webapp binds both `spring.datasource.*` and `cfct.webapp.*` keys through typed `@ConfigurationProperties` models.
 
 These keys map to CLI concepts as follows:
 

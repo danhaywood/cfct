@@ -1,6 +1,5 @@
 package com.danhaywood.cfct.webapp.config;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -10,55 +9,11 @@ import jakarta.validation.Valid;
 @Validated
 public class WebappComparisonProperties {
 
-    @Value("${spring.datasource.url:}")
-    private String datasourceUrl;
-
-    @Value("${spring.datasource.driver-class-name:com.microsoft.sqlserver.jdbc.SQLServerDriver}")
-    private String datasourceDriverClassName;
-
-    @Value("${spring.datasource.username:sa}")
-    private String datasourceUsername;
-
-    @Value("${spring.datasource.password:change-me}")
-    private String datasourcePassword;
-
     @Valid
     private Connection connection = new Connection();
 
     @Valid
     private Validation validation = new Validation();
-
-    public String getDatasourceUrl() {
-        return datasourceUrl;
-    }
-
-    public void setDatasourceUrl(final String datasourceUrl) {
-        this.datasourceUrl = datasourceUrl;
-    }
-
-    public String getDatasourceDriverClassName() {
-        return datasourceDriverClassName;
-    }
-
-    public void setDatasourceDriverClassName(final String datasourceDriverClassName) {
-        this.datasourceDriverClassName = datasourceDriverClassName;
-    }
-
-    public String getDatasourceUsername() {
-        return datasourceUsername;
-    }
-
-    public void setDatasourceUsername(final String datasourceUsername) {
-        this.datasourceUsername = datasourceUsername;
-    }
-
-    public String getDatasourcePassword() {
-        return datasourcePassword;
-    }
-
-    public void setDatasourcePassword(final String datasourcePassword) {
-        this.datasourcePassword = datasourcePassword;
-    }
 
     public Connection getConnection() {
         return connection;

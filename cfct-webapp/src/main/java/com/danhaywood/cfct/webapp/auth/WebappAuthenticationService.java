@@ -1,6 +1,7 @@
 package com.danhaywood.cfct.webapp.auth;
 
 import com.danhaywood.cfct.webapp.config.WebappComparisonProperties;
+import com.danhaywood.cfct.webapp.config.WebappDatasourceProperties;
 import com.danhaywood.cfct.webapp.validation.ConnectionValidationStatusHolder;
 import com.danhaywood.cfct.webapp.validation.SqlServerConnectivityValidationService;
 
@@ -12,16 +13,19 @@ public class WebappAuthenticationService {
     private static final String LOGGED_OUT_SUMMARY = "Login required.";
 
     private final WebappComparisonProperties properties;
+    private final WebappDatasourceProperties datasourceProperties;
     private final SqlServerConnectivityValidationService validationService;
     private final AuthenticatedConnectionContextHolder authenticatedContextHolder;
     private final ConnectionValidationStatusHolder statusHolder;
 
     public WebappAuthenticationService(
             final WebappComparisonProperties properties,
+            final WebappDatasourceProperties datasourceProperties,
             final SqlServerConnectivityValidationService validationService,
             final AuthenticatedConnectionContextHolder authenticatedContextHolder,
             final ConnectionValidationStatusHolder statusHolder) {
         this.properties = properties;
+        this.datasourceProperties = datasourceProperties;
         this.validationService = validationService;
         this.authenticatedContextHolder = authenticatedContextHolder;
         this.statusHolder = statusHolder;
@@ -29,10 +33,10 @@ public class WebappAuthenticationService {
 
     public ConnectionLoginRequest loginDefaults() {
         return new ConnectionLoginRequest(
-                properties.getDatasourceUrl(),
-                properties.getDatasourceDriverClassName(),
-                properties.getDatasourceUsername(),
-                properties.getDatasourcePassword(),
+                datasourceProperties.getUrl(),
+                datasourceProperties.getDriverClassName(),
+                datasourceProperties.getUsername(),
+                datasourceProperties.getPassword(),
                 properties.getConnection().getLeftDatabase(),
                 properties.getConnection().getRightDatabase());
     }

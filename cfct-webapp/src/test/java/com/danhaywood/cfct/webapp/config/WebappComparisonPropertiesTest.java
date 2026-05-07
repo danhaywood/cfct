@@ -1,11 +1,15 @@
 package com.danhaywood.cfct.webapp.config;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Configuration;
+
+import java.lang.reflect.Field;
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,15 +33,30 @@ class WebappComparisonPropertiesTest {
                         "cfct.webapp.validation.fail-fast=false")
                 .run(context -> {
                     assertThat(context).hasNotFailed();
+                    final WebappDatasourceProperties datasourceProperties = context.getBean(WebappDatasourceProperties.class);
+                    assertThat(datasourceProperties.getUrl()).isEqualTo("jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true");
+                    assertThat(datasourceProperties.getDriverClassName()).isEqualTo("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+                    assertThat(datasourceProperties.getUsername()).isEqualTo("sa");
+                    assertThat(datasourceProperties.getPassword()).isEqualTo("secret");
+
                     final WebappComparisonProperties properties = context.getBean(WebappComparisonProperties.class);
-                    assertThat(properties.getDatasourceUrl()).isEqualTo("jdbc:sqlserver://server-host;encrypt=false;trustServerCertificate=true");
-                    assertThat(properties.getDatasourceDriverClassName()).isEqualTo("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-                    assertThat(properties.getDatasourceUsername()).isEqualTo("sa");
-                    assertThat(properties.getDatasourcePassword()).isEqualTo("secret");
                     assertThat(properties.getConnection().getLeftDatabase()).isEqualTo("left_db");
                     assertThat(properties.getConnection().getRightDatabase()).isEqualTo("right_db");
                     assertThat(properties.getValidation().isEnabled()).isFalse();
                     assertThat(properties.getValidation().isFailFast()).isFalse();
+                });
+    }
+
+    @Test
+    void bindsDatasourceDefaultsWhenNotConfigured() {
+        contextRunner
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    final WebappDatasourceProperties datasourceProperties = context.getBean(WebappDatasourceProperties.class);
+                    assertThat(datasourceProperties.getUrl()).isBlank();
+                    assertThat(datasourceProperties.getDriverClassName()).isEqualTo("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+                    assertThat(datasourceProperties.getUsername()).isEqualTo("sa");
+                    assertThat(datasourceProperties.getPassword()).isEqualTo("change-me");
                 });
     }
 
@@ -50,8 +69,24 @@ class WebappComparisonPropertiesTest {
                 .run(context -> assertThat(context).hasNotFailed());
     }
 
+    @Test
+    void configurationPropertiesClassesAvoidFieldLevelValueInjection() {
+        assertThat(Arrays.stream(WebappComparisonProperties.class.getDeclaredFields())
+                .map(this::valueAnnotation)
+                .filter(annotation -> annotation != null))
+                .isEmpty();
+        assertThat(Arrays.stream(WebappDatasourceProperties.class.getDeclaredFields())
+                .map(this::valueAnnotation)
+                .filter(annotation -> annotation != null))
+                .isEmpty();
+    }
+
+    private Value valueAnnotation(final Field field) {
+        return field.getAnnotation(Value.class);
+    }
+
     @Configuration
-    @EnableConfigurationProperties(WebappComparisonProperties.class)
+    @EnableConfigurationProperties({WebappComparisonProperties.class, WebappDatasourceProperties.class})
     static class TestConfiguration {
     }
 }
