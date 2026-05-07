@@ -12,6 +12,10 @@ The command grid SHALL default to timestamp ascending row order.
 The command grid SHALL support keyboard-first interaction when focused.
 The command grid SHALL allow Space key toggling for the currently focused command row.
 The command grid SHALL preserve useful Up/Down and Left/Right arrow key navigation behavior.
+The command grid SHALL support contiguous range selection using anchor-and-extend interaction.
+The command grid SHALL treat the most recent non-Shift row-selection intent as the range anchor.
+The command grid SHALL select all visible rows between anchor and target, inclusive, when users perform Shift-click on a target row.
+The command grid SHALL apply contiguous range selection deterministically against the current visible row order after active sorting and filtering.
 
 #### Scenario: Command grid lists selectable command entries
 - **WHEN** the home page initializes command-selection data
@@ -37,6 +41,16 @@ The command grid SHALL preserve useful Up/Down and Left/Right arrow key navigati
 #### Scenario: Arrow key navigation remains useful
 - **WHEN** keyboard focus is in the command grid
 - **THEN** Up/Down and Left/Right keys move focus in a predictable grid-navigation manner without breaking row selection state
+
+#### Scenario: Shift-click selects an inclusive contiguous range
+- **WHEN** a user has an existing range anchor row in the command grid
+- **AND** the user Shift-clicks a different target row
+- **THEN** the command grid selects all visible command rows between anchor and target inclusively
+
+#### Scenario: Shift-click range uses current filtered and sorted order
+- **WHEN** command-grid filters or sorting are active
+- **AND** the user performs Shift-click range selection
+- **THEN** interval bounds are resolved from the current visible row ordering
 
 ### Requirement: Command grid supports live filtering
 The command grid SHALL provide filtering controls within a command-grid header row.
