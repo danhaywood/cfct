@@ -125,6 +125,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private Grid<TableCatalogEntry> tableSelectionGrid;
     private TextField commandBaselineFilterField;
     private String focusedCommandInteractionId;
+    private String commandRangeAnchorInteractionId;
+    private String skipNextCommandCheckboxClientEventInteractionId;
     private TableRef focusedBusinessTable;
 
     private WebappComparisonExecutionService.ComparisonExecutionOutcome latestOutcome;
@@ -481,12 +483,16 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         tableFilterRow.setWidthFull();
         tableFilterRow.setPadding(true);
 
+        final Div commandSelectionSpacer = new Div();
+        commandSelectionSpacer.getElement().setAttribute("data-testid", "command-selection-spacer");
+        commandSelectionSpacer.getStyle().setHeight("0.25rem");
+
         final Div resizeHandle = new Div();
         resizeHandle.getElement().setAttribute("data-testid", "navigation-drawer-resize-handle");
         resizeHandle.addClassName("navigation-drawer-resize-handle");
         enableDrawerResize(panel, resizeHandle);
 
-        layout.add(baselineFilter, commandGrid, clearActionBar, tableFilterRow, tableGrid, actionBar);
+        layout.add(baselineFilter, commandGrid, commandSelectionSpacer, clearActionBar, tableFilterRow, tableGrid, actionBar);
         panel.add(layout, resizeHandle);
         applySelectionFilters();
         applyCommandFilters();
@@ -571,11 +577,23 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             checkbox.setEnabled(authenticatedContextHolder.isAuthenticated());
             checkbox.setValue(commandSelectionState.isSelected(entry.interactionId()));
             checkbox.getElement().setAttribute("data-testid", "command-checkbox-" + entry.interactionId().toLowerCase(Locale.ROOT));
+            checkbox.getElement()
+                    .addEventListener("click", domEvent -> {
+                        if (domEvent.getEventData().get("event.shiftKey").asBoolean(false)) {
+                            skipNextCommandCheckboxClientEventInteractionId = entry.interactionId();
+                        }
+                    })
+                    .addEventData("event.shiftKey");
             checkbox.addValueChangeListener(event -> {
+                if (!event.isFromClient()) {
+                    return;
+                }
                 focusedCommandInteractionId = entry.interactionId();
-                commandSelectionState.updateSelection(entry.interactionId(), event.getValue());
-                clearComparisonProgressStatus();
-                applyCommandDrivenSelection();
+                if (entry.interactionId().equals(skipNextCommandCheckboxClientEventInteractionId)) {
+                    skipNextCommandCheckboxClientEventInteractionId = null;
+                    return;
+                }
+                applySingleCommandSelection(entry.interactionId(), event.getValue(), true);
             });
             return checkbox;
         })).setHeader("").setAutoWidth(true).setFlexGrow(0).setTextAlign(ColumnTextAlign.CENTER);
@@ -653,12 +671,21 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         contextMenu.addItem("Set baseline from selected command", event ->
                 event.getItem().ifPresent(item -> setCommandBaselineFilter(item.timestamp())));
 
-        grid.addItemClickListener(event -> focusedCommandInteractionId = event.getItem().interactionId());
+        grid.addItemClickListener(event -> {
+            focusedCommandInteractionId = event.getItem().interactionId();
+            if (event.isShiftKey()) {
+                applyCommandRangeSelection(event.getItem().interactionId());
+                return;
+            }
+            commandRangeAnchorInteractionId = event.getItem().interactionId();
+        });
         grid.addCellFocusListener(event -> event.getItem().ifPresent(item -> focusedCommandInteractionId = item.interactionId()));
+        grid.addSortListener(event -> clearCommandRangeAnchorIfInvalid());
         grid.getElement()
-                .addEventListener("keydown", event -> toggleFocusedCommandSelection())
+                .addEventListener("keydown", event -> toggleFocusedCommandSelection(event.getEventData().get("event.shiftKey").asBoolean(false)))
                 .setFilter("event.code === 'Space' || event.key === ' '")
-                .addEventData("event.code");
+                .addEventData("event.code")
+                .addEventData("event.shiftKey");
 
         return grid;
     }
@@ -704,6 +731,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 commandInteractionFilterValue,
                 commandReplayStateFilters,
                 commandBaselineFilterTimestamp));
+        clearCommandRangeAnchorIfInvalid();
         commandSelectionDataProvider.refreshAll();
     }
 
@@ -823,6 +851,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
     private void clearAllSelections() {
         focusedCommandInteractionId = null;
+        commandRangeAnchorInteractionId = null;
+        skipNextCommandCheckboxClientEventInteractionId = null;
         focusedBusinessTable = null;
         commandSelectionState.clearSelections();
         selectionState.clearSelections();
@@ -833,17 +863,143 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     }
 
     private void toggleFocusedCommandSelection() {
-        final String interactionId = focusedCommandInteractionId != null
-                ? focusedCommandInteractionId
-                : commandCatalogEntries.stream().findFirst().map(CommandCatalogEntry::interactionId).orElse(null);
+        toggleFocusedCommandSelection(false);
+    }
+
+    private void toggleFocusedCommandSelection(final boolean shiftPressed) {
+        final String interactionId = focusedOrFirstVisibleCommandInteractionId();
         if (interactionId == null || interactionId.isBlank()) {
             return;
         }
+        if (shiftPressed) {
+            applyCommandRangeSelection(interactionId);
+            return;
+        }
         final boolean nextSelected = !commandSelectionState.isSelected(interactionId);
-        commandSelectionState.updateSelection(interactionId, nextSelected);
+        applySingleCommandSelection(interactionId, nextSelected, true);
+    }
+
+    private void applySingleCommandSelection(
+            final String interactionId,
+            final boolean selected,
+            final boolean updateAnchor) {
+        commandSelectionState.updateSelection(interactionId, selected);
+        if (updateAnchor) {
+            commandRangeAnchorInteractionId = interactionId;
+        }
         clearComparisonProgressStatus();
         commandSelectionDataProvider.refreshAll();
         applyCommandDrivenSelection();
+    }
+
+    private void applyCommandRangeSelection(final String targetInteractionId) {
+        if (targetInteractionId == null || targetInteractionId.isBlank()) {
+            return;
+        }
+        final List<CommandCatalogEntry> visibleEntries = visibleCommandEntries();
+        final List<String> visibleIds = visibleEntries.stream().map(CommandCatalogEntry::interactionId).toList();
+        if (visibleIds.isEmpty() || !visibleIds.contains(targetInteractionId)) {
+            return;
+        }
+
+        final String effectiveAnchor = visibleIds.contains(commandRangeAnchorInteractionId)
+                ? commandRangeAnchorInteractionId
+                : null;
+
+        if (effectiveAnchor == null) {
+            commandSelectionState.updateSelection(targetInteractionId, true);
+            commandRangeAnchorInteractionId = targetInteractionId;
+            clearComparisonProgressStatus();
+            commandSelectionDataProvider.refreshAll();
+            applyCommandDrivenSelection();
+            return;
+        }
+
+        final int anchorIndex = visibleIds.indexOf(effectiveAnchor);
+        final int targetIndex = visibleIds.indexOf(targetInteractionId);
+        if (anchorIndex < 0 || targetIndex < 0) {
+            return;
+        }
+
+        final int start = Math.min(anchorIndex, targetIndex);
+        final int end = Math.max(anchorIndex, targetIndex);
+        for (int idx = start; idx <= end; idx++) {
+            commandSelectionState.updateSelection(visibleIds.get(idx), true);
+        }
+        clearComparisonProgressStatus();
+        commandSelectionDataProvider.refreshAll();
+        applyCommandDrivenSelection();
+    }
+
+    private String focusedOrFirstVisibleCommandInteractionId() {
+        if (focusedCommandInteractionId != null && !focusedCommandInteractionId.isBlank()) {
+            return focusedCommandInteractionId;
+        }
+        return visibleCommandEntries().stream()
+                .findFirst()
+                .map(CommandCatalogEntry::interactionId)
+                .orElse(null);
+    }
+
+    private void clearCommandRangeAnchorIfInvalid() {
+        if (commandRangeAnchorInteractionId == null || commandRangeAnchorInteractionId.isBlank()) {
+            return;
+        }
+        final boolean stillVisible = visibleCommandEntries().stream()
+                .map(CommandCatalogEntry::interactionId)
+                .anyMatch(commandRangeAnchorInteractionId::equals);
+        if (!stillVisible) {
+            commandRangeAnchorInteractionId = null;
+        }
+    }
+
+    private List<CommandCatalogEntry> visibleCommandEntries() {
+        final List<CommandCatalogEntry> filtered = commandCatalogEntries.stream()
+                .filter(entry -> commandSelectionState.matchesFilter(
+                        entry,
+                        commandMemberFilterValue,
+                        commandInteractionFilterValue,
+                        commandReplayStateFilters,
+                        commandBaselineFilterTimestamp))
+                .toList();
+
+        final Comparator<CommandCatalogEntry> comparator = commandSelectionComparator();
+        if (comparator == null) {
+            return filtered;
+        }
+        return filtered.stream().sorted(comparator).toList();
+    }
+
+    private Comparator<CommandCatalogEntry> commandSelectionComparator() {
+        if (commandSelectionGrid == null || commandSelectionGrid.getSortOrder().isEmpty()) {
+            return Comparator.comparing(CommandCatalogEntry::timestamp, String.CASE_INSENSITIVE_ORDER)
+                    .thenComparing(CommandCatalogEntry::interactionId, String.CASE_INSENSITIVE_ORDER);
+        }
+        Comparator<CommandCatalogEntry> comparator = null;
+        for (GridSortOrder<CommandCatalogEntry> sortOrder : commandSelectionGrid.getSortOrder()) {
+            final Comparator<CommandCatalogEntry> columnComparator = comparatorForColumnKey(sortOrder.getSorted().getKey());
+            final Comparator<CommandCatalogEntry> normalizedComparator =
+                    sortOrder.getDirection() == com.vaadin.flow.data.provider.SortDirection.DESCENDING
+                            ? columnComparator.reversed()
+                            : columnComparator;
+            comparator = comparator == null ? normalizedComparator : comparator.thenComparing(normalizedComparator);
+        }
+        return comparator == null
+                ? null
+                : comparator.thenComparing(CommandCatalogEntry::interactionId, String.CASE_INSENSITIVE_ORDER);
+    }
+
+    private Comparator<CommandCatalogEntry> comparatorForColumnKey(final String columnKey) {
+        if ("replay-state".equals(columnKey)) {
+            return Comparator.comparing(CommandCatalogEntry::replayState, String.CASE_INSENSITIVE_ORDER);
+        }
+        if ("member".equals(columnKey)) {
+            return Comparator.comparing(CommandCatalogEntry::logicalMemberIdentifier, String.CASE_INSENSITIVE_ORDER);
+        }
+        if ("interaction".equals(columnKey)) {
+            return Comparator.comparing(CommandCatalogEntry::interactionId, String.CASE_INSENSITIVE_ORDER);
+        }
+        return Comparator.comparing(CommandCatalogEntry::timestamp, String.CASE_INSENSITIVE_ORDER);
     }
 
     private void toggleFocusedBusinessTableSelection() {
@@ -1320,6 +1476,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         selectionState = new ManualTableSelectionState(tableCatalog);
         commandSelectionState = new CommandSelectionState(commandCatalog);
+        commandRangeAnchorInteractionId = null;
+        skipNextCommandCheckboxClientEventInteractionId = null;
         applyCommandDrivenSelection();
 
         tableCatalogEntries.clear();
@@ -1335,6 +1493,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private void clearTableCatalog() {
         selectionState = new ManualTableSelectionState(List.of());
         commandSelectionState = new CommandSelectionState(List.of());
+        commandRangeAnchorInteractionId = null;
+        skipNextCommandCheckboxClientEventInteractionId = null;
         applyCommandDrivenSelection();
         tableCatalogEntries.clear();
         commandCatalogEntries.clear();

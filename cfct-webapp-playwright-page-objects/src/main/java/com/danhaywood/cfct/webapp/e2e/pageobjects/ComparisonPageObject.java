@@ -1,6 +1,8 @@
 package com.danhaywood.cfct.webapp.e2e.pageobjects;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.KeyboardModifier;
 
 import java.util.List;
 
@@ -103,12 +105,24 @@ public class ComparisonPageObject {
         page.locator(selector).click();
     }
 
+    public void shiftClick(final String selector) {
+        page.locator(selector).click(new Locator.ClickOptions().setModifiers(List.of(KeyboardModifier.SHIFT)));
+    }
+
     public void clickCommandCheckbox(final String interactionId) {
         click(commandCheckboxSelector(interactionId));
     }
 
+    public void shiftClickCommandCheckbox(final String interactionId) {
+        shiftClick(commandCheckboxSelector(interactionId));
+    }
+
     public void clickTableCheckbox(final String qualifiedTableNameLower) {
         click(tableCheckboxSelector(qualifiedTableNameLower));
+    }
+
+    public void pressShiftSpace() {
+        page.keyboard().press("Shift+Space");
     }
 
     public void clickCompareButton() {

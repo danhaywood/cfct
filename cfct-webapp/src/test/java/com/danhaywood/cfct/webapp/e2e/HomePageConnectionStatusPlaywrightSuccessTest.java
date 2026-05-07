@@ -93,6 +93,34 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
     }
 
     @Test
+    void shiftClickAndShiftSpaceSelectContiguousCommandRange() {
+        try (Playwright playwright = Playwright.create();
+             Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+             Page page = browser.newPage()) {
+            page.setViewportSize(1440, 900);
+            final LoginPageObject loginPage = new LoginPageObject(page);
+            final ComparisonPageObject comparisonPage = new ComparisonPageObject(page);
+            loginPage.open("http://localhost:" + serverPort);
+            loginPage.login(fixture.jdbcUrl(), fixture.username(), fixture.password(), LEFT_DB, RIGHT_DB);
+            comparisonPage.waitForCommandSelectionGrid();
+
+            comparisonPage.waitForCommandSelectionState(fixture.commandInteractionId(), false, fixture.secondCommandInteractionId(), false);
+            comparisonPage.clickCommandCheckbox(fixture.commandInteractionId());
+            comparisonPage.waitForCommandSelectionState(fixture.commandInteractionId(), true, fixture.secondCommandInteractionId(), false);
+
+            comparisonPage.shiftClickCommandCheckbox(fixture.secondCommandInteractionId());
+            comparisonPage.waitForCommandSelectionState(fixture.commandInteractionId(), true, fixture.secondCommandInteractionId(), true);
+
+            comparisonPage.clickCommandCheckbox(fixture.commandInteractionId());
+            comparisonPage.waitForCommandSelectionState(fixture.commandInteractionId(), false, fixture.secondCommandInteractionId(), true);
+
+            comparisonPage.pressKey("ArrowDown");
+            comparisonPage.pressShiftSpace();
+            comparisonPage.waitForCommandSelectionState(fixture.commandInteractionId(), true, fixture.secondCommandInteractionId(), true);
+        }
+    }
+
+    @Test
     void pressingSpaceTogglesFocusedBusinessRowsAndArrowNavigationKeepsFlowStable() {
         try (Playwright playwright = Playwright.create();
              Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));

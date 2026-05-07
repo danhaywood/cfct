@@ -737,6 +737,92 @@ class MainViewTest {
     }
 
     @Test
+    void shiftRangeSelectionSelectsInclusiveVisibleRowsFromAnchor() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        invokeToggleFocusedCommandSelection(view);
+        setFocusedCommandInteractionId(view, "33333333-3333-3333-3333-333333333333");
+        invokeToggleFocusedCommandSelectionWithShift(view, true);
+
+        assertThat(view.selectedCommandInteractionIdsForStageOne())
+                .containsExactly("11111111-1111-1111-1111-111111111111", "33333333-3333-3333-3333-333333333333");
+    }
+
+    @Test
+    void shiftSpaceWithoutAnchorSelectsFocusedRowAndCreatesAnchor() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        setFocusedCommandInteractionId(view, "33333333-3333-3333-3333-333333333333");
+        invokeToggleFocusedCommandSelectionWithShift(view, true);
+        assertThat(view.selectedCommandInteractionIdsForStageOne())
+                .containsExactly("33333333-3333-3333-3333-333333333333");
+
+        setFocusedCommandInteractionId(view, "11111111-1111-1111-1111-111111111111");
+        invokeToggleFocusedCommandSelectionWithShift(view, true);
+        assertThat(view.selectedCommandInteractionIdsForStageOne())
+                .containsExactly("11111111-1111-1111-1111-111111111111", "33333333-3333-3333-3333-333333333333");
+    }
+
+    @Test
+    void applyingCommandFiltersClearsRangeAnchorWhenAnchorIsNotVisible() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        invokeToggleFocusedCommandSelection(view);
+        assertThat(commandRangeAnchorInteractionId(view)).isEqualTo("11111111-1111-1111-1111-111111111111");
+
+        setCommandMemberFilterValue(view, "product.Product");
+        invokeApplyCommandFilters(view);
+
+        assertThat(commandRangeAnchorInteractionId(view)).isNull();
+    }
+
+    @Test
+    void shiftRangeSelectionTriggersSingleCommandDrivenResolution() {
+        final CommandDrivenTableSelectionService commandDrivenSelectionService = mock(CommandDrivenTableSelectionService.class);
+        when(commandDrivenSelectionService.resolveTouchedBusinessTables(Mockito.any(), Mockito.anyList()))
+                .thenReturn(Set.of());
+
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                commandDrivenSelectionService,
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        invokeToggleFocusedCommandSelection(view);
+        Mockito.clearInvocations(commandDrivenSelectionService);
+
+        invokeApplyCommandRangeSelection(view, "33333333-3333-3333-3333-333333333333");
+
+        verify(commandDrivenSelectionService, Mockito.times(1))
+                .resolveTouchedBusinessTables(Mockito.any(), Mockito.anyList());
+    }
+
+    @Test
     void toggleFocusedBusinessTableSelectionUsesExistingStatePath() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
@@ -1134,6 +1220,26 @@ class MainViewTest {
         }
     }
 
+    private void invokeToggleFocusedCommandSelectionWithShift(final MainView view, final boolean shiftPressed) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("toggleFocusedCommandSelection", boolean.class);
+            method.setAccessible(true);
+            method.invoke(view, shiftPressed);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void invokeApplyCommandRangeSelection(final MainView view, final String interactionId) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("applyCommandRangeSelection", String.class);
+            method.setAccessible(true);
+            method.invoke(view, interactionId);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     private void invokeToggleFocusedBusinessTableSelection(final MainView view) {
         try {
             final var method = MainView.class.getDeclaredMethod("toggleFocusedBusinessTableSelection");
@@ -1149,6 +1255,26 @@ class MainViewTest {
             final var field = MainView.class.getDeclaredField("focusedBusinessTable");
             field.setAccessible(true);
             field.set(view, tableRef);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void setFocusedCommandInteractionId(final MainView view, final String interactionId) {
+        try {
+            final var field = MainView.class.getDeclaredField("focusedCommandInteractionId");
+            field.setAccessible(true);
+            field.set(view, interactionId);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private String commandRangeAnchorInteractionId(final MainView view) {
+        try {
+            final var field = MainView.class.getDeclaredField("commandRangeAnchorInteractionId");
+            field.setAccessible(true);
+            return (String) field.get(view);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -1199,6 +1325,26 @@ class MainViewTest {
             final var method = MainView.class.getDeclaredMethod("setCommandBaselineFilter", String.class);
             method.setAccessible(true);
             method.invoke(view, timestamp);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void invokeApplyCommandFilters(final MainView view) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("applyCommandFilters");
+            method.setAccessible(true);
+            method.invoke(view);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void setCommandMemberFilterValue(final MainView view, final String filterValue) {
+        try {
+            final var field = MainView.class.getDeclaredField("commandMemberFilterValue");
+            field.setAccessible(true);
+            field.set(view, filterValue);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
