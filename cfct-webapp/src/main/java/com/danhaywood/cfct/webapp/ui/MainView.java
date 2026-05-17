@@ -770,7 +770,6 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         refreshCommandsButton.getElement().setAttribute("data-testid", "command-filter-refresh");
         refreshCommandsButton.getElement().setAttribute("title", "Refresh commands from database");
-        refreshCommandsButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         refreshCommandsButton.addClickListener(event -> refreshCommandCatalog());
 
         final Button clearBaselineButton = new Button(new Icon(VaadinIcon.CLOSE_SMALL));
