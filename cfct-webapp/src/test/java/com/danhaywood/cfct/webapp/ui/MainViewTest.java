@@ -538,6 +538,34 @@ class MainViewTest {
     }
 
     @Test
+    void comparisonStageUsesFullHeightFlexChainForResultContent() {
+        final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
+        when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class)))
+                .thenReturn(sampleComparisonOutcome());
+
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                comparisonExecutionService,
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        invokeExecuteComparison(view);
+
+        final Component mainContent = findByTestId(view, "main-content").orElseThrow();
+        final Component comparisonStage = findByTestId(view, "comparison-stage-placeholder").orElseThrow();
+        final Component resultsContainer = findByTestId(view, "comparison-results-container").orElseThrow();
+
+        assertThat(mainContent.getElement().getStyle().get("padding-bottom")).isEqualTo("5rem");
+        assertThat(comparisonStage.getElement().getStyle().get("flex")).isEqualTo("1 1 auto");
+        assertThat(comparisonStage.getElement().getStyle().get("min-height")).isEqualTo("0");
+        assertThat(resultsContainer.getElement().getStyle().get("flex")).isEqualTo("1 1 auto");
+        assertThat(resultsContainer.getElement().getStyle().get("min-height")).isEqualTo("0");
+    }
+
+    @Test
     void executesCompareAndRendersResultTabs() {
         final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
         when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class)))

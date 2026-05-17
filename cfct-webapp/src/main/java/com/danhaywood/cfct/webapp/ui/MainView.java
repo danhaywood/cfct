@@ -146,6 +146,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private static final List<String> REPLAY_STATE_FILTER_OPTIONS = List.of("OK", "PENDING", "FAILED");
     private static final int MIN_DRAWER_WIDTH_PX = 360;
     private static final int MAX_DRAWER_WIDTH_PX = 860;
+    private static final String MAIN_CONTENT_FOOTER_CLEARANCE = "5rem";
 
     public MainView(
             final ConnectionValidationStatusHolder statusHolder,
@@ -265,11 +266,14 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         content.setSizeFull();
         content.setPadding(true);
         content.setSpacing(true);
+        final Component comparisonStage = buildComparisonStage();
         content.getStyle()
                 .set("gap", "var(--lumo-space-l)")
-                .set("padding-bottom", "5rem");
+                .set("padding-bottom", MAIN_CONTENT_FOOTER_CLEARANCE)
+                .set("min-height", "0");
         content.getElement().setAttribute("data-testid", "main-content");
-        content.add(buildComparisonStage(), buildFooter());
+        content.add(comparisonStage, buildFooter());
+        content.expand(comparisonStage);
         return content;
     }
 
@@ -285,7 +289,9 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("flex-direction", "column")
                 .set("gap", "var(--lumo-space-m)")
                 .set("width", "100%")
-                .set("min-width", "0");
+                .set("min-width", "0")
+                .set("min-height", "0")
+                .set("flex", "1 1 auto");
 
         comparedTableFilter.setPlaceholder("Filter compared tables");
         comparedTableFilter.setClearButtonVisible(true);
@@ -323,6 +329,9 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         comparisonResultsContainer.getElement().setAttribute("data-testid", "comparison-results-container");
         comparisonResultsContainer.addClassName("comparison-results-container");
         comparisonResultsContainer.setWidthFull();
+        comparisonResultsContainer.getStyle()
+                .set("min-height", "0")
+                .set("flex", "1 1 auto");
 
         panel.add(resultActions, comparisonError, comparisonResultsContainer);
         return panel;
@@ -1192,6 +1201,9 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         tabContent.getElement().setAttribute("data-testid", "comparison-results-tab-content");
         tabContent.addClassName("comparison-results-tab-content");
         tabContent.setWidthFull();
+        tabContent.getStyle()
+                .set("min-height", "0")
+                .set("flex", "1 1 auto");
 
         final Map<Tab, TableComparisonViewResult> mapping = new LinkedHashMap<>();
         for (TableComparisonViewResult tableResult : filtered) {
@@ -1253,7 +1265,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         grid.getElement().setAttribute("data-testid", "comparison-grid-" + selectorToken(tableResult.table()));
         final ListDataProvider<ComparisonRowView> provider = new ListDataProvider<>(visibleRows);
         grid.setDataProvider(provider);
-        grid.setAllRowsVisible(true);
+        grid.setAllRowsVisible(false);
+        grid.setHeightFull();
         grid.setWidth("max-content");
         grid.getStyle().set("min-width", "100%");
         grid.addThemeNames("column-borders", "compact");

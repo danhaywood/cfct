@@ -18,6 +18,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -351,6 +352,23 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             final String gridText = page.locator("[data-testid^='comparison-grid-dbo-']").first().innerText();
             assertThat(gridText).contains("Business Key", "Status", "name");
             assertThat(gridText).doesNotContain("L:", "R:");
+
+            final Object resultsLayoutMetrics = page.evaluate("""
+                    () => {
+                      const scrollContainer = document.querySelector('[data-testid^="comparison-grid-scroll-container-"]');
+                      const footer = document.querySelector('[data-testid="connection-details-footer"]');
+                      if (!scrollContainer || !footer) return [-1, -1, -1];
+                      const scrollRect = scrollContainer.getBoundingClientRect();
+                      const footerRect = footer.getBoundingClientRect();
+                      return [scrollRect.bottom, footerRect.top, scrollRect.height];
+                    }
+                    """);
+            final List<?> metrics = (List<?>) resultsLayoutMetrics;
+            final double scrollBottom = ((Number) metrics.get(0)).doubleValue();
+            final double footerTop = ((Number) metrics.get(1)).doubleValue();
+            final double scrollHeight = ((Number) metrics.get(2)).doubleValue();
+            assertThat(scrollBottom).isLessThanOrEqualTo(footerTop);
+            assertThat(scrollHeight).isGreaterThan(220.0);
             assertThat(page.locator("[data-testid='comparison-table-filter']").count()).isEqualTo(1);
             assertThat(page.locator("[data-testid='comparison-differences-only-filter']").count()).isEqualTo(1);
             assertThat(page.locator("[data-testid='download-format-select']").count()).isEqualTo(1);
