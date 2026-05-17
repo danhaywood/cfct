@@ -62,6 +62,9 @@ The command selection section SHALL provide an optional baseline timestamp date/
 The baseline date/time picker SHALL support date and time selection through picker interaction.
 The baseline date/time picker SHALL support direct user editing of the value.
 The command grid SHALL provide a context menu action that sets baseline from the selected command row timestamp.
+The command selection section SHALL provide a Refresh control on the same row as baseline controls.
+The Refresh control SHALL be positioned to the left of the two baseline fields.
+Activating Refresh SHALL reload command rows from the database-backed command source.
 Filtering SHALL narrow visible command rows without requiring a separate apply-filter action.
 The command grid SHALL combine member, interactionId, replay-state, and baseline filters when a baseline is set or one or more replay-state checkboxes are selected.
 When no replay-state checkboxes are selected, replay-state filtering SHALL be inactive.
@@ -99,6 +102,17 @@ When baseline is set, only command rows with timestamp strictly after baseline S
 #### Scenario: Baseline filter limits rows to commands after baseline
 - **WHEN** a baseline timestamp is set
 - **THEN** only command rows with timestamp strictly greater than baseline are visible
+
+#### Scenario: Refresh control appears to the left of baseline fields
+- **WHEN** the command selection section is rendered
+- **THEN** a Refresh control is visible on the baseline-controls row
+- **AND** the Refresh control appears to the left of the two baseline fields
+
+#### Scenario: Refresh reloads commands including newly added rows
+- **WHEN** new command rows are added by another process after the page has loaded
+- **AND** the user activates Refresh
+- **THEN** the command grid reloads from the database-backed source
+- **AND** newly added command rows become visible when they match active filters
 
 #### Scenario: Clearing baseline picker restores baseline-unfiltered rows
 - **WHEN** the user clears the baseline date/time picker value
