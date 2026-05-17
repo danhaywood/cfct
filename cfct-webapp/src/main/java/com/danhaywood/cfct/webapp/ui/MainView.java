@@ -112,6 +112,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Button compareButton = new Button("Compare");
     private final Span compareProgressCounter = new Span();
     private final Button clearSelectionsButton = new Button("Clear");
+    private final Button refreshCommandsButton = new Button("Refresh");
     private final Span comparisonError = new Span();
     private final Div comparisonResultsContainer = new Div();
     private final TextField comparedTableFilter = new TextField();
@@ -140,6 +141,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private String commandMemberFilterValue = "";
     private String commandInteractionFilterValue = "";
     private LocalDateTime commandBaselineFilterTimestamp;
+    private boolean commandCatalogRefreshInProgress;
     private final Set<String> commandReplayStateFilters = new LinkedHashSet<>();
     private static final List<String> REPLAY_STATE_FILTER_OPTIONS = List.of("OK", "PENDING", "FAILED");
     private static final int MIN_DRAWER_WIDTH_PX = 360;
@@ -766,6 +768,11 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         baselineFilter.getElement().setAttribute("data-testid", "command-filter-baseline-timestamp");
         baselineFilter.addValueChangeListener(event -> applyBaselineFilterValue(event.getValue(), baselineFilter));
 
+        refreshCommandsButton.getElement().setAttribute("data-testid", "command-filter-refresh");
+        refreshCommandsButton.getElement().setAttribute("title", "Refresh commands from database");
+        refreshCommandsButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        refreshCommandsButton.addClickListener(event -> refreshCommandCatalog());
+
         final Button clearBaselineButton = new Button(new Icon(VaadinIcon.CLOSE_SMALL));
         clearBaselineButton.getElement().setAttribute("data-testid", "command-filter-baseline-clear");
         clearBaselineButton.getElement().setAttribute("title", "Clear baseline");
@@ -781,7 +788,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             applyCommandFilters();
         });
 
-        final HorizontalLayout baselineRow = new HorizontalLayout(baselineFilter, clearBaselineButton);
+        final HorizontalLayout baselineRow = new HorizontalLayout(refreshCommandsButton, baselineFilter, clearBaselineButton);
         baselineRow.setWidthFull();
         baselineRow.setPadding(false);
         baselineRow.setSpacing(true);
@@ -812,6 +819,38 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         if (commandBaselineFilterField != null && !commandBaselineFilterTimestamp.equals(commandBaselineFilterField.getValue())) {
             commandBaselineFilterField.setValue(commandBaselineFilterTimestamp);
         }
+    }
+
+    private void refreshCommandCatalog() {
+        if (!authenticatedContextHolder.isAuthenticated() || commandCatalogRefreshInProgress) {
+            return;
+        }
+        commandCatalogRefreshInProgress = true;
+        refreshCommandsButton.setEnabled(false);
+        try {
+            reloadCommandCatalogPreservingSelection();
+        } finally {
+            commandCatalogRefreshInProgress = false;
+            refreshCommandsButton.setEnabled(authenticatedContextHolder.isAuthenticated());
+            refreshActionButtons();
+        }
+    }
+
+    private void reloadCommandCatalogPreservingSelection() {
+        final Set<String> selectedInteractionIds = new LinkedHashSet<>(commandSelectionState.selectedInteractionIds());
+        final List<CommandCatalogEntry> refreshedCatalog = sortCommandCatalog(commandCatalogService.discoverCommandCatalog()).stream()
+                .map(entry -> entry.withSelected(selectedInteractionIds.contains(entry.interactionId())))
+                .toList();
+
+        commandSelectionState = new CommandSelectionState(refreshedCatalog);
+        skipNextCommandCheckboxClientEventInteractionId = null;
+        clearComparisonProgressStatus();
+
+        commandCatalogEntries.clear();
+        commandCatalogEntries.addAll(refreshedCatalog);
+
+        applyCommandFilters();
+        applyCommandDrivenSelection();
     }
 
     private void applyResultGridFilters(
@@ -1592,6 +1631,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private void refreshAuthUiState() {
         final boolean authenticated = authenticatedContextHolder.isAuthenticated();
         accountMenu.setVisible(authenticated);
+        refreshCommandsButton.setEnabled(authenticated && !commandCatalogRefreshInProgress);
         if (authenticated) {
             accountMenu.removeAll();
             final String username = authenticatedContextHolder.current()

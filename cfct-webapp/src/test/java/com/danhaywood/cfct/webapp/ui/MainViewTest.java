@@ -253,6 +253,65 @@ class MainViewTest {
     }
 
     @Test
+    void refreshButtonRendersToLeftOfBaselineFields() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        final List<String> testIdsInOrder = view.getChildren()
+                .flatMap(this::streamWithDescendants)
+                .map(component -> component.getElement().getAttribute("data-testid"))
+                .filter(id -> id != null && !id.isBlank())
+                .toList();
+
+        assertThat(testIdsInOrder.indexOf("command-filter-refresh"))
+                .isLessThan(testIdsInOrder.indexOf("command-filter-baseline-timestamp"));
+        assertThat(testIdsInOrder.indexOf("command-filter-baseline-timestamp"))
+                .isLessThan(testIdsInOrder.indexOf("command-filter-baseline-clear"));
+    }
+
+    @Test
+    void refreshButtonReloadsCommandRowsFromCatalogService() {
+        final SqlServerCommandCatalogService commandCatalogService = Mockito.mock(SqlServerCommandCatalogService.class);
+        when(commandCatalogService.discoverCommandCatalog()).thenReturn(
+                List.of(
+                        new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", false),
+                        new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "PENDING", "FOREGROUND", "2026-04-05T11:00:00.000", false)),
+                List.of(
+                        new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", false),
+                        new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "PENDING", "FOREGROUND", "2026-04-05T11:00:00.000", false),
+                        new CommandCatalogEntry("44444444-4444-4444-4444-444444444444", "order.Order#submit", "order.Order:900", "OK", "FOREGROUND", "2026-04-05T12:00:00.000", false)));
+
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogService,
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        final Button refreshButton = (Button) findByTestId(view, "command-filter-refresh").orElseThrow();
+        final Grid<?> commandGrid = (Grid<?>) findByTestId(view, "command-selection-grid").orElseThrow();
+
+        assertThat(commandGrid.getListDataView().getItems().toList())
+                .extracting(item -> ((CommandCatalogEntry) item).interactionId())
+                .containsExactly("11111111-1111-1111-1111-111111111111", "33333333-3333-3333-3333-333333333333");
+
+        refreshButton.click();
+
+        assertThat(commandGrid.getListDataView().getItems().toList())
+                .extracting(item -> ((CommandCatalogEntry) item).interactionId())
+                .containsExactly("11111111-1111-1111-1111-111111111111", "33333333-3333-3333-3333-333333333333", "44444444-4444-4444-4444-444444444444");
+        verify(commandCatalogService, Mockito.times(2)).discoverCommandCatalog();
+    }
+
+    @Test
     void baselinePickerFiltersCommandsAndClearsBackToFullList() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
