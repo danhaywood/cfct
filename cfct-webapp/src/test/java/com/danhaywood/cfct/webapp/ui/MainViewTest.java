@@ -312,6 +312,45 @@ class MainViewTest {
     }
 
     @Test
+    void refreshClearsCommandSelectionTableSelectionAndProgressStatus() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                commandDrivenSelectionServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        invokeToggleFocusedCommandSelection(view);
+        assertThat(view.selectedCommandInteractionIdsForStageOne()).containsExactly("11111111-1111-1111-1111-111111111111");
+        assertThat(view.selectedTablesForStageTwo()).containsExactly(new TableRef("dbo", "Supplier"));
+
+        invokeShowComparisonProgress(view, "Comparison complete.", "comparison-progress-summary-success");
+        invokeOnComparisonProgress(view, new ComparisonProgressEvent(
+                new TableRef("dbo", "Supplier"),
+                ComparisonProgressPhase.TABLE_COMPLETED,
+                1,
+                1,
+                "Compared dbo.Supplier"));
+
+        final Span progress = (Span) findByTestId(view, "comparison-progress-summary").orElseThrow();
+        final Span counter = (Span) findByTestId(view, "compare-progress-counter").orElseThrow();
+        final Button refreshButton = (Button) findByTestId(view, "command-filter-refresh").orElseThrow();
+
+        assertThat(progress.getText()).isEqualTo("Compared dbo.Supplier (1/1)");
+        assertThat(counter.getText()).isEqualTo("1 of 1");
+
+        refreshButton.click();
+
+        assertThat(view.selectedCommandInteractionIdsForStageOne()).isEmpty();
+        assertThat(view.selectedTablesForStageTwo()).isEmpty();
+        assertThat(progress.getText()).isBlank();
+        assertThat(counter.getText()).isBlank();
+    }
+
+    @Test
     void baselinePickerFiltersCommandsAndClearsBackToFullList() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),

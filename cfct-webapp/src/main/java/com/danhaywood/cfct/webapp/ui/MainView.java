@@ -847,7 +847,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         commandCatalogRefreshInProgress = true;
         refreshCommandsButton.setEnabled(false);
         try {
-            reloadCommandCatalogPreservingSelection();
+            reloadCommandCatalogClearingSelection();
         } finally {
             commandCatalogRefreshInProgress = false;
             refreshCommandsButton.setEnabled(authenticatedContextHolder.isAuthenticated());
@@ -855,10 +855,9 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         }
     }
 
-    private void reloadCommandCatalogPreservingSelection() {
-        final Set<String> selectedInteractionIds = new LinkedHashSet<>(commandSelectionState.selectedInteractionIds());
+    private void reloadCommandCatalogClearingSelection() {
         final List<CommandCatalogEntry> refreshedCatalog = sortCommandCatalog(commandCatalogService.discoverCommandCatalog()).stream()
-                .map(entry -> entry.withSelected(selectedInteractionIds.contains(entry.interactionId())))
+                .map(entry -> entry.withSelected(false))
                 .toList();
 
         commandSelectionState = new CommandSelectionState(refreshedCatalog);
