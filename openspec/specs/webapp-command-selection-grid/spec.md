@@ -65,6 +65,8 @@ The command grid SHALL provide a context menu action that sets baseline from the
 The command selection section SHALL provide a Refresh control on the same row as baseline controls.
 The Refresh control SHALL be positioned to the left of the two baseline fields.
 Activating Refresh SHALL reload command rows from the database-backed command source.
+Activating Refresh SHALL clear selected command rows and selected business table rows.
+Activating Refresh SHALL clear any previously rendered comparison progress status report.
 Filtering SHALL narrow visible command rows without requiring a separate apply-filter action.
 The command grid SHALL combine member, interactionId, replay-state, and baseline filters when a baseline is set or one or more replay-state checkboxes are selected.
 When no replay-state checkboxes are selected, replay-state filtering SHALL be inactive.
@@ -113,6 +115,17 @@ When baseline is set, only command rows with timestamp strictly after baseline S
 - **AND** the user activates Refresh
 - **THEN** the command grid reloads from the database-backed source
 - **AND** newly added command rows become visible when they match active filters
+
+#### Scenario: Refresh clears command and table selections
+- **WHEN** one or more command rows or business table rows are selected
+- **AND** the user activates Refresh
+- **THEN** command selection becomes empty
+- **AND** business table selection becomes empty
+
+#### Scenario: Refresh clears prior comparison status report
+- **WHEN** a prior comparison status report is visible in the footer
+- **AND** the user activates Refresh
+- **THEN** the prior comparison status report is cleared
 
 #### Scenario: Clearing baseline picker restores baseline-unfiltered rows
 - **WHEN** the user clears the baseline date/time picker value
