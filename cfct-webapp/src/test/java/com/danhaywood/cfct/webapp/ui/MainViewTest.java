@@ -369,7 +369,7 @@ class MainViewTest {
         final List<?> filtered = commandGrid.getListDataView().getItems().toList();
         assertThat(filtered)
                 .extracting(item -> ((CommandCatalogEntry) item).interactionId())
-                .containsExactly("33333333-3333-3333-3333-333333333333");
+                .containsExactly("11111111-1111-1111-1111-111111111111", "33333333-3333-3333-3333-333333333333");
 
         baseline.clear();
 
@@ -397,7 +397,7 @@ class MainViewTest {
         baseline.setValue(LocalDateTime.parse("2026-04-05T10:00:00.000"));
         assertThat(commandGrid.getListDataView().getItems().toList())
                 .extracting(item -> ((CommandCatalogEntry) item).interactionId())
-                .containsExactly("33333333-3333-3333-3333-333333333333");
+                .containsExactly("11111111-1111-1111-1111-111111111111", "33333333-3333-3333-3333-333333333333");
 
         clearBaseline.click();
 
@@ -426,7 +426,7 @@ class MainViewTest {
         assertThat(baseline.getValue()).isEqualTo(LocalDateTime.parse("2026-04-05T10:00:00.000"));
         assertThat(commandGrid.getListDataView().getItems().toList())
                 .extracting(item -> ((CommandCatalogEntry) item).interactionId())
-                .containsExactly("33333333-3333-3333-3333-333333333333");
+                .containsExactly("11111111-1111-1111-1111-111111111111", "33333333-3333-3333-3333-333333333333");
     }
 
     @Test

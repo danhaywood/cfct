@@ -46,7 +46,7 @@ class CommandSelectionStateTest {
     }
 
     @Test
-    void appliesStrictAfterBaselineFiltering() {
+    void appliesInclusiveBaselineFiltering() {
         final CommandSelectionState state = new CommandSelectionState(List.of());
         final CommandCatalogEntry entry = new CommandCatalogEntry(
                 "11111111-1111-1111-1111-111111111111",
@@ -58,7 +58,7 @@ class CommandSelectionStateTest {
                 false);
 
         assertThat(state.matchesFilter(entry, "", "", Set.of(), LocalDateTime.parse("2026-04-05T09:59:59.999"))).isTrue();
-        assertThat(state.matchesFilter(entry, "", "", Set.of(), LocalDateTime.parse("2026-04-05T10:00:00.000"))).isFalse();
+        assertThat(state.matchesFilter(entry, "", "", Set.of(), LocalDateTime.parse("2026-04-05T10:00:00.000"))).isTrue();
         assertThat(state.matchesFilter(entry, "", "", Set.of(), LocalDateTime.parse("2026-04-05T10:00:00.001"))).isFalse();
     }
 

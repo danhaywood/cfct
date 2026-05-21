@@ -75,7 +75,7 @@ public class CommandSelectionState {
             return false;
         }
         try {
-            return LocalDateTime.parse(commandTimestamp).isAfter(baselineTimestamp);
+            return !LocalDateTime.parse(commandTimestamp).isBefore(baselineTimestamp);
         } catch (DateTimeParseException ex) {
             return false;
         }
