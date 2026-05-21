@@ -78,6 +78,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -116,7 +117,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Span comparisonError = new Span();
     private final Div comparisonResultsContainer = new Div();
     private final TextField comparedTableFilter = new TextField();
-    private final Checkbox differencesOnlyFilter = new Checkbox("Diffs only");
+    private final Checkbox differencesOnlyFilter = new Checkbox("Diff tables only");
+    private final Checkbox diffColumnsOnlyFilter = new Checkbox("Diff columns only");
     private final Checkbox selectedOnlyFilter = new Checkbox("Selected");
     private final Anchor downloadAction = new Anchor();
     private final Select<DownloadFormat> downloadFormatSelect = new Select<>();
@@ -139,6 +141,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Set<TableRef> completedTablesInActiveRun = new LinkedHashSet<>();
     private int compareProgressTotal;
     private String commandMemberFilterValue = "";
+    private TableRef selectedComparisonTable;
     private String commandInteractionFilterValue = "";
     private LocalDateTime commandBaselineFilterTimestamp;
     private boolean commandCatalogRefreshInProgress;
@@ -306,6 +309,14 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         differencesOnlyFilter.getStyle().setAlignSelf(Style.AlignSelf.CENTER);
         differencesOnlyFilter.addValueChangeListener(event -> renderComparisonTabs());
 
+        diffColumnsOnlyFilter.getElement().setAttribute("data-testid", "comparison-diff-columns-only-filter");
+        diffColumnsOnlyFilter.setValue(false);
+        diffColumnsOnlyFilter.setEnabled(false);
+        diffColumnsOnlyFilter.getStyle().setPaddingLeft(".3em");
+        diffColumnsOnlyFilter.getStyle().setPaddingRight(".3em");
+        diffColumnsOnlyFilter.getStyle().setAlignSelf(Style.AlignSelf.CENTER);
+        diffColumnsOnlyFilter.addValueChangeListener(event -> renderComparisonTabs());
+
         downloadFormatSelect.setItems(DownloadFormat.JSON, DownloadFormat.YAML, DownloadFormat.EXCEL);
         downloadFormatSelect.setItemLabelGenerator(DownloadFormat::label);
         downloadFormatSelect.setValue(DownloadFormat.JSON);
@@ -318,7 +329,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         resultActions.getElement().setAttribute("data-testid", "comparison-result-actions");
         resultActions.addClassName("comparison-result-actions");
-        resultActions.add(comparedTableFilter, differencesOnlyFilter, downloadFormatSelect, downloadAction);
+        resultActions.add(comparedTableFilter, differencesOnlyFilter, diffColumnsOnlyFilter, downloadFormatSelect, downloadAction);
         resultActions.expand(comparedTableFilter);
         resultActions.setVisible(false);
         resultActions.setPadding(true);
@@ -1189,6 +1200,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .toList();
 
         if (filtered.isEmpty()) {
+            selectedComparisonTable = null;
+            updateDiffColumnsOnlyFilterState(null);
             comparisonResultsContainer.add(new Span("No compared tables match the filter."));
             return;
         }
@@ -1206,6 +1219,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("flex", "1 1 auto");
 
         final Map<Tab, TableComparisonViewResult> mapping = new LinkedHashMap<>();
+        Tab selectedTabCandidate = null;
         for (TableComparisonViewResult tableResult : filtered) {
             final Tab tab = new Tab(tableResult.tableDisplayName());
             final boolean hasDifferences = hasDifferences(tableResult);
@@ -1216,11 +1230,20 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             }
             mapping.put(tab, tableResult);
             tabs.add(tab);
+            if (selectedComparisonTable != null && selectedComparisonTable.equals(tableResult.table())) {
+                selectedTabCandidate = tab;
+            }
+        }
+
+        if (selectedTabCandidate != null) {
+            tabs.setSelectedTab(selectedTabCandidate);
         }
 
         tabs.addSelectedChangeListener(event -> {
             final TableComparisonViewResult selected = mapping.get(event.getSelectedTab());
             if (selected != null) {
+                selectedComparisonTable = selected.table();
+                updateDiffColumnsOnlyFilterState(selected);
                 tabContent.removeAll();
                 tabContent.add(buildResultGrid(selected));
             }
@@ -1228,6 +1251,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         final TableComparisonViewResult first = mapping.get(tabs.getSelectedTab());
         if (first != null) {
+            selectedComparisonTable = first.table();
+            updateDiffColumnsOnlyFilterState(first);
             tabContent.add(buildResultGrid(first));
         }
 
@@ -1251,6 +1276,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
     private void renderEmptyComparisonState() {
         comparisonResultsContainer.removeAll();
+        selectedComparisonTable = null;
+        updateDiffColumnsOnlyFilterState(null);
         final Span empty = new Span("No comparison results yet.");
         empty.getElement().setAttribute("data-testid", "comparison-stage-empty");
         comparisonResultsContainer.add(empty);
@@ -1260,6 +1287,15 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         final List<ComparisonRowView> visibleRows = tableResult.rows().stream()
                 .filter(row -> row.status() != ComparisonRowStatus.MATCH)
                 .toList();
+
+        final List<ColumnRef> columnsToRender;
+        if (Boolean.TRUE.equals(diffColumnsOnlyFilter.getValue()) && hasDifferences(tableResult)) {
+            columnsToRender = tableResult.comparedColumns().stream()
+                    .filter(column -> visibleRows.stream().anyMatch(row -> hasValueDifference(row, column)))
+                    .toList();
+        } else {
+            columnsToRender = tableResult.comparedColumns();
+        }
 
         final Grid<ComparisonRowView> grid = new Grid<>();
         grid.getElement().setAttribute("data-testid", "comparison-grid-" + selectorToken(tableResult.table()));
@@ -1286,7 +1322,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .setComparator(Comparator.comparing(row -> row.status().name(), String.CASE_INSENSITIVE_ORDER));
 
         final Map<ColumnRef, Grid.Column<ComparisonRowView>> comparedColumns = new LinkedHashMap<>();
-        for (ColumnRef column : tableResult.comparedColumns()) {
+        for (ColumnRef column : columnsToRender) {
             final String columnName = column.name();
             final Grid.Column<ComparisonRowView> gridColumn = grid.addColumn(new ComponentRenderer<>(row -> valueCell(row, column)))
                     .setHeader(columnName)
@@ -1328,6 +1364,20 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         scrollContainer.addClassName("cmp-grid-scroll-container");
         scrollContainer.getElement().setAttribute("data-testid", "comparison-grid-scroll-container-" + selectorToken(tableResult.table()));
         return scrollContainer;
+    }
+
+    private void updateDiffColumnsOnlyFilterState(final TableComparisonViewResult selected) {
+        final boolean enabled = selected != null && hasDifferences(selected);
+        diffColumnsOnlyFilter.setEnabled(enabled);
+        if (!enabled && Boolean.TRUE.equals(diffColumnsOnlyFilter.getValue())) {
+            diffColumnsOnlyFilter.setValue(false);
+        }
+    }
+
+    private boolean hasValueDifference(final ComparisonRowView row, final ColumnRef column) {
+        final String left = row.leftValues().getOrDefault(column, "");
+        final String right = row.rightValues().getOrDefault(column, "");
+        return !Objects.equals(left, right);
     }
 
     private Component valueCell(final ComparisonRowView row, final ColumnRef column) {

@@ -8,7 +8,7 @@ INSERT INTO dbo.Supplier (
 ) VALUES
     (301, N'SUP-ACME', N'Acme Supplies', N'ACTIVE', 'GB', '2026-04-11T09:00:00.000'),
     (302, N'SUP-BETA', N'Beta Trading Co', N'ACTIVE', 'US', '2026-04-11T09:05:00.000'),
-    (304, N'SUP-DELTA', N'Delta Services', N'ACTIVE', 'FR', '2026-04-11T09:10:00.000');
+    (303, N'SUP-GAMMA', N'Gamma Wholesale', N'ONBOARDING', 'DE', '2026-04-11T09:10:00.000');
 GO
 
 INSERT INTO dbo.Product (
@@ -22,7 +22,7 @@ INSERT INTO dbo.Product (
 ) VALUES
     (701, N'SKU-701', N'Widget 701', N'Hardware', 12.50, N'ACTIVE', '2026-04-12T10:00:00.000'),
     (702, N'SKU-702', N'Widget 702', N'Hardware', 18.49, N'ACTIVE', '2026-04-12T10:05:00.000'),
-    (704, N'SKU-704', N'Widget 704', N'Service', 4.99, N'ACTIVE', '2026-04-12T10:10:00.000');
+    (703, N'SKU-703', N'Widget 703', N'Service', 3.99, N'ACTIVE', '2026-04-12T10:10:00.000');
 GO
 
 INSERT INTO dbo.ProductInventory (

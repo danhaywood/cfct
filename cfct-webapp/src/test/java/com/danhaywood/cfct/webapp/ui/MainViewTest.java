@@ -761,7 +761,11 @@ class MainViewTest {
 
         final com.vaadin.flow.component.checkbox.Checkbox differencesOnly =
                 (com.vaadin.flow.component.checkbox.Checkbox) findByTestId(view, "comparison-differences-only-filter").orElseThrow();
+        final com.vaadin.flow.component.checkbox.Checkbox diffColumnsOnly =
+                (com.vaadin.flow.component.checkbox.Checkbox) findByTestId(view, "comparison-diff-columns-only-filter").orElseThrow();
+        assertThat(differencesOnly.getLabel()).isEqualTo("Diff tables only");
         assertThat(differencesOnly.getValue()).isFalse();
+        assertThat(diffColumnsOnly.getLabel()).isEqualTo("Diff columns only");
 
         final TableComparisonViewResult supplier = outcome.viewResult().tableResults().get(0);
         final TableComparisonViewResult customerAddress = outcome.viewResult().tableResults().get(1);
@@ -775,6 +779,34 @@ class MainViewTest {
         differencesOnly.setValue(true);
         assertThat(invokeMatchesComparedTableFilter(view, supplier)).isTrue();
         assertThat(invokeMatchesComparedTableFilter(view, customerAddress)).isFalse();
+    }
+
+    @Test
+    void diffColumnsOnlyFilterDisablesForUnchangedSelectedTab() {
+        final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
+        when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class)))
+                .thenReturn(sampleComparisonOutcome());
+
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                comparisonExecutionService,
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        invokeExecuteComparison(view);
+
+        final com.vaadin.flow.component.checkbox.Checkbox diffColumnsOnly =
+                (com.vaadin.flow.component.checkbox.Checkbox) findByTestId(view, "comparison-diff-columns-only-filter").orElseThrow();
+
+        final TableComparisonViewResult supplier = sampleComparisonOutcome().viewResult().tableResults().get(0);
+        final TableComparisonViewResult customerAddress = sampleComparisonOutcome().viewResult().tableResults().get(1);
+        invokeUpdateDiffColumnsOnlyFilterState(view, supplier);
+        assertThat(diffColumnsOnly.isEnabled()).isTrue();
+        invokeUpdateDiffColumnsOnlyFilterState(view, customerAddress);
+        assertThat(diffColumnsOnly.isEnabled()).isFalse();
     }
 
     @Test
@@ -1031,6 +1063,46 @@ class MainViewTest {
 
         final Grid<?> grid = extractGrid(invokeBuildResultGrid(view, sampleComparisonOutcome().viewResult().tableResults().get(0)));
         assertThat(grid.getColumns().stream().allMatch(Grid.Column::isSortable)).isTrue();
+    }
+
+    @Test
+    void diffColumnsOnlyFilterCanBeEnabledAndAppliedWithoutError() {
+        final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
+        when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class)))
+                .thenReturn(sampleComparisonOutcome());
+
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithPreselectedSupplier(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                comparisonExecutionService,
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        invokeExecuteComparison(view);
+
+        final ColumnRef name = new ColumnRef("name");
+        final ColumnRef city = new ColumnRef("city");
+        final ComparisonRowView row = new ComparisonRowView(
+                new RowKey(List.of("SUP-001")),
+                ComparisonRowStatus.DIFFERENT,
+                Map.of(name, "Supplier A", city, "London"),
+                Map.of(name, "Supplier A (R)", city, "London"),
+                List.of(name));
+        final TableComparisonViewResult supplier = new TableComparisonViewResult(
+                new TableRef("dbo", "Supplier"),
+                List.of(name, city),
+                List.of(row));
+
+        final com.vaadin.flow.component.checkbox.Checkbox diffColumnsOnly =
+                (com.vaadin.flow.component.checkbox.Checkbox) findByTestId(view, "comparison-diff-columns-only-filter").orElseThrow();
+        setSelectedComparisonTable(view, supplier.table());
+        invokeUpdateDiffColumnsOnlyFilterState(view, supplier);
+        diffColumnsOnly.setValue(true);
+
+        final Grid<?> grid = extractGrid(invokeBuildResultGrid(view, supplier));
+        assertThat(grid.getColumns().size()).isGreaterThanOrEqualTo(3);
     }
 
     @Test
@@ -1294,6 +1366,16 @@ class MainViewTest {
         }
     }
 
+    private void invokeUpdateDiffColumnsOnlyFilterState(final MainView view, final TableComparisonViewResult tableResult) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("updateDiffColumnsOnlyFilterState", TableComparisonViewResult.class);
+            method.setAccessible(true);
+            method.invoke(view, tableResult);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     private void invokeHandleEnterShortcut(final MainView view, final String targetTagName, final String targetType) {
         try {
             final var method = MainView.class.getDeclaredMethod("handleEnterShortcut", String.class, String.class);
@@ -1347,6 +1429,16 @@ class MainViewTest {
     private void setFocusedBusinessTable(final MainView view, final TableRef tableRef) {
         try {
             final var field = MainView.class.getDeclaredField("focusedBusinessTable");
+            field.setAccessible(true);
+            field.set(view, tableRef);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void setSelectedComparisonTable(final MainView view, final TableRef tableRef) {
+        try {
+            final var field = MainView.class.getDeclaredField("selectedComparisonTable");
             field.setAccessible(true);
             field.set(view, tableRef);
         } catch (Exception ex) {

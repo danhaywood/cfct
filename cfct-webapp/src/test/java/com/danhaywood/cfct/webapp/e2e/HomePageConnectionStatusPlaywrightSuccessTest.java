@@ -339,6 +339,7 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
                     "() => document.querySelector('[data-testid=\"comparison-progress-summary\"]')?.getAttribute('class') ?? ''");
             assertThat(successProgressClass).contains("comparison-progress-summary-success");
             assertThat(comparisonPage.isCheckboxChecked("[data-testid='comparison-differences-only-filter']")).isFalse();
+            assertThat(page.locator("[data-testid='comparison-diff-columns-only-filter']").count()).isEqualTo(1);
             assertThat(page.locator("[data-testid^='comparison-result-tab-']").count()).isEqualTo(3);
             assertThat(page.locator("[data-testid='comparison-result-tab-dbo-supplier']").getAttribute("data-has-differences")).isEqualTo("true");
             assertThat(page.locator("[data-testid='comparison-result-tab-dbo-product']").getAttribute("data-has-differences")).isEqualTo("true");
@@ -371,6 +372,7 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             assertThat(scrollHeight).isGreaterThan(220.0);
             assertThat(page.locator("[data-testid='comparison-table-filter']").count()).isEqualTo(1);
             assertThat(page.locator("[data-testid='comparison-differences-only-filter']").count()).isEqualTo(1);
+            assertThat(page.locator("[data-testid='comparison-diff-columns-only-filter']").count()).isEqualTo(1);
             assertThat(page.locator("[data-testid='download-format-select']").count()).isEqualTo(1);
             assertThat(page.locator("[data-testid='download-action']").count()).isEqualTo(1);
 
