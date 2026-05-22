@@ -864,11 +864,15 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     }
 
     private void reloadCommandCatalogClearingSelection() {
-        final List<CommandCatalogEntry> refreshedCatalog = sortCommandCatalog(commandCatalogService.discoverCommandCatalog()).stream()
-                .map(entry -> entry.withSelected(false))
+        final List<CommandCatalogEntry> discoveredCatalog = sortCommandCatalog(commandCatalogService.discoverCommandCatalog());
+        final String autoSelectedInteractionId = newestSuccessfulCommandInteractionId(discoveredCatalog);
+        final List<CommandCatalogEntry> refreshedCatalog = discoveredCatalog.stream()
+                .map(entry -> entry.withSelected(entry.interactionId().equals(autoSelectedInteractionId)))
                 .toList();
 
         commandSelectionState = new CommandSelectionState(refreshedCatalog);
+        focusedCommandInteractionId = autoSelectedInteractionId;
+        commandRangeAnchorInteractionId = autoSelectedInteractionId;
         skipNextCommandCheckboxClientEventInteractionId = null;
         clearComparisonProgressStatus();
 
@@ -877,6 +881,14 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         applyCommandFilters();
         applyCommandDrivenSelection();
+    }
+
+    private String newestSuccessfulCommandInteractionId(final List<CommandCatalogEntry> entries) {
+        return entries.stream()
+                .filter(entry -> "OK".equalsIgnoreCase(entry.replayState()))
+                .max(Comparator.comparing(CommandCatalogEntry::timestamp, String.CASE_INSENSITIVE_ORDER))
+                .map(CommandCatalogEntry::interactionId)
+                .orElse(null);
     }
 
     private void applyResultGridFilters(

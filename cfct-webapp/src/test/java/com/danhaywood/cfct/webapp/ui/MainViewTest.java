@@ -330,11 +330,13 @@ class MainViewTest {
         assertThat(commandGrid.getListDataView().getItems().toList())
                 .extracting(item -> ((CommandCatalogEntry) item).interactionId())
                 .containsExactly("11111111-1111-1111-1111-111111111111", "33333333-3333-3333-3333-333333333333", "44444444-4444-4444-4444-444444444444");
+        assertThat(view.selectedCommandInteractionIdsForStageOne()).containsExactly("44444444-4444-4444-4444-444444444444");
+        assertThat(focusedCommandInteractionId(view)).isEqualTo("44444444-4444-4444-4444-444444444444");
         verify(commandCatalogService, Mockito.times(2)).discoverCommandCatalog();
     }
 
     @Test
-    void refreshClearsCommandSelectionTableSelectionAndProgressStatus() {
+    void refreshAutoSelectsNewestOkCommandAndRefreshesProgressStatus() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithDefaults(),
@@ -366,10 +368,39 @@ class MainViewTest {
 
         refreshButton.click();
 
-        assertThat(view.selectedCommandInteractionIdsForStageOne()).isEmpty();
-        assertThat(view.selectedTablesForStageTwo()).isEmpty();
+        assertThat(view.selectedCommandInteractionIdsForStageOne()).containsExactly("11111111-1111-1111-1111-111111111111");
+        assertThat(view.selectedTablesForStageTwo()).containsExactly(new TableRef("dbo", "Supplier"));
+        assertThat(focusedCommandInteractionId(view)).isEqualTo("11111111-1111-1111-1111-111111111111");
         assertThat(progress.getText()).isBlank();
         assertThat(counter.getText()).isBlank();
+    }
+
+    @Test
+    void refreshLeavesSelectionEmptyWhenNoOkCommandExists() {
+        final SqlServerCommandCatalogService commandCatalogService = Mockito.mock(SqlServerCommandCatalogService.class);
+        when(commandCatalogService.discoverCommandCatalog()).thenReturn(List.of(
+                new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "PENDING", "FOREGROUND", "2026-04-05T10:00:00.000", null, false),
+                new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "FAILED", "FOREGROUND", "2026-04-05T11:00:00.000", null, false)));
+
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogService,
+                commandDrivenSelectionServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        invokeToggleFocusedCommandSelection(view);
+        assertThat(view.selectedCommandInteractionIdsForStageOne()).isNotEmpty();
+
+        final Button refreshButton = (Button) findByTestId(view, "command-filter-refresh").orElseThrow();
+        refreshButton.click();
+
+        assertThat(view.selectedCommandInteractionIdsForStageOne()).isEmpty();
+        assertThat(view.selectedTablesForStageTwo()).isEmpty();
+        assertThat(focusedCommandInteractionId(view)).isNull();
     }
 
     @Test
@@ -1512,6 +1543,16 @@ class MainViewTest {
             final var field = MainView.class.getDeclaredField("focusedCommandInteractionId");
             field.setAccessible(true);
             field.set(view, interactionId);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private String focusedCommandInteractionId(final MainView view) {
+        try {
+            final var field = MainView.class.getDeclaredField("focusedCommandInteractionId");
+            field.setAccessible(true);
+            return (String) field.get(view);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
