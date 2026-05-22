@@ -418,6 +418,17 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .setFilter("event.key === 'Enter'")
                 .addEventData("event.target.tagName")
                 .addEventData("event.target.getAttribute('type')");
+        panel.getElement()
+                .addEventListener("keydown", event -> handleRefreshShortcut(
+                        asText(event.getEventData().get("event.key")),
+                        event.getEventData().get("event.altKey").asBoolean(false),
+                        asText(event.getEventData().get("event.target.tagName")),
+                        asText(event.getEventData().get("event.target.getAttribute('type')"))))
+                .setFilter("((event.key === 'F5') || (event.altKey && (event.key === 'r' || event.key === 'R'))) && (event.preventDefault(), true)")
+                .addEventData("event.key")
+                .addEventData("event.altKey")
+                .addEventData("event.target.tagName")
+                .addEventData("event.target.getAttribute('type')");
         panel.getStyle()
                 .set("width", drawerWidthPx + "px")
                 .set("min-width", MIN_DRAWER_WIDTH_PX + "px")
@@ -1112,23 +1123,37 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     }
 
     private void handleEnterShortcut(final String targetTagName, final String targetType) {
-        if (loginDialog.isOpened() || !compareButton.isEnabled()) {
+        if (loginDialog.isOpened() || !compareButton.isEnabled() || isTypingTarget(targetTagName, targetType)) {
             return;
         }
+        executeComparison();
+    }
 
+    private void handleRefreshShortcut(
+            final String key,
+            final boolean altKey,
+            final String targetTagName,
+            final String targetType) {
+        if (loginDialog.isOpened() || !authenticatedContextHolder.isAuthenticated() || isTypingTarget(targetTagName, targetType)) {
+            return;
+        }
+        final boolean isF5 = "F5".equalsIgnoreCase(key);
+        final boolean isAltR = altKey && "R".equalsIgnoreCase(key);
+        if (isF5 || isAltR) {
+            refreshCommandCatalog();
+        }
+    }
+
+    private boolean isTypingTarget(final String targetTagName, final String targetType) {
         final String tag = targetTagName == null ? "" : targetTagName.toUpperCase(Locale.ROOT);
         if ("INPUT".equals(tag) || "TEXTAREA".equals(tag) || "SELECT".equals(tag) || "BUTTON".equals(tag)) {
-            return;
+            return true;
         }
-
         if (targetType != null && !targetType.isBlank()) {
             final String type = targetType.toLowerCase(Locale.ROOT);
-            if ("text".equals(type) || "password".equals(type) || "search".equals(type) || "email".equals(type)) {
-                return;
-            }
+            return "text".equals(type) || "password".equals(type) || "search".equals(type) || "email".equals(type);
         }
-
-        executeComparison();
+        return false;
     }
 
     private void executeComparison() {

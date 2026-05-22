@@ -165,6 +165,58 @@ class MainViewTest {
     }
 
     @Test
+    void refreshShortcutF5AndAltRTriggerRefresh() {
+        final SqlServerCommandCatalogService commandCatalogService = Mockito.mock(SqlServerCommandCatalogService.class);
+        when(commandCatalogService.discoverCommandCatalog()).thenReturn(
+                List.of(
+                        new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "PENDING", "FOREGROUND", "2026-04-05T10:00:00.000", null, false),
+                        new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "OK", "FOREGROUND", "2026-04-05T11:00:00.000", null, false)),
+                List.of(
+                        new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "PENDING", "FOREGROUND", "2026-04-05T10:00:00.000", null, false),
+                        new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "OK", "FOREGROUND", "2026-04-05T11:00:00.000", null, false),
+                        new CommandCatalogEntry("44444444-4444-4444-4444-444444444444", "order.Order#submit", "order.Order:900", "OK", "FOREGROUND", "2026-04-05T12:00:00.000", null, false)),
+                List.of(
+                        new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "PENDING", "FOREGROUND", "2026-04-05T10:00:00.000", null, false),
+                        new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "OK", "FOREGROUND", "2026-04-05T11:00:00.000", null, false),
+                        new CommandCatalogEntry("55555555-5555-5555-5555-555555555555", "customer.Customer#approve", "customer.Customer:501", "OK", "FOREGROUND", "2026-04-05T13:00:00.000", null, false)));
+
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogService,
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        invokeHandleRefreshShortcut(view, "F5", false, "DIV", null);
+        invokeHandleRefreshShortcut(view, "r", true, "DIV", null);
+
+        verify(commandCatalogService, Mockito.times(3)).discoverCommandCatalog();
+    }
+
+    @Test
+    void refreshShortcutIgnoredWhileTypingInInput() {
+        final SqlServerCommandCatalogService commandCatalogService = Mockito.mock(SqlServerCommandCatalogService.class);
+        when(commandCatalogService.discoverCommandCatalog()).thenReturn(List.of(
+                new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", null, false)));
+
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogService,
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        invokeHandleRefreshShortcut(view, "F5", false, "INPUT", "text");
+        invokeHandleRefreshShortcut(view, "r", true, "TEXTAREA", null);
+
+        verify(commandCatalogService, Mockito.times(1)).discoverCommandCatalog();
+    }
+
+    @Test
     void rendersCommandGridAboveTableGridWithSpacerAndCompareBelowGrid() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
@@ -1473,6 +1525,21 @@ class MainViewTest {
             final var method = MainView.class.getDeclaredMethod("handleEnterShortcut", String.class, String.class);
             method.setAccessible(true);
             method.invoke(view, targetTagName, targetType);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void invokeHandleRefreshShortcut(
+            final MainView view,
+            final String key,
+            final boolean altKey,
+            final String targetTagName,
+            final String targetType) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("handleRefreshShortcut", String.class, boolean.class, String.class, String.class);
+            method.setAccessible(true);
+            method.invoke(view, key, altKey, targetTagName, targetType);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
