@@ -78,7 +78,12 @@ The command grid SHALL provide a context menu action that sets baseline from the
 The command selection section SHALL provide a Refresh control on the same row as baseline controls.
 The Refresh control SHALL be positioned to the left of the two baseline fields.
 Activating Refresh SHALL reload command rows from the database-backed command source.
-Activating Refresh SHALL clear selected command rows and selected business table rows.
+The command selection section SHALL support accelerator keys `F5` and `Alt+R` to activate Refresh.
+When accelerator-triggered Refresh is consumed by the app, browser-level page reload SHALL NOT occur.
+Activating Refresh SHALL clear selected command rows and selected business table rows before applying any auto-selection.
+Activating Refresh SHALL auto-select exactly one command row when one or more refreshed rows have replay state `OK`.
+Activating Refresh SHALL auto-select the `OK` command row with the most recent timestamp.
+Activating Refresh SHALL keep keyboard focus on the auto-selected command row.
 Activating Refresh SHALL clear any previously rendered comparison progress status report.
 Filtering SHALL narrow visible command rows without requiring a separate apply-filter action.
 The command grid SHALL combine member, interactionId, replay-state, and baseline filters when a baseline is set or one or more replay-state checkboxes are selected.
@@ -86,22 +91,20 @@ When no replay-state checkboxes are selected, replay-state filtering SHALL be in
 When baseline is not set, baseline filtering SHALL be inactive.
 When baseline is set, command rows with timestamp equal to or strictly after baseline SHALL remain visible.
 
-#### Scenario: Baseline context-menu action sets baseline value
-- **WHEN** the user opens the context menu for a command row and chooses set baseline from selected command
-- **THEN** the baseline date/time picker is populated with the selected row timestamp
+#### Scenario: F5 triggers command refresh
+- **WHEN** keyboard focus is within the command selection area
+- **AND** the user presses `F5`
+- **THEN** the command refresh action runs through the same logic path as clicking Refresh
 
-#### Scenario: Baseline filter keeps selected baseline command visible
-- **WHEN** the user sets baseline from a selected command row
-- **THEN** that selected command row remains visible in the command grid
-- **AND** that selected command row appears as the first visible row in timestamp-ascending order
+#### Scenario: Alt+R triggers command refresh
+- **WHEN** keyboard focus is within the command selection area
+- **AND** the user presses `Alt+R`
+- **THEN** the command refresh action runs through the same logic path as clicking Refresh
 
-#### Scenario: Baseline filter limits rows to commands at or after baseline
-- **WHEN** a baseline timestamp is set
-- **THEN** only command rows with timestamp greater than or equal to baseline are visible
-
-#### Scenario: Clearing baseline picker restores baseline-unfiltered rows
-- **WHEN** the user clears the baseline date/time picker value
-- **THEN** baseline filtering becomes inactive and command rows are filtered only by other active command filters
+#### Scenario: Refresh accelerators do not trigger while typing
+- **WHEN** focus is in a text/date/time input field
+- **AND** the user presses `F5` or `Alt+R`
+- **THEN** command refresh accelerator handling is ignored
 
 ### Requirement: Command selection drives business table auto-selection
 The webapp SHALL evaluate touched business tables for the currently selected commands.

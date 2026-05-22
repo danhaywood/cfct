@@ -263,6 +263,31 @@ class MainViewTest {
     }
 
     @Test
+    void formatCommandRowDetailsUsesDeterministicMemberAndInteractionPayload() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        final CommandCatalogEntry entry = new CommandCatalogEntry(
+                "11111111-1111-1111-1111-111111111111",
+                "supplier.Supplier#registerProduct",
+                "supplier.Supplier:301",
+                "OK",
+                "FOREGROUND",
+                "2026-04-05T10:00:00.000",
+                null,
+                false);
+
+        assertThat(invokeFormatCommandRowDetailsForClipboard(view, entry))
+                .isEqualTo("member: supplier.Supplier#registerProduct\ninteractionId: 11111111-1111-1111-1111-111111111111");
+    }
+
+    @Test
     void commandGridDisplaysBackgroundReplayStateFromCompletedAt() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
@@ -1678,6 +1703,16 @@ class MainViewTest {
     private String invokeDisplayReplayState(final MainView view, final CommandCatalogEntry entry) {
         try {
             final var method = MainView.class.getDeclaredMethod("displayReplayState", CommandCatalogEntry.class);
+            method.setAccessible(true);
+            return (String) method.invoke(view, entry);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private String invokeFormatCommandRowDetailsForClipboard(final MainView view, final CommandCatalogEntry entry) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("formatCommandRowDetailsForClipboard", CommandCatalogEntry.class);
             method.setAccessible(true);
             return (String) method.invoke(view, entry);
         } catch (Exception ex) {

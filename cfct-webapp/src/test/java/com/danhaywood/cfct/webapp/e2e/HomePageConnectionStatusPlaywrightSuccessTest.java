@@ -178,6 +178,24 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
     }
 
     @Test
+    void commandContextMenuShowsCopyRowDetailsAction() {
+        try (Playwright playwright = Playwright.create();
+             Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+             Page page = browser.newPage()) {
+            page.setViewportSize(1440, 900);
+            final LoginPageObject loginPage = new LoginPageObject(page);
+            final ComparisonPageObject comparisonPage = new ComparisonPageObject(page);
+            loginPage.open("http://localhost:" + serverPort);
+            loginPage.login(fixture.jdbcUrl(), fixture.username(), fixture.password(), LEFT_DB, RIGHT_DB);
+            comparisonPage.waitForCommandSelectionGrid();
+
+            comparisonPage.openCommandContextMenu(fixture.commandInteractionId());
+            assertThat(comparisonPage.isCommandContextMenuItemVisible("Set baseline from selected command")).isTrue();
+            assertThat(comparisonPage.isCommandContextMenuItemVisible("Copy row details")).isTrue();
+        }
+    }
+
+    @Test
     void pressingEnterRunsCompareAfterCommandDrivenSelectionEnablesCompare() {
         try (Playwright playwright = Playwright.create();
              Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));

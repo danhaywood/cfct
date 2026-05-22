@@ -113,6 +113,14 @@ public class ComparisonPageObject {
         click(commandCheckboxSelector(interactionId));
     }
 
+    public void openCommandContextMenu(final String interactionId) {
+        page.locator(commandCheckboxSelector(interactionId)).click(new Locator.ClickOptions().setButton(com.microsoft.playwright.options.MouseButton.RIGHT));
+    }
+
+    public boolean isCommandContextMenuItemVisible(final String itemText) {
+        return page.locator("vaadin-context-menu-overlay [role='menuitem']", new Page.LocatorOptions().setHasText(itemText)).first().isVisible();
+    }
+
     public void shiftClickCommandCheckbox(final String interactionId) {
         shiftClick(commandCheckboxSelector(interactionId));
     }

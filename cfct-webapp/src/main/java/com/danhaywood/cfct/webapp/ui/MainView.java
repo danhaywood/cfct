@@ -36,6 +36,7 @@ import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Anchor;
@@ -715,6 +716,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         final GridContextMenu<CommandCatalogEntry> contextMenu = grid.addContextMenu();
         contextMenu.addItem("Set baseline from selected command", event ->
                 event.getItem().ifPresent(item -> setCommandBaselineFilter(item.timestamp())));
+        contextMenu.addItem("Copy row details", event ->
+                event.getItem().ifPresent(this::copyCommandRowDetailsToClipboard));
 
         grid.addItemClickListener(event -> {
             focusedCommandInteractionId = event.getItem().interactionId();
@@ -1607,6 +1610,29 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         return entries.stream()
                 .sorted(Comparator.comparing(CommandCatalogEntry::timestamp, String.CASE_INSENSITIVE_ORDER))
                 .toList();
+    }
+
+    private void copyCommandRowDetailsToClipboard(final CommandCatalogEntry entry) {
+        if (entry == null) {
+            return;
+        }
+        final String payload = formatCommandRowDetailsForClipboard(entry);
+        getElement().executeJs("""
+                navigator.clipboard.writeText($0)
+                  .then(() => $1.$server.onClipboardCopyResult(true))
+                  .catch(() => $1.$server.onClipboardCopyResult(false));
+                """, payload, getElement());
+    }
+
+    @com.vaadin.flow.component.ClientCallable
+    private void onClipboardCopyResult(final boolean success) {
+        Notification.show(success ? "Command row details copied." : "Unable to copy command row details.");
+    }
+
+    private String formatCommandRowDetailsForClipboard(final CommandCatalogEntry entry) {
+        return "member: %s\ninteractionId: %s".formatted(
+                entry.logicalMemberIdentifier() == null ? "" : entry.logicalMemberIdentifier(),
+                entry.interactionId() == null ? "" : entry.interactionId());
     }
 
     private String displayReplayState(final CommandCatalogEntry entry) {
