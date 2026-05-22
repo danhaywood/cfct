@@ -4,3 +4,4 @@ interactionIds:
 touchedTables:
 - dbo.Product
 - dbo.ProductInventory
+- dbo.Supplier

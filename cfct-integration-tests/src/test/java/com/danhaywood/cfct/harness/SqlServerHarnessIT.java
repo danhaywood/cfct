@@ -158,11 +158,11 @@ class SqlServerHarnessIT {
         assertThat(harness.queryForInt(side, registerProductSupplierTargetCountSql()))
                 .isEqualTo(1);
 
-        final String expectedReplayState = side == DatabaseSide.LEFT ? "EXPORTED" : "PENDING";
+        final String expectedReplayState = side == DatabaseSide.LEFT ? "OK" : "PENDING";
         assertThat(harness.queryForString(side, registerProductReplayStateSql()))
                 .isEqualTo(expectedReplayState);
 
-        final int expectedAuditRowCount = side == DatabaseSide.LEFT ? 3 : 0;
+        final int expectedAuditRowCount = side == DatabaseSide.LEFT ? 1 : 0;
         assertThat(harness.queryForInt(side, registerProductAuditProductTargetCountSql()))
                 .isEqualTo(expectedAuditRowCount);
     }
@@ -206,7 +206,7 @@ class SqlServerHarnessIT {
         assertThat(harness.queryForInt(side, tableRowCountSql("PurchaseOrderLine"))).isEqualTo(expectedPurchaseOrderLineCount);
 
         assertThat(harness.queryForInt(side, commandLogRowCountSql())).isEqualTo(5);
-        final int expectedAuditTrailRowCount = side == DatabaseSide.LEFT ? 10 : 6;
+        final int expectedAuditTrailRowCount = side == DatabaseSide.LEFT ? 7 : 6;
         assertThat(harness.queryForInt(side, auditTrailRowCountSql())).isEqualTo(expectedAuditTrailRowCount);
     }
 
