@@ -71,61 +71,20 @@ Filtering SHALL narrow visible command rows without requiring a separate apply-f
 The command grid SHALL combine member, interactionId, replay-state, and baseline filters when a baseline is set or one or more replay-state checkboxes are selected.
 When no replay-state checkboxes are selected, replay-state filtering SHALL be inactive.
 When baseline is not set, baseline filtering SHALL be inactive.
-When baseline is set, only command rows with timestamp strictly after baseline SHALL remain visible.
-
-#### Scenario: User filters command rows by visible identity values
-- **WHEN** a user enters filter text for member or interactionId in the command-grid header row
-- **THEN** only matching command rows remain visible in the grid without pressing an apply button
-
-#### Scenario: Replay-state filter checkboxes are shown in header row
-- **WHEN** the command-grid header filter row is rendered
-- **THEN** replay-state filter checkboxes for `K`, `P`, and `F` are visible in the replayState filter cell
-
-#### Scenario: Single replay-state checkbox narrows command rows
-- **WHEN** the user selects one replay-state checkbox
-- **THEN** only command rows matching that replay state remain visible
-
-#### Scenario: Multiple replay-state checkboxes combine with OR semantics
-- **WHEN** the user selects two or more replay-state checkboxes
-- **THEN** command rows matching any selected replay state remain visible
-
-#### Scenario: Replay-state filter combines with text filters
-- **WHEN** one or more replay-state checkboxes are selected and member or interactionId filters are also provided
-- **THEN** only rows matching all active text filters and any selected replay state remain visible
-
-#### Scenario: Baseline date/time picker appears above command grid
-- **WHEN** the command selection section is rendered
-- **THEN** a baseline timestamp date/time picker is visible above the command grid
+When baseline is set, command rows with timestamp equal to or strictly after baseline SHALL remain visible.
 
 #### Scenario: Baseline context-menu action sets baseline value
 - **WHEN** the user opens the context menu for a command row and chooses set baseline from selected command
 - **THEN** the baseline date/time picker is populated with the selected row timestamp
 
-#### Scenario: Baseline filter limits rows to commands after baseline
+#### Scenario: Baseline filter keeps selected baseline command visible
+- **WHEN** the user sets baseline from a selected command row
+- **THEN** that selected command row remains visible in the command grid
+- **AND** that selected command row appears as the first visible row in timestamp-ascending order
+
+#### Scenario: Baseline filter limits rows to commands at or after baseline
 - **WHEN** a baseline timestamp is set
-- **THEN** only command rows with timestamp strictly greater than baseline are visible
-
-#### Scenario: Refresh control appears to the left of baseline fields
-- **WHEN** the command selection section is rendered
-- **THEN** a Refresh control is visible on the baseline-controls row
-- **AND** the Refresh control appears to the left of the two baseline fields
-
-#### Scenario: Refresh reloads commands including newly added rows
-- **WHEN** new command rows are added by another process after the page has loaded
-- **AND** the user activates Refresh
-- **THEN** the command grid reloads from the database-backed source
-- **AND** newly added command rows become visible when they match active filters
-
-#### Scenario: Refresh clears command and table selections
-- **WHEN** one or more command rows or business table rows are selected
-- **AND** the user activates Refresh
-- **THEN** command selection becomes empty
-- **AND** business table selection becomes empty
-
-#### Scenario: Refresh clears prior comparison status report
-- **WHEN** a prior comparison status report is visible in the footer
-- **AND** the user activates Refresh
-- **THEN** the prior comparison status report is cleared
+- **THEN** only command rows with timestamp greater than or equal to baseline are visible
 
 #### Scenario: Clearing baseline picker restores baseline-unfiltered rows
 - **WHEN** the user clears the baseline date/time picker value
