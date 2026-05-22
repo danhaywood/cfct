@@ -7,6 +7,7 @@ public record CommandCatalogEntry(
         String replayState,
         String executeIn,
         String timestamp,
+        String completedAt,
         boolean selected) {
 
     public CommandCatalogEntry withSelected(final boolean selected) {
@@ -17,6 +18,7 @@ public record CommandCatalogEntry(
                 replayState,
                 executeIn,
                 timestamp,
+                completedAt,
                 selected);
     }
 }

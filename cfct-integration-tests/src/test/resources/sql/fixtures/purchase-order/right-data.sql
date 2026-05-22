@@ -103,14 +103,15 @@ INSERT INTO causewayExtCommandLog.CommandLogEntry (
     executeIn,
     logicalMemberIdentifier,
     [timestamp],
+    completedAt,
     target,
     replayState
 ) VALUES
-    ('11111111-1111-1111-1111-111111111111', 'FOREGROUND', 'supplier.Supplier#registerProduct', '2026-04-05T10:00:00.000', 'supplier.Supplier:301', 'PENDING'),
-    ('44444444-4444-4444-4444-444444444444', 'FOREGROUND', 'supplier.Supplier#updateContact', '2026-04-05T10:10:00.000', 'supplier.Supplier:302', 'PENDING'),
-    ('55555555-5555-5555-5555-555555555555', 'FOREGROUND', 'purchaseorder.PurchaseOrder#approve', '2026-04-05T10:20:00.000', 'purchaseorder.PurchaseOrder:101', 'PENDING'),
-    ('66666666-6666-6666-6666-666666666666', 'FOREGROUND', 'customer.Customer#onboard', '2026-04-05T10:30:00.000', 'customer.Customer:501', 'PENDING'),
-    ('77777777-7777-7777-7777-777777777777', 'BACKGROUND', 'product.Product#adjustInventory', '2026-04-05T10:40:00.000', 'product.Product:702', 'PENDING');
+    ('11111111-1111-1111-1111-111111111111', 'FOREGROUND', 'supplier.Supplier#registerProduct', '2026-04-05T10:00:00.000', null, 'supplier.Supplier:301', 'PENDING'),
+    ('44444444-4444-4444-4444-444444444444', 'FOREGROUND', 'supplier.Supplier#updateContact', '2026-04-05T10:10:00.000', null, 'supplier.Supplier:302', 'PENDING'),
+    ('55555555-5555-5555-5555-555555555555', 'FOREGROUND', 'purchaseorder.PurchaseOrder#approve', '2026-04-05T10:20:00.000', null, 'purchaseorder.PurchaseOrder:101', 'PENDING'),
+    ('66666666-6666-6666-6666-666666666666', 'BACKGROUND', 'customer.Customer#onboard', '2026-04-05T10:30:00.000', null, 'customer.Customer:501', 'UNDEFINED'),
+    ('77777777-7777-7777-7777-777777777777', 'BACKGROUND', 'product.Product#adjustInventory', '2026-04-05T10:40:00.000', '2026-04-05T10:41:00.000', 'product.Product:702', 'UNDEFINED');
 GO
 
 INSERT INTO causewayExtAuditTrail.AuditTrailEntry (

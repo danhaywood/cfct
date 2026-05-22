@@ -92,6 +92,7 @@ CREATE TABLE causewayExtCommandLog.CommandLogEntry (
     executeIn VARCHAR(10) NOT NULL,
     logicalMemberIdentifier VARCHAR(255) NOT NULL,
     [timestamp] DATETIME2 NOT NULL,
+    completedAt DATETIME2 NULL,
     target VARCHAR(1500) NOT NULL,
     replayState VARCHAR(20) NOT NULL,
     CONSTRAINT PK_CommandLogEntry PRIMARY KEY (interactionId)

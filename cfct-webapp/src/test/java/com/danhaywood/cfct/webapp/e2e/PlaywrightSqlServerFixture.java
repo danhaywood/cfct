@@ -84,7 +84,7 @@ class PlaywrightSqlServerFixture {
         executeSql(databaseName, "DROP TABLE IF EXISTS causewayExtCommandLog.CommandLogEntry;");
         executeSql(databaseName, "DROP TABLE IF EXISTS util.LogicalTypeTableMapping;");
 
-        executeSql(databaseName, "CREATE TABLE causewayExtCommandLog.CommandLogEntry (interactionId UNIQUEIDENTIFIER NOT NULL PRIMARY KEY, executeIn VARCHAR(10) NOT NULL, logicalMemberIdentifier VARCHAR(255) NOT NULL, [timestamp] DATETIME2 NOT NULL, target VARCHAR(1500) NOT NULL, replayState VARCHAR(20) NOT NULL);");
+        executeSql(databaseName, "CREATE TABLE causewayExtCommandLog.CommandLogEntry (interactionId UNIQUEIDENTIFIER NOT NULL PRIMARY KEY, executeIn VARCHAR(10) NOT NULL, logicalMemberIdentifier VARCHAR(255) NOT NULL, [timestamp] DATETIME2 NOT NULL, completedAt DATETIME2 NULL, target VARCHAR(1500) NOT NULL, replayState VARCHAR(20) NOT NULL);");
         executeSql(databaseName, "CREATE TABLE causewayExtAuditTrail.AuditTrailEntry (interactionId UNIQUEIDENTIFIER NOT NULL, sequence INT NOT NULL, target VARCHAR(1500) NOT NULL, propertyId VARCHAR(100) NOT NULL, CONSTRAINT PK_AuditTrailEntry PRIMARY KEY (interactionId, sequence, target, propertyId));");
         executeSql(databaseName, "CREATE TABLE util.LogicalTypeTableMapping (logicalTypeName NVARCHAR(255) NULL, qualifiedName NVARCHAR(255) NOT NULL);");
 
@@ -94,8 +94,8 @@ class PlaywrightSqlServerFixture {
             executeSql(databaseName, "INSERT INTO dbo." + equalTable() + " (reference, customerReference, line1, city, postcode, [version]) VALUES ('ADDR-001', 'CUS-001', '10 High Street', 'Bristol', 'BS1 1AA', SYSDATETIME()), ('ADDR-002', 'CUS-002', '22 River Road', 'Bath', 'BA1 2BB', SYSDATETIME());");
 
             executeSql(databaseName, "INSERT INTO util.LogicalTypeTableMapping (logicalTypeName, qualifiedName) VALUES ('supplier.Supplier', 'dbo.Supplier'), ('product.Product', 'dbo.Product'), ('customer.CustomerAddress', 'dbo.CustomerAddress');");
-            executeSql(databaseName, "INSERT INTO causewayExtCommandLog.CommandLogEntry (interactionId, executeIn, logicalMemberIdentifier, [timestamp], target, replayState) VALUES ('" + commandInteractionId() + "', 'FOREGROUND', 'supplier.Supplier#registerProduct', DATEADD(SECOND, -1, SYSDATETIME()), 'supplier.Supplier:301', 'OK');");
-            executeSql(databaseName, "INSERT INTO causewayExtCommandLog.CommandLogEntry (interactionId, executeIn, logicalMemberIdentifier, [timestamp], target, replayState) VALUES ('" + secondCommandInteractionId() + "', 'FOREGROUND', 'product.Product#changeStatus', SYSDATETIME(), 'product.Product:701', 'PENDING');");
+            executeSql(databaseName, "INSERT INTO causewayExtCommandLog.CommandLogEntry (interactionId, executeIn, logicalMemberIdentifier, [timestamp], completedAt, target, replayState) VALUES ('" + commandInteractionId() + "', 'FOREGROUND', 'supplier.Supplier#registerProduct', DATEADD(SECOND, -1, SYSDATETIME()), NULL, 'supplier.Supplier:301', 'OK');");
+            executeSql(databaseName, "INSERT INTO causewayExtCommandLog.CommandLogEntry (interactionId, executeIn, logicalMemberIdentifier, [timestamp], completedAt, target, replayState) VALUES ('" + secondCommandInteractionId() + "', 'FOREGROUND', 'product.Product#changeStatus', SYSDATETIME(), NULL, 'product.Product:701', 'PENDING');");
             executeSql(databaseName, "INSERT INTO causewayExtAuditTrail.AuditTrailEntry (interactionId, sequence, target, propertyId) VALUES ('" + commandInteractionId() + "', 1, 'supplier.Supplier:301', 'name');");
             executeSql(databaseName, "INSERT INTO causewayExtAuditTrail.AuditTrailEntry (interactionId, sequence, target, propertyId) VALUES ('" + secondCommandInteractionId() + "', 1, 'product.Product:701', 'name');");
         } else {

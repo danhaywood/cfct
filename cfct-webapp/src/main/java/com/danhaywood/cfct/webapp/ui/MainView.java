@@ -624,7 +624,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             return checkbox;
         })).setHeader("").setAutoWidth(true).setFlexGrow(0).setTextAlign(ColumnTextAlign.CENTER);
 
-        final Grid.Column<CommandCatalogEntry> replayStateColumn = grid.addColumn(CommandCatalogEntry::replayState)
+        final Grid.Column<CommandCatalogEntry> replayStateColumn = grid.addColumn(this::displayReplayState)
                 .setHeader("Replay state")
                 .setSortable(true)
                 .setComparator(Comparator.comparing(CommandCatalogEntry::replayState, String.CASE_INSENSITIVE_ORDER))
@@ -642,6 +642,14 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .setComparator(Comparator.comparing(CommandCatalogEntry::timestamp, String.CASE_INSENSITIVE_ORDER))
                 .setAutoWidth(true)
                 .setKey("timestamp");
+        final Grid.Column<CommandCatalogEntry> completedAtColumn = grid.addColumn(CommandCatalogEntry::completedAt)
+                .setHeader("Completed at")
+                .setSortable(true)
+                .setComparator(Comparator.comparing(
+                        entry -> entry.completedAt() == null ? "" : entry.completedAt(),
+                        String.CASE_INSENSITIVE_ORDER))
+                .setAutoWidth(true)
+                .setKey("completed-at");
         final Grid.Column<CommandCatalogEntry> interactionColumn = grid.addColumn(CommandCatalogEntry::interactionId)
                 .setHeader("Interaction")
                 .setSortable(true)
@@ -1052,7 +1060,10 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
     private Comparator<CommandCatalogEntry> comparatorForColumnKey(final String columnKey) {
         if ("replay-state".equals(columnKey)) {
-            return Comparator.comparing(CommandCatalogEntry::replayState, String.CASE_INSENSITIVE_ORDER);
+            return Comparator.comparing(this::displayReplayState, String.CASE_INSENSITIVE_ORDER);
+        }
+        if ("completed-at".equals(columnKey)) {
+            return Comparator.comparing(entry -> entry.completedAt() == null ? "" : entry.completedAt(), String.CASE_INSENSITIVE_ORDER);
         }
         if ("member".equals(columnKey)) {
             return Comparator.comparing(CommandCatalogEntry::logicalMemberIdentifier, String.CASE_INSENSITIVE_ORDER);
@@ -1559,6 +1570,18 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         return entries.stream()
                 .sorted(Comparator.comparing(CommandCatalogEntry::timestamp, String.CASE_INSENSITIVE_ORDER))
                 .toList();
+    }
+
+    private String displayReplayState(final CommandCatalogEntry entry) {
+        if (entry == null) {
+            return "";
+        }
+        if ("UNDEFINED".equalsIgnoreCase(entry.replayState())) {
+            return entry.completedAt() == null || entry.completedAt().isBlank()
+                    ? "BGRND:PEND"
+                    : "BGRND:DONE";
+        }
+        return entry.replayState();
     }
 
     private String replayStateAbbreviation(final String replayState) {

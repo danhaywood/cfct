@@ -13,9 +13,9 @@ class CommandSelectionStateTest {
     @Test
     void updatesAndReturnsSelectedInteractionIdsInDeterministicOrder() {
         final CommandSelectionState state = new CommandSelectionState(List.of(
-                new CommandCatalogEntry("111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "EXPORTED", "FOREGROUND", "2026-04-05T10:00:00.000", false),
-                new CommandCatalogEntry("222", "supplier.Supplier#updateName", "supplier.Supplier:302", "EXPORTED", "FOREGROUND", "2026-04-05T10:30:00.000", false),
-                new CommandCatalogEntry("333", "product.Product#changeStatus", "product.Product:701", "PENDING", "FOREGROUND", "2026-04-05T11:00:00.000", false)));
+                new CommandCatalogEntry("111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "EXPORTED", "FOREGROUND", "2026-04-05T10:00:00.000", null, false),
+                new CommandCatalogEntry("222", "supplier.Supplier#updateName", "supplier.Supplier:302", "EXPORTED", "FOREGROUND", "2026-04-05T10:30:00.000", null, false),
+                new CommandCatalogEntry("333", "product.Product#changeStatus", "product.Product:701", "PENDING", "FOREGROUND", "2026-04-05T11:00:00.000", null, false)));
 
         state.updateSelection("111", true);
         state.updateSelection("333", true);
@@ -35,6 +35,7 @@ class CommandSelectionStateTest {
                 "FAILED",
                 "FOREGROUND",
                 "2026-04-05T10:00:00.000",
+                null,
                 false);
 
         assertThat(state.matchesFilter(entry, "supplier", "1111", Set.of(), null)).isTrue();
@@ -55,6 +56,7 @@ class CommandSelectionStateTest {
                 "FAILED",
                 "FOREGROUND",
                 "2026-04-05T10:00:00.000",
+                null,
                 false);
 
         assertThat(state.matchesFilter(entry, "", "", Set.of(), LocalDateTime.parse("2026-04-05T09:59:59.999"))).isTrue();
@@ -65,8 +67,8 @@ class CommandSelectionStateTest {
     @Test
     void clearsAllSelectedCommands() {
         final CommandSelectionState state = new CommandSelectionState(List.of(
-                new CommandCatalogEntry("111", "a", "a", "EXPORTED", "FOREGROUND", "2026-04-05T10:00:00.000", true),
-                new CommandCatalogEntry("222", "b", "b", "EXPORTED", "FOREGROUND", "2026-04-05T10:01:00.000", false)));
+                new CommandCatalogEntry("111", "a", "a", "EXPORTED", "FOREGROUND", "2026-04-05T10:00:00.000", null, true),
+                new CommandCatalogEntry("222", "b", "b", "EXPORTED", "FOREGROUND", "2026-04-05T10:01:00.000", null, false)));
 
         assertThat(state.selectedCount()).isEqualTo(1);
 

@@ -35,7 +35,8 @@ public class SqlServerCommandCatalogService {
                     target,
                     replayState,
                     executeIn,
-                    CONVERT(varchar(33), [timestamp], 126) AS timestamp_text
+                    CONVERT(varchar(33), [timestamp], 126) AS timestamp_text,
+                    CONVERT(varchar(33), completedAt, 126) AS completed_at_text
                 FROM causewayExtCommandLog.CommandLogEntry
                 ORDER BY [timestamp] DESC, interactionId DESC
                 """;
@@ -51,7 +52,8 @@ public class SqlServerCommandCatalogService {
                         resultSet.getString("target"),
                         resultSet.getString("replayState"),
                         resultSet.getString("executeIn"),
-                        resultSet.getString("timestamp_text")));
+                        resultSet.getString("timestamp_text"),
+                        resultSet.getString("completed_at_text")));
             }
             return rows;
         } catch (SQLException ex) {
@@ -65,7 +67,8 @@ public class SqlServerCommandCatalogService {
             final String target,
             final String replayState,
             final String executeIn,
-            final String timestamp) {
+            final String timestamp,
+            final String completedAt) {
         return new CommandCatalogEntry(
                 interactionId,
                 logicalMemberIdentifier,
@@ -73,6 +76,7 @@ public class SqlServerCommandCatalogService {
                 replayState,
                 executeIn,
                 timestamp,
+                completedAt,
                 false);
     }
 }

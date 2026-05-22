@@ -207,7 +207,29 @@ class MainViewTest {
 
         final Grid<?> commandGrid = (Grid<?>) findByTestId(view, "command-selection-grid").orElseThrow();
         final List<String> columnKeys = commandGrid.getColumns().stream().map(Grid.Column::getKey).toList();
-        assertThat(columnKeys).containsExactly(null, "replay-state", "member", "timestamp", "interaction");
+        assertThat(columnKeys).containsExactly(null, "replay-state", "member", "timestamp", "completed-at", "interaction");
+    }
+
+    @Test
+    void commandGridDisplaysBackgroundReplayStateFromCompletedAt() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithBackgroundEntries(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        final Grid<?> commandGrid = (Grid<?>) findByTestId(view, "command-selection-grid").orElseThrow();
+        final List<?> items = commandGrid.getListDataView().getItems().toList();
+
+        assertThat(items)
+                .extracting(item -> ((CommandCatalogEntry) item).replayState())
+                .containsExactly("UNDEFINED", "UNDEFINED", "OK");
+        assertThat(items)
+                .extracting(item -> invokeDisplayReplayState(view, (CommandCatalogEntry) item))
+                .containsExactly("BGRND:PEND", "BGRND:DONE", "OK");
     }
 
     @Test
@@ -280,12 +302,12 @@ class MainViewTest {
         final SqlServerCommandCatalogService commandCatalogService = Mockito.mock(SqlServerCommandCatalogService.class);
         when(commandCatalogService.discoverCommandCatalog()).thenReturn(
                 List.of(
-                        new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", false),
-                        new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "PENDING", "FOREGROUND", "2026-04-05T11:00:00.000", false)),
+                        new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", null, false),
+                        new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "PENDING", "FOREGROUND", "2026-04-05T11:00:00.000", null, false)),
                 List.of(
-                        new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", false),
-                        new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "PENDING", "FOREGROUND", "2026-04-05T11:00:00.000", false),
-                        new CommandCatalogEntry("44444444-4444-4444-4444-444444444444", "order.Order#submit", "order.Order:900", "OK", "FOREGROUND", "2026-04-05T12:00:00.000", false)));
+                        new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", null, false),
+                        new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "PENDING", "FOREGROUND", "2026-04-05T11:00:00.000", null, false),
+                        new CommandCatalogEntry("44444444-4444-4444-4444-444444444444", "order.Order#submit", "order.Order:900", "OK", "FOREGROUND", "2026-04-05T12:00:00.000", null, false)));
 
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
@@ -1545,6 +1567,16 @@ class MainViewTest {
         }
     }
 
+    private String invokeDisplayReplayState(final MainView view, final CommandCatalogEntry entry) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("displayReplayState", CommandCatalogEntry.class);
+            method.setAccessible(true);
+            return (String) method.invoke(view, entry);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     private void invokeSetCommandBaselineFilter(final MainView view, final String timestamp) {
         try {
             final var method = MainView.class.getDeclaredMethod("setCommandBaselineFilter", String.class);
@@ -1605,25 +1637,34 @@ class MainViewTest {
     private SqlServerCommandCatalogService commandCatalogServiceWithDefaults() {
         final SqlServerCommandCatalogService service = Mockito.mock(SqlServerCommandCatalogService.class);
         when(service.discoverCommandCatalog()).thenReturn(List.of(
-                new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", false),
-                new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "PENDING", "FOREGROUND", "2026-04-05T11:00:00.000", false)));
+                new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", null, false),
+                new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "PENDING", "FOREGROUND", "2026-04-05T11:00:00.000", null, false)));
         return service;
     }
 
     private SqlServerCommandCatalogService commandCatalogServiceWithReverseTimestamps() {
         final SqlServerCommandCatalogService service = Mockito.mock(SqlServerCommandCatalogService.class);
         when(service.discoverCommandCatalog()).thenReturn(List.of(
-                new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "FAILED", "FOREGROUND", "2026-04-05T11:00:00.000", false),
-                new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", false)));
+                new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "FAILED", "FOREGROUND", "2026-04-05T11:00:00.000", null, false),
+                new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", null, false)));
+        return service;
+    }
+
+    private SqlServerCommandCatalogService commandCatalogServiceWithBackgroundEntries() {
+        final SqlServerCommandCatalogService service = Mockito.mock(SqlServerCommandCatalogService.class);
+        when(service.discoverCommandCatalog()).thenReturn(List.of(
+                new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "UNDEFINED", "BACKGROUND", "2026-04-05T10:00:00.000", null, false),
+                new CommandCatalogEntry("22222222-2222-2222-2222-222222222222", "supplier.Supplier#updateName", "supplier.Supplier:302", "UNDEFINED", "BACKGROUND", "2026-04-05T10:30:00.000", "2026-04-05T10:31:00.000", false),
+                new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "OK", "FOREGROUND", "2026-04-05T11:00:00.000", null, false)));
         return service;
     }
 
     private SqlServerCommandCatalogService commandCatalogServiceWithPreselectedEntries() {
         final SqlServerCommandCatalogService service = Mockito.mock(SqlServerCommandCatalogService.class);
         when(service.discoverCommandCatalog()).thenReturn(List.of(
-                new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "EXPORTED", "FOREGROUND", "2026-04-05T10:00:00.000", true),
-                new CommandCatalogEntry("22222222-2222-2222-2222-222222222222", "supplier.Supplier#updateName", "supplier.Supplier:302", "EXPORTED", "FOREGROUND", "2026-04-05T10:30:00.000", true),
-                new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "PENDING", "FOREGROUND", "2026-04-05T11:00:00.000", false)));
+                new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "EXPORTED", "FOREGROUND", "2026-04-05T10:00:00.000", null, true),
+                new CommandCatalogEntry("22222222-2222-2222-2222-222222222222", "supplier.Supplier#updateName", "supplier.Supplier:302", "EXPORTED", "FOREGROUND", "2026-04-05T10:30:00.000", null, true),
+                new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "PENDING", "FOREGROUND", "2026-04-05T11:00:00.000", null, false)));
         return service;
     }
 
