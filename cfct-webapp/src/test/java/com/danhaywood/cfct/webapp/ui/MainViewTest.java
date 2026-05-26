@@ -414,13 +414,14 @@ class MainViewTest {
 
     @Test
     void refreshAutoSelectsNewestOkCommandAndRefreshesProgressStatus() {
+        final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithDefaults(),
                 commandCatalogServiceWithDefaults(),
                 commandDrivenSelectionServiceWithDefaults(),
                 propertiesWithDefaults(),
-                mock(WebappComparisonExecutionService.class),
+                comparisonExecutionService,
                 authenticatedHolder(),
                 authenticationServiceWithDefaults());
 
@@ -436,25 +437,21 @@ class MainViewTest {
                 1,
                 "Compared dbo.Supplier"));
 
-        final Span progress = (Span) findByTestId(view, "comparison-progress-summary").orElseThrow();
-        final Span counter = (Span) findByTestId(view, "compare-progress-counter").orElseThrow();
         final Button refreshButton = (Button) findByTestId(view, "command-filter-refresh").orElseThrow();
-
-        assertThat(progress.getText()).isEqualTo("Compared dbo.Supplier (1/1)");
-        assertThat(counter.getText()).isEqualTo("1 of 1");
 
         refreshButton.click();
 
         assertThat(view.selectedCommandInteractionIdsForStageOne()).containsExactly("11111111-1111-1111-1111-111111111111");
         assertThat(view.selectedTablesForStageTwo()).containsExactly(new TableRef("dbo", "Supplier"));
         assertThat(focusedCommandInteractionId(view)).isEqualTo("11111111-1111-1111-1111-111111111111");
-        assertThat(progress.getText()).isBlank();
-        assertThat(counter.getText()).isBlank();
+        verify(comparisonExecutionService, Mockito.timeout(1_000))
+                .compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class));
     }
 
     @Test
     void refreshLeavesSelectionEmptyWhenNoOkCommandExists() {
         final SqlServerCommandCatalogService commandCatalogService = Mockito.mock(SqlServerCommandCatalogService.class);
+        final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
         when(commandCatalogService.discoverCommandCatalog()).thenReturn(List.of(
                 new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "PENDING", "FOREGROUND", "2026-04-05T10:00:00.000", null, false),
                 new CommandCatalogEntry("33333333-3333-3333-3333-333333333333", "product.Product#changeStatus", "product.Product:701", "FAILED", "FOREGROUND", "2026-04-05T11:00:00.000", null, false)));
@@ -465,7 +462,7 @@ class MainViewTest {
                 commandCatalogService,
                 commandDrivenSelectionServiceWithDefaults(),
                 propertiesWithDefaults(),
-                mock(WebappComparisonExecutionService.class),
+                comparisonExecutionService,
                 authenticatedHolder(),
                 authenticationServiceWithDefaults());
 
@@ -478,6 +475,7 @@ class MainViewTest {
         assertThat(view.selectedCommandInteractionIdsForStageOne()).isEmpty();
         assertThat(view.selectedTablesForStageTwo()).isEmpty();
         assertThat(focusedCommandInteractionId(view)).isNull();
+        Mockito.verifyNoInteractions(comparisonExecutionService);
     }
 
     @Test

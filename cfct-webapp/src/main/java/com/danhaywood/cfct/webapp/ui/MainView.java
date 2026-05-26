@@ -895,6 +895,17 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
 
         applyCommandFilters();
         applyCommandDrivenSelection();
+        triggerCompareAfterRefreshIfEligible();
+    }
+
+    private void triggerCompareAfterRefreshIfEligible() {
+        if (!authenticatedContextHolder.isAuthenticated()) {
+            return;
+        }
+        if (!selectionState.isCompareEnabled()) {
+            return;
+        }
+        executeComparison();
     }
 
     private String newestSuccessfulCommandInteractionId(final List<CommandCatalogEntry> entries) {
