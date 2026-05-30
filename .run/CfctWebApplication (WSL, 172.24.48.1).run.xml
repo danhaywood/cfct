@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="CfctWebApplication (WSL, 172.24.48.1)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <option name="ACTIVE_PROFILES" value="sqlhost_172_24_48_1_jdo" />
+    <option name="ALTERNATIVE_JRE_PATH" value="$USER_HOME$/.sdkman/candidates/java/21.0.10-tem" />
+    <option name="ENABLE_JMX_AUTH" value="true" />
+    <module name="cfct-webapp" />
+    <target name="WSL 21" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.danhaywood.cfct.webapp.CfctWebApplication" />
+    <option name="VM_PARAMETERS" value="-agentlib:jdwp=transport=dt_socket,suspend=n,server=y,address=10011" />
+    <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
