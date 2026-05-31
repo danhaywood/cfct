@@ -27,6 +27,10 @@ class PlaywrightSqlServerFixture {
         return "PurchaseOrderWithoutBusinessKey";
     }
 
+    String metadataExcludedTable() {
+        return "SupplierMetadataExcluded";
+    }
+
     String equalTable() {
         return "CustomerAddress";
     }
@@ -71,6 +75,11 @@ class PlaywrightSqlServerFixture {
 
         executeSql(databaseName, "DROP TABLE IF EXISTS dbo." + ineligibleTable() + ";");
         executeSql(databaseName, "CREATE TABLE dbo." + ineligibleTable() + " (id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, reference NVARCHAR(40) NOT NULL, [version] DATETIME2(3) NOT NULL);");
+
+        executeSql(databaseName, "DROP TABLE IF EXISTS dbo." + metadataExcludedTable() + ";");
+        executeSql(databaseName, "CREATE TABLE dbo." + metadataExcludedTable() + " (id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, reference NVARCHAR(40) NOT NULL, name NVARCHAR(80) NOT NULL, [version] DATETIME2(3) NOT NULL);");
+        executeSql(databaseName, "CREATE UNIQUE INDEX " + metadataExcludedTable() + "_PK ON dbo." + metadataExcludedTable() + "(reference);");
+        executeSql(databaseName, "EXEC sys.sp_addextendedproperty @name = N'cfct.ignored', @value = N'true', @level0type = N'SCHEMA', @level0name = N'dbo', @level1type = N'TABLE', @level1name = N'" + metadataExcludedTable() + "';");
 
         executeSql(databaseName, "DROP TABLE IF EXISTS dbo." + equalTable() + ";");
         executeSql(databaseName, "CREATE TABLE dbo." + equalTable() + " (id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, reference NVARCHAR(40) NOT NULL, customerReference NVARCHAR(40) NOT NULL, line1 NVARCHAR(120) NOT NULL, city NVARCHAR(80) NOT NULL, postcode NVARCHAR(20) NOT NULL, [version] DATETIME2(3) NOT NULL);");

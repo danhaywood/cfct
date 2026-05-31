@@ -20,7 +20,8 @@ class SqlServerTableCatalogServiceTest {
     void mapsEligibleTableWhenExactlyOneBkIndexExists() {
         final TableCatalogEntry entry = SqlServerTableCatalogService.mapDiscoveredTable(
                 new TableRef("dbo", "Supplier"),
-                1);
+                1,
+                null);
 
         assertThat(entry.eligible()).isTrue();
         assertThat(entry.eligibilityReason()).isNull();
@@ -30,7 +31,8 @@ class SqlServerTableCatalogServiceTest {
     void mapsIneligibleTableWhenNoBkIndexExists() {
         final TableCatalogEntry entry = SqlServerTableCatalogService.mapDiscoveredTable(
                 new TableRef("dbo", "PurchaseOrderWithoutBusinessKey"),
-                0);
+                0,
+                null);
 
         assertThat(entry.eligible()).isFalse();
         assertThat(entry.eligibilityReason()).contains("No unique index or unique constraint ending with _PK");
@@ -40,9 +42,32 @@ class SqlServerTableCatalogServiceTest {
     void mapsIneligibleTableWhenMultipleBkIndexesExist() {
         final TableCatalogEntry entry = SqlServerTableCatalogService.mapDiscoveredTable(
                 new TableRef("dbo", "AmbiguousBusinessKey"),
-                2);
+                2,
+                null);
 
         assertThat(entry.eligible()).isFalse();
         assertThat(entry.eligibilityReason()).contains("Multiple unique indexes or unique constraints ending with _PK");
+    }
+
+    @Test
+    void mapsIneligibleTableWhenTableExtendedPropertyIsTruthy() {
+        final TableCatalogEntry entry = SqlServerTableCatalogService.mapDiscoveredTable(
+                new TableRef("dbo", "Supplier"),
+                1,
+                "true");
+
+        assertThat(entry.eligible()).isFalse();
+        assertThat(entry.eligibilityReason()).contains("extended-property metadata");
+    }
+
+    @Test
+    void nonTruthyTableExtendedPropertyDoesNotDisableTable() {
+        final TableCatalogEntry entry = SqlServerTableCatalogService.mapDiscoveredTable(
+                new TableRef("dbo", "Supplier"),
+                1,
+                "false");
+
+        assertThat(entry.eligible()).isTrue();
+        assertThat(entry.eligibilityReason()).isNull();
     }
 }

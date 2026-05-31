@@ -764,10 +764,13 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         grid.addCellFocusListener(event -> event.getItem().ifPresent(item -> focusedCommandInteractionId = item.interactionId()));
         grid.addSortListener(event -> clearCommandRangeAnchorIfInvalid());
         grid.getElement()
-                .addEventListener("keydown", event -> toggleFocusedCommandSelection(event.getEventData().get("event.shiftKey").asBoolean(false)))
+                .addEventListener("keydown", event -> toggleFocusedCommandSelection(
+                        event.getEventData().get("event.shiftKey").asBoolean(false),
+                        asText(event.getEventData().get("event.target.getAttribute('data-testid')"))))
                 .setFilter("event.code === 'Space' || event.key === ' '")
                 .addEventData("event.code")
-                .addEventData("event.shiftKey");
+                .addEventData("event.shiftKey")
+                .addEventData("event.target.getAttribute('data-testid')");
 
         return grid;
     }
@@ -1009,11 +1012,15 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     }
 
     private void toggleFocusedCommandSelection() {
-        toggleFocusedCommandSelection(false);
+        toggleFocusedCommandSelection(false, null);
     }
 
     private void toggleFocusedCommandSelection(final boolean shiftPressed) {
-        final String interactionId = focusedOrFirstVisibleCommandInteractionId();
+        toggleFocusedCommandSelection(shiftPressed, null);
+    }
+
+    private void toggleFocusedCommandSelection(final boolean shiftPressed, final String targetTestId) {
+        final String interactionId = focusedOrFirstVisibleCommandInteractionId(targetTestId);
         if (interactionId == null || interactionId.isBlank()) {
             return;
         }
@@ -1077,13 +1084,35 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         applyCommandDrivenSelection();
     }
 
-    private String focusedOrFirstVisibleCommandInteractionId() {
-        if (focusedCommandInteractionId != null && !focusedCommandInteractionId.isBlank()) {
+    private String focusedOrFirstVisibleCommandInteractionId(final String targetTestId) {
+        final String interactionIdFromTarget = parseCommandInteractionIdFromTestId(targetTestId);
+        if (interactionIdFromTarget != null && !interactionIdFromTarget.isBlank()) {
+            focusedCommandInteractionId = interactionIdFromTarget;
+            return interactionIdFromTarget;
+        }
+
+        final List<String> visibleInteractionIds = visibleCommandEntries().stream()
+                .map(CommandCatalogEntry::interactionId)
+                .toList();
+
+        if (focusedCommandInteractionId != null
+                && !focusedCommandInteractionId.isBlank()
+                && visibleInteractionIds.contains(focusedCommandInteractionId)) {
             return focusedCommandInteractionId;
         }
-        return visibleCommandEntries().stream()
-                .findFirst()
+
+        return visibleInteractionIds.stream().findFirst().orElse(null);
+    }
+
+    private String parseCommandInteractionIdFromTestId(final String targetTestId) {
+        if (targetTestId == null || !targetTestId.startsWith("command-checkbox-")) {
+            return null;
+        }
+        final String normalizedInteractionId = targetTestId.substring("command-checkbox-".length());
+        return commandCatalogEntries.stream()
                 .map(CommandCatalogEntry::interactionId)
+                .filter(id -> id != null && id.equalsIgnoreCase(normalizedInteractionId))
+                .findFirst()
                 .orElse(null);
     }
 

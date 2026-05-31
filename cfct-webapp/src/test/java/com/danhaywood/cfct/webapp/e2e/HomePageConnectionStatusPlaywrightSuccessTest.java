@@ -282,6 +282,8 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             comparisonPage.waitForTableGridContains("Supplier");
             assertThat(page.locator("[data-testid='table-checkbox-dbo-purchaseorderwithoutbusinesskey']").getAttribute("disabled")).isNotNull();
             assertThat(page.locator("[data-testid='table-checkbox-dbo-purchaseorderwithoutbusinesskey']").getAttribute("title")).isNotBlank();
+            assertThat(page.locator("[data-testid='table-checkbox-dbo-suppliermetadataexcluded']").getAttribute("disabled")).isNotNull();
+            assertThat(page.locator("[data-testid='table-checkbox-dbo-suppliermetadataexcluded']").getAttribute("title")).contains("extended-property metadata");
 
             page.screenshot(new Page.ScreenshotOptions().setPath(screenshotPath("webapp-main.png")).setFullPage(true));
 
