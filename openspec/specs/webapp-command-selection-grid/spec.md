@@ -85,6 +85,7 @@ Activating Refresh SHALL auto-select exactly one command row when one or more re
 Activating Refresh SHALL auto-select the `OK` command row with the most recent timestamp.
 Activating Refresh SHALL keep keyboard focus on the auto-selected command row.
 Activating Refresh SHALL clear any previously rendered comparison progress status report.
+Activating Refresh SHALL trigger compare automatically when compare is enabled after refresh auto-selection completes.
 Filtering SHALL narrow visible command rows without requiring a separate apply-filter action.
 The command grid SHALL combine member, interactionId, replay-state, and baseline filters when a baseline is set or one or more replay-state checkboxes are selected.
 When no replay-state checkboxes are selected, replay-state filtering SHALL be inactive.
@@ -105,6 +106,16 @@ When baseline is set, command rows with timestamp equal to or strictly after bas
 - **WHEN** focus is in a text/date/time input field
 - **AND** the user presses `F5` or `Alt+R`
 - **THEN** command refresh accelerator handling is ignored
+
+#### Scenario: Refresh auto-selects latest OK command and runs compare
+- **WHEN** refreshed command rows contain at least one `OK` replay-state row
+- **AND** refresh auto-selection produces a compare-enabled state
+- **THEN** the latest timestamp `OK` command row is selected
+- **AND** compare execution starts through the same orchestration path as the Compare action
+
+#### Scenario: Refresh does not run compare when compare remains disabled
+- **WHEN** refresh completes and compare eligibility is not satisfied
+- **THEN** no compare execution is started
 
 ### Requirement: Command selection drives business table auto-selection
 The webapp SHALL evaluate touched business tables for the currently selected commands.
