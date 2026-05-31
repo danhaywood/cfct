@@ -6,6 +6,7 @@ The webapp SHALL treat configured truthy values as a table-ineligible decision.
 The webapp SHALL keep metadata-excluded tables visible in the manual table grid.
 The webapp SHALL render metadata-excluded tables as non-selectable in the same manner as other ineligible rows.
 The webapp SHALL expose an eligibility tooltip reason that explains the table is excluded by metadata configuration.
+Select-all operations SHALL NOT select metadata-excluded tables.
 Command-driven programmatic selection SHALL NOT select metadata-excluded tables.
 Keyboard-driven selection interactions SHALL NOT select metadata-excluded tables.
 
@@ -16,6 +17,11 @@ Keyboard-driven selection interactions SHALL NOT select metadata-excluded tables
 #### Scenario: Metadata-excluded table shows explanatory tooltip
 - **WHEN** a user hovers or focuses an ineligible row disabled by table-level metadata
 - **THEN** the tooltip explains the table is excluded by metadata configuration
+
+#### Scenario: Select-all skips metadata-excluded support tables
+- **WHEN** tables such as audit tables or Flyway history tables are configured with `cfct.ignored=true`
+- **AND** the user triggers a select-all action in the manual table grid
+- **THEN** those metadata-excluded tables remain unselected
 
 #### Scenario: Metadata-excluded table is ignored by command-driven selection
 - **WHEN** command footprint resolution includes a table disabled by table-level metadata

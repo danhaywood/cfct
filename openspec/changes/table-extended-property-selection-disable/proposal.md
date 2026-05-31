@@ -2,11 +2,13 @@
 
 The webapp already uses metadata-driven ignore decisions for columns, but table-level exclusion still requires hardcoded logic.
 Allowing table-level extended-property opt-out makes table eligibility configurable at the database layer and reduces accidental selection of tables that should not be compared.
+This is especially useful for audit tables and Flyway migration history tables that should be excluded from bulk `Select all` operations.
 
 ## What Changes
 
 - Add table-level metadata evaluation for a dedicated extended property that marks a business table as non-selectable in the manual table grid.
 - Keep excluded tables visible in the grid, but render them disabled with a tooltip explaining that metadata-based exclusion is active.
+- Ensure metadata-excluded rows are not selected by `Select all`, including practical examples such as audit and Flyway history tables configured with `cfct.ignored=true`.
 - Ensure command-driven and keyboard-driven selection workflows honor the same disabled eligibility state.
 
 ## Capabilities
