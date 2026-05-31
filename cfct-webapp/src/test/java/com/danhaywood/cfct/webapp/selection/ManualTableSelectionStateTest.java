@@ -150,7 +150,7 @@ class ManualTableSelectionStateTest {
     }
 
     @Test
-    void selectedOnlyStillShowsMetadataExcludedRows() {
+    void selectedOnlyHidesUnselectedMetadataExcludedRows() {
         final TableRef supplier = new TableRef("dbo", "Supplier");
         final TableRef flywayHistory = new TableRef("dbo", "flyway_schema_history");
         final ManualTableSelectionState state = new ManualTableSelectionState(List.of(
@@ -166,7 +166,7 @@ class ManualTableSelectionStateTest {
 
         assertThat(visible)
                 .extracting(entry -> entry.table().displayName())
-                .containsExactlyInAnyOrder("dbo.Supplier", "dbo.flyway_schema_history");
+                .containsExactly("dbo.Supplier");
     }
 }
 

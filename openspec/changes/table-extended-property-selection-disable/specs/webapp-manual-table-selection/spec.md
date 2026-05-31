@@ -3,8 +3,7 @@
 ### Requirement: Manual table grid supports metadata-driven table exclusion
 The webapp SHALL evaluate a configured SQL Server table-level extended property for each business table candidate.
 The webapp SHALL treat configured truthy values as a table-ineligible decision.
-The webapp SHALL keep metadata-excluded tables visible in the manual table grid.
-The webapp SHALL keep metadata-excluded tables visible when `Selected only` is enabled so users can understand why those tables are excluded from selection.
+The webapp SHALL keep metadata-excluded tables visible in the manual table grid when all tables are shown.
 The webapp SHALL render metadata-excluded tables as non-selectable in the same manner as other ineligible rows.
 The webapp SHALL expose an eligibility tooltip reason that explains the table is excluded by metadata configuration.
 Select-all operations SHALL NOT select metadata-excluded tables.

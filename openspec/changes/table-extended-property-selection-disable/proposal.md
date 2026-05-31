@@ -9,7 +9,7 @@ This is especially useful for audit tables and Flyway migration history tables t
 - Add table-level metadata evaluation for a dedicated extended property that marks a business table as non-selectable in the manual table grid.
 - Keep excluded tables visible in the grid, but render them disabled with a tooltip explaining that metadata-based exclusion is active.
 - Ensure metadata-excluded rows are not selected by `Select all`, including practical examples such as audit and Flyway history tables configured with `cfct.ignored=true`.
-- Keep metadata-excluded rows visible (including under `Selected only`) so users can see they are intentionally excluded and read the tooltip reason.
+- Keep metadata-excluded rows visible when all tables are shown so users can see they are intentionally excluded and read the tooltip reason.
 - Ensure command-driven and keyboard-driven selection workflows honor the same disabled eligibility state.
 
 ## Capabilities
