@@ -479,9 +479,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .set("margin-top", "var(--lumo-space-xs)");
 
         compareButton.getElement().setAttribute("data-testid", "compare-button");
-        compareButton.getElement().setAttribute("data-default-action", "compare");
         compareButton.getElement().setAttribute("title", "Execute comparison for selected eligible tables.");
-        compareButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         compareButton.addClickListener(event -> executeComparison());
 
         clearSelectionsButton.getElement().setAttribute("data-testid", "clear-selections-button");
@@ -849,7 +847,9 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         baselineFilter.addValueChangeListener(event -> applyBaselineFilterValue(event.getValue(), baselineFilter));
 
         refreshCommandsButton.getElement().setAttribute("data-testid", "command-filter-refresh");
+        refreshCommandsButton.getElement().setAttribute("data-default-action", "refresh");
         refreshCommandsButton.getElement().setAttribute("title", "Refresh commands from database");
+        refreshCommandsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         refreshCommandsButton.addClickListener(event -> refreshCommandCatalog());
 
         final Button clearBaselineButton = new Button(new Icon(VaadinIcon.CLOSE_SMALL));
@@ -1300,10 +1300,10 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     }
 
     private void handleEnterShortcut(final String targetTagName, final String targetType) {
-        if (loginDialog.isOpened() || !compareButton.isEnabled() || isTypingTarget(targetTagName, targetType)) {
+        if (loginDialog.isOpened() || !refreshCommandsButton.isEnabled() || isTypingTarget(targetTagName, targetType)) {
             return;
         }
-        executeComparison();
+        refreshCommandCatalog();
     }
 
     private void handleRefreshShortcut(

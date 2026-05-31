@@ -120,48 +120,74 @@ class MainViewTest {
         final Component actionBar = findByTestId(view, "navigation-compare-action-bar").orElseThrow();
         assertThat(actionBar.getElement().getAttribute("class")).contains("navigation-compare-action-bar");
         final Button compareButton = (Button) findByTestId(view, "compare-button").orElseThrow();
-        assertThat(compareButton.getElement().getAttribute("data-default-action")).isEqualTo("compare");
-        assertThat(compareButton.getThemeNames()).contains("primary");
+        assertThat(compareButton.getThemeNames()).doesNotContain("primary");
+        final Button refreshButton = (Button) findByTestId(view, "command-filter-refresh").orElseThrow();
+        assertThat(refreshButton.getElement().getAttribute("data-default-action")).isEqualTo("refresh");
+        assertThat(refreshButton.getThemeNames()).contains("primary");
         assertThat(findByTestId(view, "navigation-drawer-resize-handle")).isPresent();
     }
 
     @Test
-    void enterShortcutTriggersCompareWhenEnabledAndNotTyping() {
-        final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
-        when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class)))
-                .thenReturn(sampleComparisonOutcome());
+    void enterShortcutTriggersRefreshWhenEnabledAndNotTyping() {
+        final SqlServerCommandCatalogService commandCatalogService = Mockito.mock(SqlServerCommandCatalogService.class);
+        when(commandCatalogService.discoverCommandCatalog()).thenReturn(
+                List.of(new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", null, false)),
+                List.of(new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", null, false)));
 
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithPreselectedSupplier(),
-                commandCatalogServiceWithDefaults(),
+                commandCatalogService,
                 propertiesWithDefaults(),
-                comparisonExecutionService,
+                mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
                 authenticationServiceWithDefaults());
 
         invokeHandleEnterShortcut(view, "DIV", null);
 
-        verify(comparisonExecutionService).compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class));
+        verify(commandCatalogService, Mockito.times(2)).discoverCommandCatalog();
     }
 
     @Test
-    void enterShortcutDoesNotTriggerCompareWhenDisabledOrTyping() {
-        final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
+    void enterShortcutDoesNotTriggerRefreshWhenTyping() {
+        final SqlServerCommandCatalogService commandCatalogService = Mockito.mock(SqlServerCommandCatalogService.class);
+        when(commandCatalogService.discoverCommandCatalog()).thenReturn(List.of(
+                new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", null, false)));
 
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
                 catalogServiceWithDefaults(),
-                commandCatalogServiceWithDefaults(),
+                commandCatalogService,
                 propertiesWithDefaults(),
-                comparisonExecutionService,
+                mock(WebappComparisonExecutionService.class),
                 authenticatedHolder(),
                 authenticationServiceWithDefaults());
 
-        invokeHandleEnterShortcut(view, "DIV", null);
+        Mockito.clearInvocations(commandCatalogService);
         invokeHandleEnterShortcut(view, "INPUT", "text");
 
-        Mockito.verifyNoInteractions(comparisonExecutionService);
+        Mockito.verifyNoInteractions(commandCatalogService);
+    }
+
+    @Test
+    void enterShortcutDoesNotTriggerRefreshWhenRefreshIsDisabled() {
+        final SqlServerCommandCatalogService commandCatalogService = Mockito.mock(SqlServerCommandCatalogService.class);
+        when(commandCatalogService.discoverCommandCatalog()).thenReturn(List.of(
+                new CommandCatalogEntry("11111111-1111-1111-1111-111111111111", "supplier.Supplier#registerProduct", "supplier.Supplier:301", "OK", "FOREGROUND", "2026-04-05T10:00:00.000", null, false)));
+
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogService,
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                unauthenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        Mockito.clearInvocations(commandCatalogService);
+        invokeHandleEnterShortcut(view, "DIV", null);
+
+        Mockito.verifyNoInteractions(commandCatalogService);
     }
 
     @Test
