@@ -275,7 +275,9 @@ class HomePageConnectionStatusPlaywrightSuccessTest {
             assertThat(comparisonPage.isSelectedOnlyChecked()).isTrue();
 
             final String initialGridText = comparisonPage.tableGridText();
-            assertThat(initialGridText).doesNotContain("Supplier", "Product", "PurchaseOrderWithoutBusinessKey");
+            assertThat(initialGridText).doesNotContain("Product", "PurchaseOrderWithoutBusinessKey");
+            assertThat(initialGridText).contains("SupplierMetadataExcluded");
+            assertThat(page.locator("[data-testid='table-checkbox-dbo-suppliermetadataexcluded']").getAttribute("disabled")).isNotNull();
             assertThat(initialGridText).doesNotContain("CommandLogEntry", "AuditTrailEntry", "LogicalTypeTableMapping");
 
             comparisonPage.setSelectedOnly(false);

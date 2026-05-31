@@ -148,4 +148,25 @@ class ManualTableSelectionStateTest {
 
         assertThat(state.isSelectedOnly()).isTrue();
     }
+
+    @Test
+    void selectedOnlyStillShowsMetadataExcludedRows() {
+        final TableRef supplier = new TableRef("dbo", "Supplier");
+        final TableRef flywayHistory = new TableRef("dbo", "flyway_schema_history");
+        final ManualTableSelectionState state = new ManualTableSelectionState(List.of(
+                TableCatalogEntry.eligible(supplier),
+                TableCatalogEntry.ineligible(flywayHistory, "Table excluded by extended-property metadata (cfct.ignored).")));
+
+        state.updateSelection(supplier, true);
+        state.setSelectedOnly(true);
+
+        final List<TableCatalogEntry> visible = state.filteredEntries(null).stream()
+                .filter(state::matchesSelectedVisibility)
+                .toList();
+
+        assertThat(visible)
+                .extracting(entry -> entry.table().displayName())
+                .containsExactlyInAnyOrder("dbo.Supplier", "dbo.flyway_schema_history");
+    }
 }
+

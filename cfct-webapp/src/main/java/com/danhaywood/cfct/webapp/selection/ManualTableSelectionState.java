@@ -91,7 +91,14 @@ public class ManualTableSelectionState {
     }
 
     public boolean matchesSelectedVisibility(final TableCatalogEntry entry) {
-        return !selectedOnly || isSelected(entry.table());
+        return !selectedOnly || isSelected(entry.table()) || isMetadataExcluded(entry);
+    }
+
+    private boolean isMetadataExcluded(final TableCatalogEntry entry) {
+        return entry != null
+                && !entry.eligible()
+                && entry.eligibilityReason() != null
+                && entry.eligibilityReason().contains("cfct.ignored");
     }
 
     public List<TableCatalogEntry> entriesSortedByTableName(final String filter, final boolean ascending) {

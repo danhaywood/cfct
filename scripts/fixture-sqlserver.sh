@@ -128,7 +128,7 @@ load_demo_data() {
     create_database "${RIGHT_DATABASE}"
   fi
 
-  for fixture in supplier product customer-address purchase-order purchase-order-without-business-key; do
+  for fixture in supplier product customer-address purchase-order purchase-order-without-business-key flyway-schema-history; do
     apply_fixture "${fixture}" "${LEFT_DATABASE}" left
     if [[ "${invalid_target_db}" != "true" ]]; then
       apply_fixture "${fixture}" "${RIGHT_DATABASE}" right
