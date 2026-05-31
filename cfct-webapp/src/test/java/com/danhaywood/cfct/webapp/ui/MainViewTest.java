@@ -1176,6 +1176,81 @@ class MainViewTest {
     }
 
     @Test
+    void shiftSpaceWithoutBusinessAnchorSelectsFocusedRowAndCreatesAnchor() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        final Checkbox selectedOnly = (Checkbox) findByTestId(view, "selected-only-checkbox").orElseThrow();
+        selectedOnly.setValue(false);
+
+        setFocusedBusinessTable(view, new TableRef("dbo", "Product"));
+        invokeToggleFocusedBusinessTableSelectionWithShift(view, true);
+        assertThat(view.selectedTablesForStageTwo()).containsExactly(new TableRef("dbo", "Product"));
+
+        setFocusedBusinessTable(view, new TableRef("dbo", "Supplier"));
+        invokeToggleFocusedBusinessTableSelectionWithShift(view, true);
+        assertThat(view.selectedTablesForStageTwo()).containsExactlyInAnyOrder(
+                new TableRef("dbo", "Supplier"),
+                new TableRef("dbo", "Product"));
+    }
+
+    @Test
+    void shiftBusinessRangeSelectionSkipsIneligibleRows() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        final Checkbox selectedOnly = (Checkbox) findByTestId(view, "selected-only-checkbox").orElseThrow();
+        selectedOnly.setValue(false);
+
+        invokeApplyBusinessTableRangeSelection(view, new TableRef("dbo", "Supplier"));
+        invokeApplyBusinessTableRangeSelection(view, new TableRef("dbo", "PurchaseOrderWithoutBusinessKey"));
+
+        assertThat(view.selectedTablesForStageTwo()).containsExactly(new TableRef("dbo", "Supplier"));
+    }
+
+    @Test
+    void selectAllCheckboxSelectsEligibleRowsAndReflectsIndeterminateState() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        final Checkbox selectAll = (Checkbox) findByTestId(view, "table-select-all-checkbox").orElseThrow();
+
+        assertThat(selectAll.getValue()).isFalse();
+        assertThat(selectAll.isIndeterminate()).isFalse();
+
+        selectAll.setValue(true);
+        assertThat(view.selectedTablesForStageTwo()).containsExactlyInAnyOrder(
+                new TableRef("dbo", "Product"),
+                new TableRef("dbo", "Supplier"));
+
+        invokeToggleFocusedBusinessTableSelection(view);
+        assertThat(selectAll.isIndeterminate()).isTrue();
+
+        selectAll.setValue(true);
+        selectAll.setValue(false);
+        assertThat(view.selectedTablesForStageTwo()).isEmpty();
+        assertThat(selectAll.isIndeterminate()).isFalse();
+    }
+
+    @Test
     void hidesMatchRowsByDefaultAndOmitsMatchRowsToggle() {
         final WebappComparisonExecutionService comparisonExecutionService = mock(WebappComparisonExecutionService.class);
         when(comparisonExecutionService.compare(Mockito.any(MultiTableComparisonRequest.class), Mockito.any(com.danhaywood.cfct.service.ComparisonProgressListener.class)))
@@ -1603,6 +1678,26 @@ class MainViewTest {
             final var method = MainView.class.getDeclaredMethod("toggleFocusedBusinessTableSelection");
             method.setAccessible(true);
             method.invoke(view);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void invokeToggleFocusedBusinessTableSelectionWithShift(final MainView view, final boolean shiftPressed) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("toggleFocusedBusinessTableSelection", boolean.class);
+            method.setAccessible(true);
+            method.invoke(view, shiftPressed);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void invokeApplyBusinessTableRangeSelection(final MainView view, final TableRef tableRef) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("applyBusinessTableRangeSelection", TableRef.class);
+            method.setAccessible(true);
+            method.invoke(view, tableRef);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

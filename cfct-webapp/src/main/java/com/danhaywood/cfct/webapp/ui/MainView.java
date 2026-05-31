@@ -121,6 +121,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private final Checkbox differencesOnlyFilter = new Checkbox("Diff tables only");
     private final Checkbox diffColumnsOnlyFilter = new Checkbox("Diff columns only");
     private final Checkbox selectedOnlyFilter = new Checkbox("Selected");
+    private final Checkbox selectAllTablesFilter = new Checkbox("Select all");
     private final Anchor downloadAction = new Anchor();
     private final Select<DownloadFormat> downloadFormatSelect = new Select<>();
     private final HorizontalLayout resultActions = new HorizontalLayout();
@@ -135,6 +136,9 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private String commandRangeAnchorInteractionId;
     private String skipNextCommandCheckboxClientEventInteractionId;
     private TableRef focusedBusinessTable;
+    private TableRef businessRangeAnchorTable;
+    private TableRef skipNextBusinessCheckboxClientEventTable;
+    private boolean updatingSelectAllTablesFilter;
 
     private WebappComparisonExecutionService.ComparisonExecutionOutcome latestOutcome;
     private int drawerWidthPx = 512;
@@ -513,9 +517,19 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             applySelectionFilters();
         });
 
+        selectAllTablesFilter.getElement().setAttribute("data-testid", "table-select-all-checkbox");
+        selectAllTablesFilter.setWidth("8.5rem");
+        selectAllTablesFilter.getStyle().set("white-space", "nowrap");
+        selectAllTablesFilter.addValueChangeListener(event -> {
+            if (updatingSelectAllTablesFilter) {
+                return;
+            }
+            applySelectAllBusinessTableSelection(Boolean.TRUE.equals(event.getValue()));
+        });
+
         final Grid<TableCatalogEntry> tableGrid = buildSelectionGrid();
 
-        final HorizontalLayout tableFilterRow = new HorizontalLayout(tableFilter, selectedOnlyFilter);
+        final HorizontalLayout tableFilterRow = new HorizontalLayout(tableFilter, selectedOnlyFilter, selectAllTablesFilter);
         tableFilterRow.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.END);
         tableFilterRow.expand(tableFilter);
         tableFilterRow.setWidthFull();
@@ -533,6 +547,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         layout.add(baselineFilter, commandGrid, commandSelectionSpacer, clearActionBar, tableFilterRow, tableGrid, actionBar);
         panel.add(layout, resizeHandle);
         applySelectionFilters();
+        syncSelectAllTablesFilterState();
         applyCommandFilters();
         return panel;
     }
@@ -559,12 +574,24 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                     checkbox.getElement().setAttribute("title", entry.eligibilityReason());
                 }
             }
+            checkbox.getElement()
+                    .addEventListener("click", domEvent -> {
+                        if (domEvent.getEventData().get("event.shiftKey").asBoolean(false)) {
+                            skipNextBusinessCheckboxClientEventTable = entry.table();
+                            applyBusinessTableRangeSelection(entry.table());
+                        }
+                    })
+                    .addEventData("event.shiftKey");
             checkbox.addValueChangeListener(event -> {
+                if (!event.isFromClient()) {
+                    return;
+                }
                 focusedBusinessTable = entry.table();
-                selectionState.updateSelection(entry.table(), event.getValue());
-                clearComparisonProgressStatus();
-                selectionDataProvider.refreshAll();
-                refreshActionButtons();
+                if (entry.table().equals(skipNextBusinessCheckboxClientEventTable)) {
+                    skipNextBusinessCheckboxClientEventTable = null;
+                    return;
+                }
+                applySingleBusinessTableSelection(entry.table(), event.getValue(), true);
             });
             return checkbox;
         })).setHeader("").setAutoWidth(true).setFlexGrow(0).setTextAlign(ColumnTextAlign.CENTER);
@@ -589,12 +616,21 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .setComparator(Comparator.comparing(entry -> entry.table().tableName(), String.CASE_INSENSITIVE_ORDER))
                 .setKey("table");
 
-        grid.addItemClickListener(event -> focusedBusinessTable = event.getItem().table());
+        grid.addItemClickListener(event -> {
+            focusedBusinessTable = event.getItem().table();
+            if (event.isShiftKey()) {
+                applyBusinessTableRangeSelection(event.getItem().table());
+                return;
+            }
+            businessRangeAnchorTable = event.getItem().table();
+        });
         grid.addCellFocusListener(event -> event.getItem().ifPresent(item -> focusedBusinessTable = item.table()));
+        grid.addSortListener(event -> clearBusinessRangeAnchorIfInvalid());
         grid.getElement()
-                .addEventListener("keydown", event -> toggleFocusedBusinessTableSelection())
+                .addEventListener("keydown", event -> toggleFocusedBusinessTableSelection(event.getEventData().get("event.shiftKey").asBoolean(false)))
                 .setFilter("event.code === 'Space' || event.key === ' '")
-                .addEventData("event.code");
+                .addEventData("event.code")
+                .addEventData("event.shiftKey");
 
         return grid;
     }
@@ -787,7 +823,9 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         selectionDataProvider.clearFilters();
         selectionDataProvider.addFilter(entry -> selectionState.matchesFilter(entry, tableFilterValue));
         selectionDataProvider.addFilter(selectionState::matchesSelectedVisibility);
+        clearBusinessRangeAnchorIfInvalid();
         selectionDataProvider.refreshAll();
+        syncSelectAllTablesFilterState();
     }
 
     private TextField filterField(final String placeholder, final String testId, final Consumer<String> onValueChanged) {
@@ -960,6 +998,8 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         commandRangeAnchorInteractionId = null;
         skipNextCommandCheckboxClientEventInteractionId = null;
         focusedBusinessTable = null;
+        businessRangeAnchorTable = null;
+        skipNextBusinessCheckboxClientEventTable = null;
         commandSelectionState.clearSelections();
         selectionState.clearSelections();
         clearComparisonProgressStatus();
@@ -1112,18 +1152,141 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     }
 
     private void toggleFocusedBusinessTableSelection() {
-        final TableCatalogEntry focusedEntry = focusedBusinessTable != null
-                ? tableCatalogEntries.stream().filter(entry -> entry.table().equals(focusedBusinessTable)).findFirst().orElse(null)
-                : tableCatalogEntries.stream().findFirst().orElse(null);
+        toggleFocusedBusinessTableSelection(false);
+    }
+
+    private void toggleFocusedBusinessTableSelection(final boolean shiftPressed) {
+        final TableCatalogEntry focusedEntry = focusedOrFirstVisibleBusinessEntry();
         if (focusedEntry == null || !focusedEntry.eligible()) {
+            return;
+        }
+        if (shiftPressed) {
+            applyBusinessTableRangeSelection(focusedEntry.table());
             return;
         }
         final TableRef tableRef = focusedEntry.table();
         final boolean nextSelected = !selectionState.isSelected(tableRef);
-        selectionState.updateSelection(tableRef, nextSelected);
+        applySingleBusinessTableSelection(tableRef, nextSelected, true);
+    }
+
+    private void applySingleBusinessTableSelection(
+            final TableRef table,
+            final boolean selected,
+            final boolean updateAnchor) {
+        selectionState.updateSelection(table, selected);
+        if (updateAnchor) {
+            businessRangeAnchorTable = table;
+        }
+        onBusinessSelectionMutated();
+    }
+
+    private void applyBusinessTableRangeSelection(final TableRef targetTable) {
+        if (targetTable == null) {
+            return;
+        }
+        final List<TableCatalogEntry> visibleEntries = visibleBusinessEntries();
+        final List<TableRef> visibleTables = visibleEntries.stream().map(TableCatalogEntry::table).toList();
+        if (visibleTables.isEmpty() || !visibleTables.contains(targetTable)) {
+            return;
+        }
+
+        final TableRef effectiveAnchor = visibleTables.contains(businessRangeAnchorTable)
+                ? businessRangeAnchorTable
+                : null;
+        if (effectiveAnchor == null) {
+            selectionState.updateSelection(targetTable, true);
+            businessRangeAnchorTable = targetTable;
+            onBusinessSelectionMutated();
+            return;
+        }
+
+        final int anchorIndex = visibleTables.indexOf(effectiveAnchor);
+        final int targetIndex = visibleTables.indexOf(targetTable);
+        if (anchorIndex < 0 || targetIndex < 0) {
+            return;
+        }
+
+        final int start = Math.min(anchorIndex, targetIndex);
+        final int end = Math.max(anchorIndex, targetIndex);
+        for (int idx = start; idx <= end; idx++) {
+            selectionState.updateSelection(visibleTables.get(idx), true);
+        }
+        onBusinessSelectionMutated();
+    }
+
+    private void applySelectAllBusinessTableSelection(final boolean selected) {
+        final List<TableCatalogEntry> selectableEntries = selectableBusinessEntriesForBulkSelection();
+        for (TableCatalogEntry entry : selectableEntries) {
+            selectionState.updateSelection(entry.table(), selected);
+        }
+        onBusinessSelectionMutated();
+    }
+
+    private void onBusinessSelectionMutated() {
         clearComparisonProgressStatus();
         selectionDataProvider.refreshAll();
+        syncSelectAllTablesFilterState();
         refreshActionButtons();
+    }
+
+    private TableCatalogEntry focusedOrFirstVisibleBusinessEntry() {
+        if (focusedBusinessTable != null) {
+            final TableCatalogEntry focused = tableCatalogEntries.stream()
+                    .filter(entry -> entry.table().equals(focusedBusinessTable))
+                    .findFirst()
+                    .orElse(null);
+            if (focused != null) {
+                return focused;
+            }
+        }
+        final TableCatalogEntry firstVisible = visibleBusinessEntries().stream().findFirst().orElse(null);
+        if (firstVisible != null) {
+            return firstVisible;
+        }
+        return tableCatalogEntries.stream().findFirst().orElse(null);
+    }
+
+    private List<TableCatalogEntry> selectableBusinessEntriesForBulkSelection() {
+        return tableCatalogEntries.stream()
+                .filter(TableCatalogEntry::eligible)
+                .filter(entry -> selectionState.matchesFilter(entry, tableFilterValue))
+                .sorted(Comparator.comparing(entry -> entry.table().displayName(), String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    private List<TableCatalogEntry> visibleBusinessEntries() {
+        return tableCatalogEntries.stream()
+                .filter(entry -> selectionState.matchesFilter(entry, tableFilterValue))
+                .filter(selectionState::matchesSelectedVisibility)
+                .sorted(Comparator.comparing(entry -> entry.table().displayName(), String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    private void syncSelectAllTablesFilterState() {
+        final List<TableCatalogEntry> selectableEntries = selectableBusinessEntriesForBulkSelection();
+        final long selectedCount = selectableEntries.stream().filter(entry -> selectionState.isSelected(entry.table())).count();
+        final boolean allSelected = !selectableEntries.isEmpty() && selectedCount == selectableEntries.size();
+        final boolean anySelected = selectedCount > 0;
+
+        updatingSelectAllTablesFilter = true;
+        try {
+            selectAllTablesFilter.setIndeterminate(anySelected && !allSelected);
+            selectAllTablesFilter.setValue(allSelected);
+        } finally {
+            updatingSelectAllTablesFilter = false;
+        }
+    }
+
+    private void clearBusinessRangeAnchorIfInvalid() {
+        if (businessRangeAnchorTable == null) {
+            return;
+        }
+        final boolean stillVisible = visibleBusinessEntries().stream()
+                .map(entry -> entry.table())
+                .anyMatch(businessRangeAnchorTable::equals);
+        if (!stillVisible) {
+            businessRangeAnchorTable = null;
+        }
     }
 
     private void refreshActionButtons() {
