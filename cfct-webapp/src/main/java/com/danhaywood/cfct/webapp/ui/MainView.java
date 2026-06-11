@@ -141,6 +141,10 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     private boolean updatingSelectAllTablesFilter;
 
     private WebappComparisonExecutionService.ComparisonExecutionOutcome latestOutcome;
+    private boolean comparisonInProgress;
+    private long comparisonRunSequence;
+    private long activeComparisonRunSequence = -1;
+    private long commandSelectionMutationSequence;
     private int drawerWidthPx = 512;
     private String tableFilterValue = "";
     private final Set<TableRef> completedTablesInActiveRun = new LinkedHashSet<>();
@@ -771,8 +775,34 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                 .addEventData("event.code")
                 .addEventData("event.shiftKey")
                 .addEventData("event.target.getAttribute('data-testid')");
+        grid.getElement()
+                .addEventListener("keydown", event -> moveFocusedCommandSelection(
+                        event.getEventData().get("event.code").asText("")))
+                .setFilter("event.code === 'ArrowDown' || event.code === 'ArrowUp'")
+                .addEventData("event.code");
 
         return grid;
+    }
+
+    private void moveFocusedCommandSelection(final String keyCode) {
+        final List<String> visibleInteractionIds = visibleCommandEntries().stream()
+                .map(CommandCatalogEntry::interactionId)
+                .toList();
+        if (visibleInteractionIds.isEmpty()) {
+            focusedCommandInteractionId = null;
+            return;
+        }
+
+        final int currentIndex = focusedCommandInteractionId == null
+                ? 0
+                : Math.max(0, visibleInteractionIds.indexOf(focusedCommandInteractionId));
+        if ("ArrowDown".equalsIgnoreCase(keyCode)) {
+            focusedCommandInteractionId = visibleInteractionIds.get(Math.min(currentIndex + 1, visibleInteractionIds.size() - 1));
+            return;
+        }
+        if ("ArrowUp".equalsIgnoreCase(keyCode)) {
+            focusedCommandInteractionId = visibleInteractionIds.get(Math.max(currentIndex - 1, 0));
+        }
     }
 
     private void enableDrawerResize(final Div panel, final Div resizeHandle) {
@@ -993,6 +1023,7 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         final var touchedTables = commandDrivenTableSelectionService.resolveTouchedBusinessTables(selectedInteractionIds, tableCatalogEntries);
         selectionState.applyProgrammaticSelections(touchedTables);
         applySelectionFilters();
+        syncSelectAllTablesFilterState();
         refreshActionButtons();
     }
 
@@ -1036,13 +1067,40 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             final String interactionId,
             final boolean selected,
             final boolean updateAnchor) {
+        if (interactionId == null || interactionId.isBlank()) {
+            return;
+        }
+
+        final long mutationId = ++commandSelectionMutationSequence;
+        if (comparisonInProgress) {
+            cancelActiveComparisonForCommandReselection();
+        }
+
+        if (selected && isAllVisibleCommandSelectionActive() && commandSelectionState.selectedCount() > 1) {
+            commandSelectionState.clearSelections();
+        }
+
+        if (commandSelectionState.isSelected(interactionId) == selected) {
+            return;
+        }
+
         commandSelectionState.updateSelection(interactionId, selected);
         if (updateAnchor) {
             commandRangeAnchorInteractionId = interactionId;
         }
         clearComparisonProgressStatus();
         commandSelectionDataProvider.refreshAll();
-        applyCommandDrivenSelection();
+        if (mutationId == commandSelectionMutationSequence) {
+            applyCommandDrivenSelection();
+        }
+    }
+
+    private boolean isAllVisibleCommandSelectionActive() {
+        final List<CommandCatalogEntry> visibleEntries = visibleCommandEntries();
+        if (visibleEntries.isEmpty()) {
+            return false;
+        }
+        return visibleEntries.stream().allMatch(entry -> commandSelectionState.isSelected(entry.interactionId()));
     }
 
     private void applyCommandRangeSelection(final String targetInteractionId) {
@@ -1244,9 +1302,13 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
     }
 
     private void applySelectAllBusinessTableSelection(final boolean selected) {
+        if (!selected) {
+            clearAllSelections();
+            return;
+        }
         final List<TableCatalogEntry> selectableEntries = selectableBusinessEntriesForBulkSelection();
         for (TableCatalogEntry entry : selectableEntries) {
-            selectionState.updateSelection(entry.table(), selected);
+            selectionState.updateSelection(entry.table(), true);
         }
         onBusinessSelectionMutated();
     }
@@ -1380,10 +1442,13 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         compareProgressCounter.setText("0 of " + compareProgressTotal);
         compareProgressCounter.setVisible(true);
         showComparisonProgress("Comparison running...", PROGRESS_STYLE_NEUTRAL);
+        comparisonInProgress = true;
+        final long runId = ++comparisonRunSequence;
+        activeComparisonRunSequence = runId;
 
         final UI ui = getUI().orElse(null);
         if (ui == null) {
-            executeComparisonSynchronously(selectedTables);
+            executeComparisonSynchronously(selectedTables, runId);
             return;
         }
 
@@ -1392,10 +1457,17 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         CompletableFuture
                 .supplyAsync(() -> comparisonExecutionService.compare(
                         MultiTableComparisonRequest.forTables(selectedTables),
-                        event -> ui.access(() -> onComparisonProgress(event)),
+                        event -> ui.access(() -> {
+                            if (runId == activeComparisonRunSequence) {
+                                onComparisonProgress(event);
+                            }
+                        }),
                         authenticatedContext))
                 .whenComplete((outcome, throwable) -> ui.access(() -> {
                     try {
+                        if (runId != activeComparisonRunSequence) {
+                            return;
+                        }
                         if (throwable == null) {
                             latestOutcome = outcome;
                             showComparisonProgress("Comparison complete.", PROGRESS_STYLE_SUCCESS);
@@ -1415,6 +1487,10 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
                             renderEmptyComparisonState();
                         }
                     } finally {
+                        if (runId == activeComparisonRunSequence) {
+                            comparisonInProgress = false;
+                            activeComparisonRunSequence = -1;
+                        }
                         ui.setPollInterval(-1);
                         compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
                     }
@@ -1896,17 +1972,27 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
         refreshActionButtons();
     }
 
-    private void executeComparisonSynchronously(final List<TableRef> selectedTables) {
+    private void executeComparisonSynchronously(final List<TableRef> selectedTables, final long runId) {
         try {
             latestOutcome = comparisonExecutionService.compare(
                     MultiTableComparisonRequest.forTables(selectedTables),
-                    this::onComparisonProgress);
+                    event -> {
+                        if (runId == activeComparisonRunSequence) {
+                            onComparisonProgress(event);
+                        }
+                    });
+            if (runId != activeComparisonRunSequence) {
+                return;
+            }
             showComparisonProgress("Comparison complete.", PROGRESS_STYLE_SUCCESS);
             downloadFormatSelect.setValue(DownloadFormat.JSON);
             resultActions.setVisible(true);
             refreshDownloadLinks();
             renderComparisonTabs();
         } catch (RuntimeException ex) {
+            if (runId != activeComparisonRunSequence) {
+                return;
+            }
             latestOutcome = null;
             resultActions.setVisible(false);
             comparisonResultsContainer.removeAll();
@@ -1914,8 +2000,26 @@ public class MainView extends AppLayout implements BeforeEnterObserver {
             showComparisonProgress("Comparison failed.", PROGRESS_STYLE_FAILURE);
             renderEmptyComparisonState();
         } finally {
+            if (runId == activeComparisonRunSequence) {
+                comparisonInProgress = false;
+                activeComparisonRunSequence = -1;
+            }
             compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
         }
+    }
+
+    private void cancelActiveComparisonForCommandReselection() {
+        if (!comparisonInProgress) {
+            return;
+        }
+        activeComparisonRunSequence = -1;
+        comparisonInProgress = false;
+        latestOutcome = null;
+        resultActions.setVisible(false);
+        comparisonResultsContainer.removeAll();
+        renderEmptyComparisonState();
+        clearComparisonProgressStatus();
+        compareButton.setEnabled(selectionState.isCompareEnabled() && authenticatedContextHolder.isAuthenticated());
     }
 
     private void onComparisonProgress(final ComparisonProgressEvent event) {

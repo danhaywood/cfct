@@ -1056,6 +1056,47 @@ class MainViewTest {
     }
 
     @Test
+    void selectingSingleCommandAfterAllVisibleSelectedClearsBulkSelectionState() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        invokeApplySingleCommandSelection(view, "11111111-1111-1111-1111-111111111111", true, true);
+        invokeApplySingleCommandSelection(view, "22222222-2222-2222-2222-222222222222", true, true);
+        invokeApplySingleCommandSelection(view, "33333333-3333-3333-3333-333333333333", true, true);
+        invokeApplySingleCommandSelection(view, "22222222-2222-2222-2222-222222222222", true, true);
+
+        assertThat(view.selectedCommandInteractionIdsForStageOne().size()).isLessThan(3);
+    }
+
+    @Test
+    void selectingCommandDuringActiveComparisonCancelsRunAndClearsProgress() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        invokeShowComparisonProgress(view, "Comparison running...", "comparison-progress-summary-neutral");
+        setComparisonInProgress(view, true);
+        setActiveComparisonRunSequence(view, 99L);
+        invokeApplySingleCommandSelection(view, "11111111-1111-1111-1111-111111111111", true, true);
+
+        final Span progress = (Span) findByTestId(view, "comparison-progress-summary").orElseThrow();
+        assertThat(progress.getText()).isBlank();
+        assertThat(getComparisonInProgress(view)).isFalse();
+        assertThat(getActiveComparisonRunSequence(view)).isEqualTo(-1L);
+    }
+
+    @Test
     void shiftRangeSelectionSelectsInclusiveVisibleRowsFromAnchor() {
         final MainView view = new MainView(
                 new ConnectionValidationStatusHolder(),
@@ -1072,6 +1113,26 @@ class MainViewTest {
 
         assertThat(view.selectedCommandInteractionIdsForStageOne())
                 .containsExactly("11111111-1111-1111-1111-111111111111", "33333333-3333-3333-3333-333333333333");
+    }
+
+    @Test
+    void spaceToggleUsesMovedCommandFocusNotInitialRow() {
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        invokeToggleFocusedCommandSelection(view);
+        invokeMoveFocusedCommandSelection(view, "ArrowDown");
+        invokeToggleFocusedCommandSelection(view);
+
+        assertThat(view.selectedCommandInteractionIdsForStageOne())
+                .contains("11111111-1111-1111-1111-111111111111")
+                .hasSize(2);
     }
 
     @Test
@@ -1274,6 +1335,32 @@ class MainViewTest {
         selectAll.setValue(false);
         assertThat(view.selectedTablesForStageTwo()).isEmpty();
         assertThat(selectAll.isIndeterminate()).isFalse();
+    }
+
+    @Test
+    void commandSelectionAfterDeselectingTableSelectAllReappliesCommandDrivenTables() {
+        final CommandDrivenTableSelectionService commandDrivenSelectionService = mock(CommandDrivenTableSelectionService.class);
+        when(commandDrivenSelectionService.resolveTouchedBusinessTables(Mockito.any(), Mockito.anyList()))
+                .thenReturn(Set.of(new TableRef("dbo", "Supplier")));
+
+        final MainView view = new MainView(
+                new ConnectionValidationStatusHolder(),
+                catalogServiceWithDefaults(),
+                commandCatalogServiceWithDefaults(),
+                commandDrivenSelectionService,
+                propertiesWithDefaults(),
+                mock(WebappComparisonExecutionService.class),
+                authenticatedHolder(),
+                authenticationServiceWithDefaults());
+
+        final Checkbox selectAll = (Checkbox) findByTestId(view, "table-select-all-checkbox").orElseThrow();
+        selectAll.setValue(true);
+        selectAll.setValue(false);
+
+        invokeApplySingleCommandSelection(view, "11111111-1111-1111-1111-111111111111", true, true);
+
+        assertThat(view.selectedTablesForStageTwo()).containsExactly(new TableRef("dbo", "Supplier"));
+        assertThat(selectAll.getValue()).isFalse();
     }
 
     @Test
@@ -1699,6 +1786,30 @@ class MainViewTest {
         }
     }
 
+    private void invokeMoveFocusedCommandSelection(final MainView view, final String keyCode) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("moveFocusedCommandSelection", String.class);
+            method.setAccessible(true);
+            method.invoke(view, keyCode);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void invokeApplySingleCommandSelection(
+            final MainView view,
+            final String interactionId,
+            final boolean selected,
+            final boolean updateAnchor) {
+        try {
+            final var method = MainView.class.getDeclaredMethod("applySingleCommandSelection", String.class, boolean.class, boolean.class);
+            method.setAccessible(true);
+            method.invoke(view, interactionId, selected, updateAnchor);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     private void invokeToggleFocusedBusinessTableSelection(final MainView view) {
         try {
             final var method = MainView.class.getDeclaredMethod("toggleFocusedBusinessTableSelection");
@@ -1774,6 +1885,46 @@ class MainViewTest {
             final var field = MainView.class.getDeclaredField("commandRangeAnchorInteractionId");
             field.setAccessible(true);
             return (String) field.get(view);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void setComparisonInProgress(final MainView view, final boolean value) {
+        try {
+            final var field = MainView.class.getDeclaredField("comparisonInProgress");
+            field.setAccessible(true);
+            field.setBoolean(view, value);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private boolean getComparisonInProgress(final MainView view) {
+        try {
+            final var field = MainView.class.getDeclaredField("comparisonInProgress");
+            field.setAccessible(true);
+            return field.getBoolean(view);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void setActiveComparisonRunSequence(final MainView view, final long value) {
+        try {
+            final var field = MainView.class.getDeclaredField("activeComparisonRunSequence");
+            field.setAccessible(true);
+            field.setLong(view, value);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private long getActiveComparisonRunSequence(final MainView view) {
+        try {
+            final var field = MainView.class.getDeclaredField("activeComparisonRunSequence");
+            field.setAccessible(true);
+            return field.getLong(view);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
