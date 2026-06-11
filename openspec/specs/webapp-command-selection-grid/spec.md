@@ -122,6 +122,8 @@ The webapp SHALL evaluate touched business tables for the currently selected com
 The webapp SHALL update business table selections to include the resolved touched tables.
 The webapp SHALL use union semantics across all selected commands.
 The webapp SHALL allow users to press Enter to execute compare immediately after command-driven table selection has enabled compare.
+Selecting an individual command row SHALL clear any active command-grid `Select all` state before command-driven table selection is recomputed.
+Selecting an individual command row after `Select all` SHALL leave only explicitly selected command rows active.
 
 #### Scenario: Selecting one command auto-selects touched business tables
 - **WHEN** a user selects a command row in the command grid
@@ -145,6 +147,12 @@ The webapp SHALL allow users to press Enter to execute compare immediately after
 #### Scenario: Enter executes compare after command-driven selection enables compare
 - **WHEN** command-driven table selection has produced at least one eligible selected table and the user presses Enter
 - **THEN** compare execution starts using the currently selected eligible tables
+
+#### Scenario: Selecting a command clears active select-all state
+- **WHEN** command-grid `Select all` state is active
+- **AND** the user selects an individual command row
+- **THEN** the `Select all` state is cleared
+- **AND** only explicitly selected command rows remain selected
 
 ### Requirement: Clear control resets command and business selections
 The webapp SHALL render a Clear control below the command selection grid.
