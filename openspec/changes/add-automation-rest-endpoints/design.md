@@ -40,10 +40,15 @@ Both operations must be protected by HTTP Basic authentication.
   - Alternative considered: introduce full Spring Security configuration for the application.
   - Why not chosen: it risks affecting Vaadin session behavior and is broader than the requested automation surface.
 
-- Source automation database credentials and comparison defaults from configuration.
-  - Rationale: automation clients should not send database passwords on every refresh request.
-  - Alternative considered: accept database connection details in the refresh payload.
-  - Why not chosen: it increases secret exposure and creates another credential transport path.
+- Source automation database credentials from configuration and derive compared tables dynamically.
+  - Rationale: automation clients should not send database passwords on every refresh request, and the Vaadin refresh flow already derives impacted tables from command-audit data.
+  - Alternative considered: configure a static automation table list.
+  - Why not chosen: it duplicates and can drift from the UI's command-driven table-selection behavior.
+
+- Select the newest successful command for automation refresh and resolve its touched eligible business tables.
+  - Rationale: this mirrors the UI refresh behavior that auto-selects the latest `OK` command, computes touched tables, and compares when eligible.
+  - Alternative considered: accept selected command IDs in the refresh request.
+  - Why not chosen: the requested automation contract has a single kick-off endpoint and should not require callers to understand the command catalog.
 
 - Allow the refresh endpoint to run synchronously for the initial implementation.
   - Rationale: synchronous execution gives callers a deterministic completion signal and keeps result state simple.
@@ -83,5 +88,5 @@ Rollback is a normal code revert and removal of any automation-specific properti
 
 ## Open Questions
 
-The initial design assumes the refresh endpoint uses configured automation comparison inputs rather than accepting database credentials from the caller.
-If callers need per-request table selection later, that can be added as an optional refresh request body without changing the two-endpoint shape.
+The initial design assumes automation refresh uses the newest successful command, matching the Vaadin refresh behavior.
+If callers need per-request command selection later, that can be added as an optional refresh request body without changing the two-endpoint shape.

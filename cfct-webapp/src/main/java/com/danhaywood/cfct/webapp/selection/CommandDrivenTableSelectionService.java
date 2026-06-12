@@ -2,6 +2,7 @@ package com.danhaywood.cfct.webapp.selection;
 
 import com.danhaywood.cfct.model.TableRef;
 import com.danhaywood.cfct.spi.CommandAuditTouchedTableResolver;
+import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContextHolder;
 import com.danhaywood.cfct.webapp.config.WebappDataSourceConfiguration;
 import com.danhaywood.cfct.webapp.config.WebappDataSources;
@@ -54,7 +55,7 @@ public class CommandDrivenTableSelectionService {
             return Set.of();
         }
 
-        final Set<TableRef> resolved = resolveTouchedTableRefs(selectedInteractionIds);
+        final Set<TableRef> resolved = resolveTouchedTableRefs(selectedInteractionIds, authenticatedContextHolder.required());
         if (resolved.isEmpty()) {
             return Set.of();
         }
@@ -68,8 +69,37 @@ public class CommandDrivenTableSelectionService {
         return filtered;
     }
 
-    private Set<TableRef> resolveTouchedTableRefs(final Collection<String> selectedInteractionIds) {
-        final WebappDataSources dataSources = dataSourceConfiguration.dataSourcesFor(authenticatedContextHolder.required());
+    public Set<TableRef> resolveTouchedBusinessTables(
+            final Collection<String> selectedInteractionIds,
+            final List<TableCatalogEntry> visibleTableCatalog,
+            final AuthenticatedConnectionContext authenticatedContext) {
+        if (selectedInteractionIds == null || selectedInteractionIds.isEmpty() || visibleTableCatalog == null || visibleTableCatalog.isEmpty()) {
+            return Set.of();
+        }
+
+        final Set<TableRef> visibleEligibleTables = visibleEligibleTables(visibleTableCatalog);
+        if (visibleEligibleTables.isEmpty()) {
+            return Set.of();
+        }
+
+        final Set<TableRef> resolved = resolveTouchedTableRefs(selectedInteractionIds, authenticatedContext);
+        if (resolved.isEmpty()) {
+            return Set.of();
+        }
+
+        final LinkedHashSet<TableRef> filtered = new LinkedHashSet<>();
+        for (TableRef table : resolved) {
+            if (visibleEligibleTables.contains(table)) {
+                filtered.add(table);
+            }
+        }
+        return filtered;
+    }
+
+    private Set<TableRef> resolveTouchedTableRefs(
+            final Collection<String> selectedInteractionIds,
+            final AuthenticatedConnectionContext authenticatedContext) {
+        final WebappDataSources dataSources = dataSourceConfiguration.dataSourcesFor(authenticatedContext);
         try (Connection connection = dataSources.left().getConnection()) {
             final Set<String> qualifiedTableNames = touchedTableResolver.resolveTouchedQualifiedTableNames(connection, selectedInteractionIds);
             final LinkedHashSet<TableRef> parsed = new LinkedHashSet<>();

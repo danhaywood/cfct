@@ -679,6 +679,146 @@ The webapp is reachable at http://localhost:8080 when the container is running.
 
 If browser access shows a whitelabel error and logs include `Unable to find index.html`, rebuild the jar with Maven package and recheck the classpath entry above before rebuilding the image.
 
+=== Automation REST API
+
+The webapp can expose a Basic-authenticated automation API for non-interactive refresh and JSON download workflows.
+Enable the API and configure credentials and comparison inputs with Spring properties:
+
+[source,properties]
+----
+cfct.webapp.automation.enabled=true
+cfct.webapp.automation.username=robot
+cfct.webapp.automation.password=secret
+cfct.webapp.automation.left-database=left_db
+cfct.webapp.automation.right-database=right_db
+----
+
+The automation endpoints use the same JDBC URL, JDBC driver, username, and password as the webapp datasource configuration.
+If automation-specific left or right database values are omitted, the endpoints fall back to `cfct.webapp.connection.left-database` and `cfct.webapp.connection.right-database`.
+A refresh dynamically selects the newest successful command from the command log, resolves touched eligible business tables using the same command-driven table-selection logic as the Vaadin UI, and compares those tables.
+
+Trigger a synchronous refresh with Basic Auth:
+
+[source,bash]
+----
+curl -u robot:secret -X POST http://localhost:8080/api/automation/refresh
+----
+
+Download the latest successful automation JSON result:
+
+[source,bash]
+----
+curl -u robot:secret -OJ http://localhost:8080/api/automation/comparison.json
+----
+
+The download endpoint returns `404 Not Found` until at least one automation refresh has completed successfully since application startup.
+A failed refresh reports an error response and leaves the previous successful JSON result available for download.
+
+==== Manual regression test with fixture SQL Server
+
+Start or restart the fixture SQL Server from the repository root:
+
+[source,bash]
+----
+scripts/fixture-sqlserver.sh restart
+----
+
+The fixture defaults are `localhost:14333`, username `sa`, password `Str0ng_password!123`, source database `left_db`, and target database `right_db`.
+Check fixture status if startup is slow:
+
+[source,bash]
+----
+scripts/fixture-sqlserver.sh status
+----
+
+Start the webapp with Java 21 and automation settings:
+
+[source,bash]
+----
+export JAVA_HOME="$HOME/.sdkman/candidates/java/21.0.10-tem"
+
+mvn -pl cfct-webapp -am spring-boot:run \
+  -Dspring-boot.run.arguments="\
+--spring.datasource.url=jdbc:sqlserver://localhost:14333;encrypt=false;trustServerCertificate=true \
+--spring.datasource.username=sa \
+--spring.datasource.password=Str0ng_password!123 \
+--cfct.webapp.connection.left-database=left_db \
+--cfct.webapp.connection.right-database=right_db \
+--cfct.webapp.automation.enabled=true \
+--cfct.webapp.automation.username=robot \
+--cfct.webapp.automation.password=secret \
+--cfct.webapp.automation.left-database=left_db \
+--cfct.webapp.automation.right-database=right_db"
+----
+
+Verify unauthenticated refresh is rejected:
+
+[source,bash]
+----
+curl -i -X POST http://localhost:8080/api/automation/refresh
+----
+
+The expected response is `401 Unauthorized` with a `WWW-Authenticate: Basic realm="CFCT Automation"` header.
+Verify invalid Basic Auth is rejected:
+
+[source,bash]
+----
+curl -i -u robot:wrong -X POST http://localhost:8080/api/automation/refresh
+----
+
+The expected response is `401 Unauthorized`.
+Verify download before refresh returns no result:
+
+[source,bash]
+----
+curl -i -u robot:secret http://localhost:8080/api/automation/comparison.json
+----
+
+The expected response is `404 Not Found` with a JSON body whose `status` is `not_found`.
+Trigger the automation refresh:
+
+[source,bash]
+----
+curl -i -u robot:secret -X POST http://localhost:8080/api/automation/refresh
+----
+
+The expected response is `200 OK` with JSON containing `status: completed`, `completedAt`, and a `tableCount` matching the eligible business tables touched by the newest successful fixture command.
+Download the latest JSON comparison:
+
+[source,bash]
+----
+curl -i -u robot:secret http://localhost:8080/api/automation/comparison.json
+----
+
+The expected response is `200 OK`, `Content-Type: application/json`, and a `Content-Disposition` filename beginning with `comparison-`.
+Save and inspect the artifact:
+
+[source,bash]
+----
+curl -u robot:secret -OJ http://localhost:8080/api/automation/comparison.json
+jq . comparison-*.json | head -80
+----
+
+The saved artifact should be valid JSON in the same deterministic comparison format used by existing JSON downloads.
+Run a second refresh and download to confirm the latest result remains available and the filename timestamp updates.
+For failure regression, stop the fixture while the webapp remains running:
+
+[source,bash]
+----
+scripts/fixture-sqlserver.sh stop
+curl -i -u robot:secret -X POST http://localhost:8080/api/automation/refresh
+----
+
+The expected response is `500 Internal Server Error` with a JSON body whose `status` is `failed`.
+If a previous refresh succeeded, a subsequent download should still return the last successful JSON result.
+If no refresh ever succeeded, the download should return `404 Not Found`.
+Stop the webapp with `Ctrl+C` and stop the fixture when done:
+
+[source,bash]
+----
+scripts/fixture-sqlserver.sh stop
+----
+
 === Smoke Tests
 
 * Run webapp connectivity-validation tests (Docker required):

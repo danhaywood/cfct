@@ -1,5 +1,6 @@
 package com.danhaywood.cfct.webapp.selection;
 
+import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContextHolder;
 import com.danhaywood.cfct.webapp.config.WebappDataSourceConfiguration;
 import com.danhaywood.cfct.webapp.config.WebappDataSources;
@@ -27,7 +28,11 @@ public class SqlServerCommandCatalogService {
     }
 
     public List<CommandCatalogEntry> discoverCommandCatalog() {
-        final WebappDataSources dataSources = dataSourceConfiguration.dataSourcesFor(authenticatedContextHolder.required());
+        return discoverCommandCatalog(authenticatedContextHolder.required());
+    }
+
+    public List<CommandCatalogEntry> discoverCommandCatalog(final AuthenticatedConnectionContext authenticatedContext) {
+        final WebappDataSources dataSources = dataSourceConfiguration.dataSourcesFor(authenticatedContext);
         final String sql = """
                 SELECT
                     CONVERT(varchar(36), interactionId) AS interaction_id,

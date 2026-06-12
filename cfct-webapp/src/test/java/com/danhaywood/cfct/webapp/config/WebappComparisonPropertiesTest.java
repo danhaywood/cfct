@@ -30,7 +30,12 @@ class WebappComparisonPropertiesTest {
                         "cfct.webapp.connection.left-database=left_db",
                         "cfct.webapp.connection.right-database=right_db",
                         "cfct.webapp.validation.enabled=false",
-                        "cfct.webapp.validation.fail-fast=false")
+                        "cfct.webapp.validation.fail-fast=false",
+                        "cfct.webapp.automation.enabled=true",
+                        "cfct.webapp.automation.username=robot",
+                        "cfct.webapp.automation.password=secret",
+                        "cfct.webapp.automation.left-database=automation_left",
+                        "cfct.webapp.automation.right-database=automation_right")
                 .run(context -> {
                     assertThat(context).hasNotFailed();
                     final WebappDatasourceProperties datasourceProperties = context.getBean(WebappDatasourceProperties.class);
@@ -44,6 +49,11 @@ class WebappComparisonPropertiesTest {
                     assertThat(properties.getConnection().getRightDatabase()).isEqualTo("right_db");
                     assertThat(properties.getValidation().isEnabled()).isFalse();
                     assertThat(properties.getValidation().isFailFast()).isFalse();
+                    assertThat(properties.getAutomation().isEnabled()).isTrue();
+                    assertThat(properties.getAutomation().getUsername()).isEqualTo("robot");
+                    assertThat(properties.getAutomation().getPassword()).isEqualTo("secret");
+                    assertThat(properties.getAutomation().getLeftDatabase()).isEqualTo("automation_left");
+                    assertThat(properties.getAutomation().getRightDatabase()).isEqualTo("automation_right");
                 });
     }
 
@@ -57,6 +67,10 @@ class WebappComparisonPropertiesTest {
                     assertThat(datasourceProperties.getDriverClassName()).isEqualTo("com.microsoft.sqlserver.jdbc.SQLServerDriver");
                     assertThat(datasourceProperties.getUsername()).isEqualTo("sa");
                     assertThat(datasourceProperties.getPassword()).isEqualTo("change-me");
+                    final WebappComparisonProperties properties = context.getBean(WebappComparisonProperties.class);
+                    assertThat(properties.getAutomation().isEnabled()).isFalse();
+                    assertThat(properties.getAutomation().getUsername()).isBlank();
+                    assertThat(properties.getAutomation().getPassword()).isBlank();
                 });
     }
 

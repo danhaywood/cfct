@@ -27,7 +27,8 @@ The webapp SHALL scope automation Basic authentication to automation endpoints o
 
 ### Requirement: Automation client can refresh comparison JSON
 The webapp SHALL provide `POST /api/automation/refresh` to run a comparison refresh for automation clients.
-The refresh endpoint SHALL use configured automation connection and comparison inputs.
+The refresh endpoint SHALL use configured automation connection inputs.
+The refresh endpoint SHALL derive compared tables from command-audit data using the same newest-successful-command and touched-eligible-business-table rules as the Vaadin refresh workflow.
 The refresh endpoint SHALL execute comparison through the same comparison orchestration and JSON report formatting used by the webapp comparison workflow.
 The refresh endpoint SHALL store the latest successful JSON comparison result for later download.
 The refresh endpoint SHALL return a success response only after the refreshed comparison result is available for download.
@@ -36,9 +37,16 @@ The refresh endpoint SHALL prevent overlapping automation refreshes from corrupt
 
 #### Scenario: Refresh stores latest JSON result
 - **WHEN** an authenticated automation client posts to `/api/automation/refresh`
+- **AND** the command catalog contains a newest successful command that touches eligible business tables
 - **AND** comparison execution succeeds
 - **THEN** the webapp stores the refreshed JSON comparison result
 - **AND** the response indicates that the refresh completed successfully
+
+#### Scenario: Refresh derives tables from newest successful command
+- **WHEN** an authenticated automation refresh starts
+- **THEN** the webapp discovers the command catalog
+- **AND** selects the newest command whose replay state is `OK`
+- **AND** resolves touched eligible business tables from that command before comparing
 
 #### Scenario: Refresh uses existing comparison formatting
 - **WHEN** an authenticated automation refresh succeeds
@@ -46,9 +54,15 @@ The refresh endpoint SHALL prevent overlapping automation refreshes from corrupt
 
 #### Scenario: Refresh failure reports error
 - **WHEN** an authenticated automation client posts to `/api/automation/refresh`
-- **AND** comparison execution fails
+- **AND** command discovery, touched-table resolution, or comparison execution fails
 - **THEN** the webapp responds with an error status and concise error payload
 - **AND** any previously successful JSON result remains available for download
+
+#### Scenario: Refresh without impacted eligible tables reports error
+- **WHEN** an authenticated automation client posts to `/api/automation/refresh`
+- **AND** no newest successful command or no touched eligible business table can be resolved
+- **THEN** the webapp responds with an error status and concise error payload
+- **AND** no new JSON result is stored
 
 #### Scenario: Concurrent refresh is rejected or serialized
 - **WHEN** an automation refresh is already running

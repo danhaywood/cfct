@@ -1,6 +1,7 @@
 package com.danhaywood.cfct.webapp.selection;
 
 import com.danhaywood.cfct.model.TableRef;
+import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContextHolder;
 import com.danhaywood.cfct.webapp.config.WebappDataSourceConfiguration;
 import com.danhaywood.cfct.webapp.config.WebappDataSources;
@@ -41,7 +42,11 @@ public class SqlServerTableCatalogService {
     }
 
     public List<TableCatalogEntry> discoverTableCatalog() {
-        final WebappDataSources dataSources = dataSourceConfiguration.dataSourcesFor(authenticatedContextHolder.required());
+        return discoverTableCatalog(authenticatedContextHolder.required());
+    }
+
+    public List<TableCatalogEntry> discoverTableCatalog(final AuthenticatedConnectionContext authenticatedContext) {
+        final WebappDataSources dataSources = dataSourceConfiguration.dataSourcesFor(authenticatedContext);
         final String sql = """
                 SELECT s.name AS schema_name,
                        t.name AS table_name,
