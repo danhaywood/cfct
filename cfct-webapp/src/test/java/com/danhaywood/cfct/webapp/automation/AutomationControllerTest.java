@@ -13,11 +13,9 @@ import java.util.Base64;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -29,7 +27,7 @@ class AutomationControllerTest {
     void rejectsMissingBasicCredentials() throws Exception {
         final MockMvc mockMvc = mockMvc(mock(AutomationComparisonService.class));
 
-        mockMvc.perform(post("/api/automation/refresh"))
+        mockMvc.perform(get("/api/automation/comparison.json"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, containsString("Basic")));
     }
@@ -38,60 +36,16 @@ class AutomationControllerTest {
     void rejectsInvalidBasicCredentials() throws Exception {
         final MockMvc mockMvc = mockMvc(mock(AutomationComparisonService.class));
 
-        mockMvc.perform(post("/api/automation/refresh")
+        mockMvc.perform(get("/api/automation/comparison.json")
                         .header(HttpHeaders.AUTHORIZATION, basic("robot", "wrong")))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void refreshAllowsValidBasicCredentials() throws Exception {
+    void downloadRefreshesAndReturnsJsonForValidBasicCredentials() throws Exception {
         final AutomationComparisonService service = mock(AutomationComparisonService.class);
         when(service.refresh()).thenReturn(AutomationComparisonService.AutomationRefreshResult.success(
-                new AutomationComparisonService.LatestAutomationResult("{}\n", Instant.parse("2026-06-12T07:00:00Z"), 2)));
-        final MockMvc mockMvc = mockMvc(service);
-
-        mockMvc.perform(post("/api/automation/refresh")
-                        .header(HttpHeaders.AUTHORIZATION, basic("robot", "secret")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("completed"))
-                .andExpect(jsonPath("$.completedAt").value("2026-06-12T07:00:00Z"))
-                .andExpect(jsonPath("$.tableCount").value(2));
-
-        verify(service).refresh();
-    }
-
-    @Test
-    void refreshReportsConflictWhenAlreadyRunning() throws Exception {
-        final AutomationComparisonService service = mock(AutomationComparisonService.class);
-        when(service.refresh()).thenReturn(AutomationComparisonService.AutomationRefreshResult.inProgress());
-        final MockMvc mockMvc = mockMvc(service);
-
-        mockMvc.perform(post("/api/automation/refresh")
-                        .header(HttpHeaders.AUTHORIZATION, basic("robot", "secret")))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.status").value("in_progress"));
-    }
-
-    @Test
-    void refreshReportsExecutionFailure() throws Exception {
-        final AutomationComparisonService service = mock(AutomationComparisonService.class);
-        when(service.refresh()).thenThrow(new IllegalStateException("database unavailable"));
-        final MockMvc mockMvc = mockMvc(service);
-
-        mockMvc.perform(post("/api/automation/refresh")
-                        .header(HttpHeaders.AUTHORIZATION, basic("robot", "secret")))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.status").value("failed"))
-                .andExpect(jsonPath("$.message").value("database unavailable"));
-    }
-
-    @Test
-    void downloadReturnsLatestJson() throws Exception {
-        final AutomationComparisonService service = mock(AutomationComparisonService.class);
-        when(service.latestResult()).thenReturn(new AutomationComparisonService.LatestAutomationResult(
-                "{\"tables\":[]}\n",
-                Instant.parse("2026-06-12T07:00:00Z"),
-                1));
+                new AutomationComparisonService.LatestAutomationResult("{\"tables\":[]}\n", Instant.parse("2026-06-12T07:00:00Z"), 2)));
         final MockMvc mockMvc = mockMvc(service);
 
         mockMvc.perform(get("/api/automation/comparison.json")
@@ -101,20 +55,44 @@ class AutomationControllerTest {
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("comparison-2026-06-12T07-00-00Z.json")))
                 .andExpect(content().json("{\"tables\":[]}"));
 
-        verify(service).latestResult();
-        verify(service, never()).refresh();
+        verify(service).refresh();
     }
 
     @Test
-    void downloadBeforeRefreshReturnsNotFound() throws Exception {
+    void downloadReportsConflictWhenAlreadyRunning() throws Exception {
         final AutomationComparisonService service = mock(AutomationComparisonService.class);
-        when(service.latestResult()).thenReturn(null);
+        when(service.refresh()).thenReturn(AutomationComparisonService.AutomationRefreshResult.inProgress());
+        final MockMvc mockMvc = mockMvc(service);
+
+        mockMvc.perform(get("/api/automation/comparison.json")
+                        .header(HttpHeaders.AUTHORIZATION, basic("robot", "secret")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value("in_progress"));
+    }
+
+    @Test
+    void downloadReportsExecutionFailure() throws Exception {
+        final AutomationComparisonService service = mock(AutomationComparisonService.class);
+        when(service.refresh()).thenThrow(new IllegalStateException("database unavailable"));
+        final MockMvc mockMvc = mockMvc(service);
+
+        mockMvc.perform(get("/api/automation/comparison.json")
+                        .header(HttpHeaders.AUTHORIZATION, basic("robot", "secret")))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.status").value("failed"))
+                .andExpect(jsonPath("$.message").value("database unavailable"));
+    }
+
+    @Test
+    void downloadReportsDisabledAutomation() throws Exception {
+        final AutomationComparisonService service = mock(AutomationComparisonService.class);
+        when(service.refresh()).thenThrow(new AutomationComparisonService.AutomationDisabledException());
         final MockMvc mockMvc = mockMvc(service);
 
         mockMvc.perform(get("/api/automation/comparison.json")
                         .header(HttpHeaders.AUTHORIZATION, basic("robot", "secret")))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value("not_found"));
+                .andExpect(jsonPath("$.status").value("disabled"));
     }
 
     private static MockMvc mockMvc(final AutomationComparisonService service) {

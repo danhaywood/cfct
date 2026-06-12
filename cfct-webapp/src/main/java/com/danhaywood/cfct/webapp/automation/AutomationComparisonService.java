@@ -21,7 +21,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class AutomationComparisonService {
@@ -33,7 +32,6 @@ public class AutomationComparisonService {
     private final SqlServerTableCatalogService tableCatalogService;
     private final CommandDrivenTableSelectionService commandDrivenTableSelectionService;
     private final Clock clock;
-    private final AtomicReference<LatestAutomationResult> latestResult = new AtomicReference<>();
     private final AtomicBoolean refreshInProgress = new AtomicBoolean();
 
     @Autowired
@@ -88,16 +86,10 @@ public class AutomationComparisonService {
                     outcome.json(),
                     Instant.now(clock),
                     request.tables().size());
-            latestResult.set(result);
             return AutomationRefreshResult.success(result);
         } finally {
             refreshInProgress.set(false);
         }
-    }
-
-    public LatestAutomationResult latestResult() {
-        ensureEnabled();
-        return latestResult.get();
     }
 
     private List<TableRef> dynamicallyResolvedTables(final AuthenticatedConnectionContext context) {

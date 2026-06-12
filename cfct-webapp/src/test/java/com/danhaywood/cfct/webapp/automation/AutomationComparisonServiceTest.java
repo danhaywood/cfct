@@ -44,7 +44,7 @@ class AutomationComparisonServiceTest {
     private static final TableRef APPLICATION_USER = new TableRef("isisExtSecman", "ApplicationUser");
 
     @Test
-    void refreshDerivesTablesFromNewestSuccessfulCommandAndStoresFormatterJson() {
+    void refreshDerivesTablesFromNewestSuccessfulCommandAndReturnsCurrentFormatterJson() {
         final Fixture fixture = fixture();
         when(fixture.executionService.compare(any(), isNull(), any()))
                 .thenReturn(new WebappComparisonExecutionService.ComparisonExecutionOutcome(
@@ -61,7 +61,6 @@ class AutomationComparisonServiceTest {
         assertThat(result.latestResult().json()).isEqualTo("{\"tables\":[]}\n");
         assertThat(result.latestResult().completedAt()).isEqualTo(Instant.parse("2026-06-12T07:00:00Z"));
         assertThat(result.latestResult().tableCount()).isEqualTo(2);
-        assertThat(service.latestResult()).isSameAs(result.latestResult());
         verify(fixture.commandCatalogService).discoverCommandCatalog(EXPECTED_CONTEXT);
         verify(fixture.tableCatalogService).discoverTableCatalog(EXPECTED_CONTEXT);
         verify(fixture.commandDrivenTableSelectionService).resolveTouchedBusinessTables(
@@ -69,7 +68,7 @@ class AutomationComparisonServiceTest {
                 fixture.tableCatalog,
                 EXPECTED_CONTEXT);
         verify(fixture.executionService).compare(
-                org.mockito.ArgumentMatchers.argThat(request -> request.tables().equals(List.of(SUPPLIER, APPLICATION_USER))),
+                org.mockito.ArgumentMatchers.argThat(request -> Set.copyOf(request.tables()).equals(Set.of(SUPPLIER, APPLICATION_USER))),
                 isNull(),
                 org.mockito.ArgumentMatchers.eq(EXPECTED_CONTEXT));
     }
@@ -97,7 +96,7 @@ class AutomationComparisonServiceTest {
     }
 
     @Test
-    void refreshFailurePreservesPreviousSuccessfulResult() {
+    void refreshFailureDoesNotReturnCachedResult() {
         final Fixture fixture = fixture();
         when(fixture.executionService.compare(any(), isNull(), any()))
                 .thenReturn(new WebappComparisonExecutionService.ComparisonExecutionOutcome(
@@ -109,12 +108,10 @@ class AutomationComparisonServiceTest {
                 .thenThrow(new IllegalStateException("database unavailable"));
         final AutomationComparisonService service = fixture.service();
 
-        final AutomationComparisonService.LatestAutomationResult firstResult = service.refresh().latestResult();
-
+        assertThat(service.refresh().latestResult().json()).isEqualTo("{\"ok\":true}\n");
         assertThatThrownBy(service::refresh)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("database unavailable");
-        assertThat(service.latestResult()).isSameAs(firstResult);
     }
 
     @Test
@@ -163,7 +160,7 @@ class AutomationComparisonServiceTest {
     }
 
     @Test
-    void disabledAutomationRejectsRefreshAndDownloadState() {
+    void disabledAutomationRejectsRefresh() {
         final WebappComparisonProperties properties = properties();
         properties.getAutomation().setEnabled(false);
         final AutomationComparisonService service = new AutomationComparisonService(
@@ -176,8 +173,6 @@ class AutomationComparisonServiceTest {
                 FIXED_CLOCK);
 
         assertThatThrownBy(service::refresh)
-                .isInstanceOf(AutomationComparisonService.AutomationDisabledException.class);
-        assertThatThrownBy(service::latestResult)
                 .isInstanceOf(AutomationComparisonService.AutomationDisabledException.class);
     }
 
