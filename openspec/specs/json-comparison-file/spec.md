@@ -28,6 +28,8 @@ The JSON output SHALL include `differingTables` with one detailed result entry p
 The JSON output SHALL omit clean compared tables from `differingTables`.
 The JSON output SHALL support a top-level `command` metadata object when a caller supplies command context for the rendered comparison.
 When command metadata is supplied, the JSON output SHALL include `command.interactionId` and `command.timestamp` fields.
+The JSON output SHALL support a top-level `backgroundCommands` metadata object when a caller supplies background command status for the rendered comparison.
+When background command status is supplied, the JSON output SHALL include a numeric `backgroundCommands.pending` field.
 Each `differingTables` result SHALL include table identity, business-key metadata, compared columns, ignored columns, summary counts, rows only in left, rows only in right, and differing rows.
 Rows only in left and rows only in right SHALL include the row key and available side values.
 Differing rows SHALL include the row key, left values, right values, and changed column details.
@@ -66,6 +68,11 @@ The JSON output SHALL support empty comparison results with `hasDifferences` set
 #### Scenario: JSON output includes supplied command metadata
 - **WHEN** a caller renders JSON output with command metadata
 - **THEN** the JSON output includes `command.interactionId` and `command.timestamp` fields matching the supplied command metadata
+- **AND** the compared table and differing table structures remain present and deterministic
+
+#### Scenario: JSON output includes supplied background command status
+- **WHEN** a caller renders JSON output with background command status
+- **THEN** the JSON output includes a numeric `backgroundCommands.pending` field matching the supplied pending count
 - **AND** the compared table and differing table structures remain present and deterministic
 
 #### Scenario: JSON output represents empty comparisons

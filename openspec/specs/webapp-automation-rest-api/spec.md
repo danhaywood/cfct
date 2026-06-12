@@ -39,6 +39,9 @@ The endpoint SHALL return a successful empty comparison JSON response when the n
 The endpoint SHALL include a top-level `command` JSON object in every successful comparison response.
 The `command` object SHALL include `interactionId` and `timestamp` fields for the selected newest successful command.
 The endpoint SHALL populate `command.interactionId` and `command.timestamp` from the same command catalog entry used to resolve touched business tables.
+The endpoint SHALL include a top-level `backgroundCommands` JSON object in every successful comparison response.
+The `backgroundCommands` object SHALL include a numeric `pending` field.
+The endpoint SHALL populate `backgroundCommands.pending` with the count of visible command catalog entries whose execution mode is background and whose replay state is pending.
 The endpoint SHALL return `application/json` content.
 The endpoint SHALL return a download-friendly filename in response headers for successful JSON downloads.
 The endpoint SHALL return a concise error response when command discovery or comparison execution fails.
@@ -51,6 +54,7 @@ The endpoint SHALL prevent overlapping automation refresh/download requests from
 - **THEN** the webapp responds with `200 OK`
 - **AND** the response body is the refreshed JSON comparison result
 - **AND** the response body includes `command.interactionId` and `command.timestamp` fields for the selected newest successful command
+- **AND** the response body includes a numeric `backgroundCommands.pending` field
 - **AND** the response content type is `application/json`
 - **AND** the response includes a download-friendly filename
 
@@ -65,10 +69,21 @@ The endpoint SHALL prevent overlapping automation refresh/download requests from
 - **THEN** the returned JSON payload includes `command.interactionId` equal to the newest successful command interaction identifier
 - **AND** the returned JSON payload includes `command.timestamp` equal to that same command's command timestamp
 
+#### Scenario: Download reports pending background command count
+- **WHEN** an authenticated automation download succeeds
+- **AND** the command catalog snapshot contains pending background commands
+- **THEN** the returned JSON payload includes `backgroundCommands.pending` equal to the number of pending background command entries
+
+#### Scenario: Download reports zero pending background commands
+- **WHEN** an authenticated automation download succeeds
+- **AND** the command catalog snapshot contains no pending background commands
+- **THEN** the returned JSON payload includes `backgroundCommands.pending` set to `0`
+
 #### Scenario: Download uses existing comparison formatting
 - **WHEN** an authenticated automation download succeeds with one or more eligible compared tables
 - **THEN** the returned JSON payload uses the same deterministic JSON comparison format as existing webapp JSON downloads
 - **AND** the returned JSON payload includes the selected command metadata fields
+- **AND** the returned JSON payload includes the background command status fields
 
 #### Scenario: Download returns empty comparison for safe non-changing command
 - **WHEN** an authenticated automation client calls `GET /api/automation/comparison.json`
@@ -78,6 +93,7 @@ The endpoint SHALL prevent overlapping automation refresh/download requests from
 - **AND** the response body has `differingTables` set to an empty array
 - **AND** the response body has `comparedTables` set to an empty array
 - **AND** the response body includes `command.interactionId` and `command.timestamp` fields for the selected newest successful command
+- **AND** the response body includes a numeric `backgroundCommands.pending` field
 
 #### Scenario: Download failure reports error
 - **WHEN** an authenticated automation client calls `GET /api/automation/comparison.json`
