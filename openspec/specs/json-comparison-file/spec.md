@@ -26,6 +26,8 @@ The JSON output SHALL include report-level difference status.
 The JSON output SHALL include `comparedTables` with one table identity entry per compared table in request order.
 The JSON output SHALL include `differingTables` with one detailed result entry per compared table that has missing rows or differing rows.
 The JSON output SHALL omit clean compared tables from `differingTables`.
+The JSON output SHALL support a top-level `command` metadata object when a caller supplies command context for the rendered comparison.
+When command metadata is supplied, the JSON output SHALL include `command.interactionId` and `command.timestamp` fields.
 Each `differingTables` result SHALL include table identity, business-key metadata, compared columns, ignored columns, summary counts, rows only in left, rows only in right, and differing rows.
 Rows only in left and rows only in right SHALL include the row key and available side values.
 Differing rows SHALL include the row key, left values, right values, and changed column details.
@@ -61,6 +63,11 @@ The JSON output SHALL support empty comparison results with `hasDifferences` set
 - **WHEN** a matched row has differing compared values
 - **THEN** the JSON output includes the row key, left-side values, right-side values, and changed column details for that row in `differingTables`
 
+#### Scenario: JSON output includes supplied command metadata
+- **WHEN** a caller renders JSON output with command metadata
+- **THEN** the JSON output includes `command.interactionId` and `command.timestamp` fields matching the supplied command metadata
+- **AND** the compared table and differing table structures remain present and deterministic
+
 #### Scenario: JSON output represents empty comparisons
 - **WHEN** a configured comparison has no compared tables
 - **THEN** the JSON output has `hasDifferences` set to `false`
@@ -70,7 +77,6 @@ The JSON output SHALL support empty comparison results with `hasDifferences` set
 #### Scenario: JSON output is approval-tested
 - **WHEN** the configured comparison integration test runs
 - **THEN** the approved output is a deterministic detailed JSON document
-
 ### Requirement: Comparison JSON file supports configured output formats
 The system SHALL accept `json`, `yaml`, and `excel` as supported output types in a comparison JSON file.
 The system SHALL reject all other output types.
