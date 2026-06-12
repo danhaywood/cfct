@@ -113,7 +113,7 @@ public final class TableMetadataReaderSqlServer implements TableMetadataReader {
             final TableRef table,
             final ComparisonOptions options) {
         final String sql = """
-                SELECT i.name AS index_name, ic.key_ordinal, c.name AS column_name
+                SELECT i.name AS index_name, i.is_primary_key, ic.key_ordinal, c.name AS column_name
                 FROM sys.schemas s
                 JOIN sys.tables t ON s.schema_id = t.schema_id
                 JOIN sys.indexes i ON t.object_id = i.object_id
@@ -130,29 +130,49 @@ public final class TableMetadataReaderSqlServer implements TableMetadataReader {
             statement.setString(1, table.schemaName());
             statement.setString(2, table.tableName());
             try (ResultSet resultSet = statement.executeQuery()) {
-                final Map<String, List<ColumnRef>> matchingKeyObjects = new LinkedHashMap<>();
+                final Map<String, KeyCandidate> matchingKeyObjects = new LinkedHashMap<>();
                 while (resultSet.next()) {
                     final String keyObjectName = resultSet.getString("index_name");
                     if (!hasBusinessKeySuffix(keyObjectName, options.businessKeyIndexSuffix())) {
                         continue;
                     }
-                    matchingKeyObjects.computeIfAbsent(keyObjectName, ignored -> new ArrayList<>())
+                    final boolean primaryKey = resultSet.getBoolean("is_primary_key");
+                    matchingKeyObjects.computeIfAbsent(
+                                    keyObjectName,
+                                    ignored -> new KeyCandidate(keyObjectName, primaryKey, new ArrayList<>()))
+                            .columns()
                             .add(new ColumnRef(resultSet.getString("column_name")));
                 }
-                if (matchingKeyObjects.isEmpty()) {
-                    throw new MetadataException("Table %s has no unique index or unique constraint ending with %s".formatted(
-                            table.displayName(), options.businessKeyIndexSuffix()));
-                }
-                if (matchingKeyObjects.size() > 1) {
-                    throw new MetadataException("Table %s has multiple unique indexes or unique constraints ending with %s: %s".formatted(
-                            table.displayName(), options.businessKeyIndexSuffix(), String.join(", ", matchingKeyObjects.keySet())));
-                }
-                final Map.Entry<String, List<ColumnRef>> entry = matchingKeyObjects.entrySet().iterator().next();
-                return new BusinessKey(entry.getKey(), entry.getValue());
+                final KeyCandidate selectedCandidate = selectBusinessKeyCandidate(
+                        table,
+                        options.businessKeyIndexSuffix(),
+                        matchingKeyObjects);
+                return new BusinessKey(selectedCandidate.name(), selectedCandidate.columns());
             }
         } catch (SQLException ex) {
             throw new MetadataException("Failed to read business-key index or constraint for table %s".formatted(table.displayName()), ex);
         }
+    }
+
+    private KeyCandidate selectBusinessKeyCandidate(
+            final TableRef table,
+            final String businessKeyIndexSuffix,
+            final Map<String, KeyCandidate> matchingKeyObjects) {
+        if (matchingKeyObjects.isEmpty()) {
+            throw new MetadataException("Table %s has no unique index or unique constraint ending with %s".formatted(
+                    table.displayName(), businessKeyIndexSuffix));
+        }
+        if (matchingKeyObjects.size() == 1) {
+            return matchingKeyObjects.values().iterator().next();
+        }
+        final List<KeyCandidate> primaryKeyCandidates = matchingKeyObjects.values().stream()
+                .filter(KeyCandidate::primaryKey)
+                .toList();
+        if (primaryKeyCandidates.size() == 1) {
+            return primaryKeyCandidates.get(0);
+        }
+        throw new MetadataException("Table %s has multiple unique indexes or unique constraints ending with %s: %s".formatted(
+                table.displayName(), businessKeyIndexSuffix, String.join(", ", matchingKeyObjects.keySet())));
     }
 
     static boolean hasBusinessKeySuffix(final String candidateName, final String expectedSuffix) {
@@ -162,6 +182,9 @@ public final class TableMetadataReaderSqlServer implements TableMetadataReader {
         final String normalizedName = candidateName.toLowerCase(Locale.ROOT);
         final String normalizedSuffix = expectedSuffix.toLowerCase(Locale.ROOT);
         return normalizedName.endsWith(normalizedSuffix);
+    }
+
+    private record KeyCandidate(String name, boolean primaryKey, List<ColumnRef> columns) {
     }
 
     private boolean isIgnoredByAdvisor(final ColumnMetadata column) {

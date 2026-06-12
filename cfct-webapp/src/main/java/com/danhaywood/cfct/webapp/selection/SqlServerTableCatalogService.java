@@ -12,8 +12,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -43,23 +45,30 @@ public class SqlServerTableCatalogService {
         final String sql = """
                 SELECT s.name AS schema_name,
                        t.name AS table_name,
-                       SUM(CASE WHEN i.is_unique = 1 AND i.name IS NOT NULL AND i.name LIKE ? THEN 1 ELSE 0 END) AS bk_key_object_count,
-                       MAX(CASE WHEN ep.name = ? THEN CAST(ep.value AS NVARCHAR(128)) END) AS table_ignored_extended_property
+                       i.name AS key_object_name,
+                       i.is_primary_key,
+                       MAX(CAST(ep.value AS NVARCHAR(128))) AS table_ignored_extended_property
                 FROM sys.tables t
                 JOIN sys.schemas s ON s.schema_id = t.schema_id
-                LEFT JOIN sys.indexes i ON i.object_id = t.object_id
-                LEFT JOIN sys.extended_properties ep ON ep.major_id = t.object_id AND ep.minor_id = 0
+                LEFT JOIN sys.indexes i
+                       ON i.object_id = t.object_id
+                      AND i.is_unique = 1
+                      AND i.name IS NOT NULL
+                LEFT JOIN sys.extended_properties ep
+                       ON ep.class = 1
+                      AND ep.major_id = t.object_id
+                      AND ep.minor_id = 0
+                      AND ep.name = ?
                 WHERE t.is_ms_shipped = 0
-                GROUP BY s.name, t.name
-                ORDER BY s.name, t.name
+                GROUP BY s.name, t.name, i.name, i.is_primary_key
+                ORDER BY s.name, t.name, i.name
                 """;
 
         try (Connection jdbc = dataSources.left().getConnection();
              PreparedStatement statement = jdbc.prepareStatement(sql)) {
-            statement.setString(1, "%" + PK_SUFFIX);
-            statement.setString(2, TABLE_IGNORED_PROPERTY_NAME);
+            statement.setString(1, TABLE_IGNORED_PROPERTY_NAME);
             try (ResultSet resultSet = statement.executeQuery()) {
-                final List<TableCatalogEntry> rows = new ArrayList<>();
+                final Map<TableRef, DiscoveredTable> discoveredTables = new LinkedHashMap<>();
                 while (resultSet.next()) {
                     final String schemaName = resultSet.getString("schema_name");
                     final String tableName = resultSet.getString("table_name");
@@ -67,9 +76,23 @@ public class SqlServerTableCatalogService {
                     if (isExcludedTable(table)) {
                         continue;
                     }
-                    final int bkKeyObjectCount = resultSet.getInt("bk_key_object_count");
                     final String tableIgnoredExtendedPropertyValue = resultSet.getString("table_ignored_extended_property");
-                    rows.add(mapDiscoveredTable(table, bkKeyObjectCount, tableIgnoredExtendedPropertyValue));
+                    final DiscoveredTable discoveredTable = discoveredTables.computeIfAbsent(
+                            table,
+                            ignored -> new DiscoveredTable(table, tableIgnoredExtendedPropertyValue, new ArrayList<>()));
+                    final String keyObjectName = resultSet.getString("key_object_name");
+                    if (hasBusinessKeySuffix(keyObjectName)) {
+                        discoveredTable.matchingKeyObjects().add(new KeyCandidate(
+                                keyObjectName,
+                                resultSet.getBoolean("is_primary_key")));
+                    }
+                }
+                final List<TableCatalogEntry> rows = new ArrayList<>();
+                for (DiscoveredTable discoveredTable : discoveredTables.values()) {
+                    rows.add(mapDiscoveredTable(
+                            discoveredTable.table(),
+                            discoveredTable.matchingKeyObjects(),
+                            discoveredTable.tableIgnoredExtendedPropertyValue()));
                 }
                 return rows;
             }
@@ -84,18 +107,40 @@ public class SqlServerTableCatalogService {
 
     static TableCatalogEntry mapDiscoveredTable(
             final TableRef table,
-            final int bkKeyObjectCount,
+            final List<KeyCandidate> matchingKeyObjects,
             final String tableIgnoredExtendedPropertyValue) {
         if (isTruthy(tableIgnoredExtendedPropertyValue)) {
             return TableCatalogEntry.ineligible(table, TABLE_IGNORED_REASON);
         }
-        if (bkKeyObjectCount == 1) {
-            return TableCatalogEntry.eligible(table);
-        }
-        if (bkKeyObjectCount <= 0) {
+        if (matchingKeyObjects.isEmpty()) {
             return TableCatalogEntry.ineligible(table, "No unique index or unique constraint ending with _PK.");
         }
+        if (matchingKeyObjects.size() == 1) {
+            return TableCatalogEntry.eligible(table);
+        }
+        final List<KeyCandidate> primaryKeyCandidates = matchingKeyObjects.stream()
+                .filter(KeyCandidate::primaryKey)
+                .toList();
+        if (primaryKeyCandidates.size() == 1) {
+            return TableCatalogEntry.eligible(table);
+        }
         return TableCatalogEntry.ineligible(table, "Multiple unique indexes or unique constraints ending with _PK.");
+    }
+
+    static boolean hasBusinessKeySuffix(final String candidateName) {
+        if (candidateName == null) {
+            return false;
+        }
+        return candidateName.toLowerCase(Locale.ROOT).endsWith(PK_SUFFIX.toLowerCase(Locale.ROOT));
+    }
+
+    record KeyCandidate(String name, boolean primaryKey) {
+    }
+
+    private record DiscoveredTable(
+            TableRef table,
+            String tableIgnoredExtendedPropertyValue,
+            List<KeyCandidate> matchingKeyObjects) {
     }
 
     static boolean isTruthy(final String value) {

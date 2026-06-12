@@ -20,4 +20,9 @@ class TableMetadataReaderSqlServerTest {
     void doesNotMatchWhenSuffixDiffers() {
         assertThat(TableMetadataReaderSqlServer.hasBusinessKeySuffix("PurchaseOrder__reference__UK", "_PK")).isFalse();
     }
+
+    @Test
+    void treatsUnderscoreAsLiteralSuffixCharacter() {
+        assertThat(TableMetadataReaderSqlServer.hasBusinessKeySuffix("PurchaseOrderXPK", "_PK")).isFalse();
+    }
 }

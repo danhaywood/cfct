@@ -241,6 +241,26 @@ class CoreSingleTableComparisonIT {
     }
 
     @Test
+    void acceptsPrimaryKeyWhenUnrelatedUniqueConstraintExists() throws Exception {
+        initializeSchema("application-user-primary-key");
+
+        final TableMetadata metadata = readMetadata("ApplicationUser");
+
+        assertThat(metadata.businessKey().indexName()).isEqualTo("ApplicationUser_PK");
+        assertThat(metadata.businessKey().columns()).containsExactly(new ColumnRef("id"));
+    }
+
+    @Test
+    void prefersPrimaryKeyWhenMultipleBusinessKeyObjectsMatchSuffix() throws Exception {
+        initializeSchema("application-user-primary-key-preference");
+
+        final TableMetadata metadata = readMetadata("ApplicationUserPrimaryKeyPreference");
+
+        assertThat(metadata.businessKey().indexName()).isEqualTo("ApplicationUserPrimaryKeyPreference_PK");
+        assertThat(metadata.businessKey().columns()).containsExactly(new ColumnRef("id"));
+    }
+
+    @Test
     void failsClearlyWhenBusinessKeyObjectsAreAmbiguousAcrossIndexAndConstraint() {
         initializeSchema("ambiguous-business-key-mixed");
 

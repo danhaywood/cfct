@@ -4,6 +4,8 @@ import com.danhaywood.cfct.model.TableRef;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class SqlServerTableCatalogServiceTest {
@@ -20,7 +22,7 @@ class SqlServerTableCatalogServiceTest {
     void mapsEligibleTableWhenExactlyOneBkIndexExists() {
         final TableCatalogEntry entry = SqlServerTableCatalogService.mapDiscoveredTable(
                 new TableRef("dbo", "Supplier"),
-                1,
+                List.of(new SqlServerTableCatalogService.KeyCandidate("Supplier_PK", false)),
                 null);
 
         assertThat(entry.eligible()).isTrue();
@@ -31,7 +33,7 @@ class SqlServerTableCatalogServiceTest {
     void mapsIneligibleTableWhenNoBkIndexExists() {
         final TableCatalogEntry entry = SqlServerTableCatalogService.mapDiscoveredTable(
                 new TableRef("dbo", "PurchaseOrderWithoutBusinessKey"),
-                0,
+                List.of(),
                 null);
 
         assertThat(entry.eligible()).isFalse();
@@ -42,7 +44,9 @@ class SqlServerTableCatalogServiceTest {
     void mapsIneligibleTableWhenMultipleBkIndexesExist() {
         final TableCatalogEntry entry = SqlServerTableCatalogService.mapDiscoveredTable(
                 new TableRef("dbo", "AmbiguousBusinessKey"),
-                2,
+                List.of(
+                        new SqlServerTableCatalogService.KeyCandidate("AmbiguousBusinessKey_PK", false),
+                        new SqlServerTableCatalogService.KeyCandidate("AmbiguousBusinessKeyExternal_PK", false)),
                 null);
 
         assertThat(entry.eligible()).isFalse();
@@ -50,10 +54,52 @@ class SqlServerTableCatalogServiceTest {
     }
 
     @Test
+    void mapsEligibleTableWhenPrimaryKeyDisambiguatesMultipleBkIndexes() {
+        final TableCatalogEntry entry = SqlServerTableCatalogService.mapDiscoveredTable(
+                new TableRef("dbo", "ApplicationUser"),
+                List.of(
+                        new SqlServerTableCatalogService.KeyCandidate("ApplicationUser_PK", true),
+                        new SqlServerTableCatalogService.KeyCandidate("ApplicationUser__username__PK", false)),
+                null);
+
+        assertThat(entry.eligible()).isTrue();
+        assertThat(entry.eligibilityReason()).isNull();
+    }
+
+    @Test
+    void mapsEligibleTableWhenUnrelatedUniqueConstraintExists() {
+        final TableCatalogEntry entry = SqlServerTableCatalogService.mapDiscoveredTable(
+                new TableRef("dbo", "ApplicationUser"),
+                List.of(new SqlServerTableCatalogService.KeyCandidate("ApplicationUser_PK", true)),
+                null);
+
+        assertThat(entry.eligible()).isTrue();
+        assertThat(entry.eligibilityReason()).isNull();
+    }
+
+    @Test
+    void mapsEligibleTableWhenTableExtendedPropertyIsNotTruthy() {
+        final TableCatalogEntry entry = SqlServerTableCatalogService.mapDiscoveredTable(
+                new TableRef("dbo", "Supplier"),
+                List.of(new SqlServerTableCatalogService.KeyCandidate("Supplier_PK", false)),
+                "description");
+
+        assertThat(entry.eligible()).isTrue();
+        assertThat(entry.eligibilityReason()).isNull();
+    }
+
+    @Test
+    void matchesBusinessKeySuffixLiterally() {
+        assertThat(SqlServerTableCatalogService.hasBusinessKeySuffix("Supplier_PK")).isTrue();
+        assertThat(SqlServerTableCatalogService.hasBusinessKeySuffix("SupplierXPK")).isFalse();
+        assertThat(SqlServerTableCatalogService.hasBusinessKeySuffix("Supplier_pk")).isTrue();
+    }
+
+    @Test
     void mapsIneligibleTableWhenTableExtendedPropertyIsTruthy() {
         final TableCatalogEntry entry = SqlServerTableCatalogService.mapDiscoveredTable(
                 new TableRef("dbo", "Supplier"),
-                1,
+                List.of(new SqlServerTableCatalogService.KeyCandidate("Supplier_PK", false)),
                 "true");
 
         assertThat(entry.eligible()).isFalse();
@@ -64,7 +110,7 @@ class SqlServerTableCatalogServiceTest {
     void nonTruthyTableExtendedPropertyDoesNotDisableTable() {
         final TableCatalogEntry entry = SqlServerTableCatalogService.mapDiscoveredTable(
                 new TableRef("dbo", "Supplier"),
-                1,
+                List.of(new SqlServerTableCatalogService.KeyCandidate("Supplier_PK", false)),
                 "false");
 
         assertThat(entry.eligible()).isTrue();
