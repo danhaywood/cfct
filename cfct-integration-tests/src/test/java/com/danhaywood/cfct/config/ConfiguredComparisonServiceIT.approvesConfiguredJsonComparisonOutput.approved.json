@@ -1,6 +1,6 @@
 {
   "hasDifferences" : true,
-  "tables" : [ {
+  "differingTables" : [ {
     "table" : {
       "schema" : "dbo",
       "name" : "Supplier"
@@ -122,5 +122,16 @@
         "right" : "10.50"
       } ]
     } ]
+  } ],
+  "comparedTables" : [ {
+    "table" : {
+      "schema" : "dbo",
+      "name" : "Supplier"
+    }
+  }, {
+    "table" : {
+      "schema" : "dbo",
+      "name" : "Product"
+    }
   } ]
 }

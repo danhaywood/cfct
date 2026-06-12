@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -50,7 +51,7 @@ class AutomationComparisonServiceTest {
                 .thenReturn(new WebappComparisonExecutionService.ComparisonExecutionOutcome(
                         new MultiTableComparisonResult(List.of()),
                         new com.danhaywood.cfct.model.MultiTableComparisonViewResult(List.of()),
-                        "{\"tables\":[]}\n",
+                        "{\"hasDifferences\":false,\"differingTables\":[],\"comparedTables\":[]}\n",
                         "tables: []\n",
                         new byte[]{1}));
         final AutomationComparisonService service = fixture.service();
@@ -58,7 +59,7 @@ class AutomationComparisonServiceTest {
         final AutomationComparisonService.AutomationRefreshResult result = service.refresh();
 
         assertThat(result.conflict()).isFalse();
-        assertThat(result.latestResult().json()).isEqualTo("{\"tables\":[]}\n");
+        assertThat(result.latestResult().json()).isEqualTo("{\"hasDifferences\":false,\"differingTables\":[],\"comparedTables\":[]}\n");
         assertThat(result.latestResult().completedAt()).isEqualTo(Instant.parse("2026-06-12T07:00:00Z"));
         assertThat(result.latestResult().tableCount()).isEqualTo(2);
         verify(fixture.commandCatalogService).discoverCommandCatalog(EXPECTED_CONTEXT);
@@ -124,12 +125,17 @@ class AutomationComparisonServiceTest {
     }
 
     @Test
-    void refreshFailsWhenNoEligibleTouchedTablesResolve() {
+    void refreshReturnsEmptyJsonWhenNoEligibleTouchedTablesResolve() {
         final Fixture fixture = fixture(Set.of());
 
-        assertThatThrownBy(fixture.service()::refresh)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("No eligible touched business tables were resolved for command newest-ok.");
+        final AutomationComparisonService.AutomationRefreshResult result = fixture.service().refresh();
+
+        assertThat(result.conflict()).isFalse();
+        assertThat(result.latestResult().json()).contains("\"hasDifferences\" : false");
+        assertThat(result.latestResult().json()).contains("\"differingTables\" : [ ]");
+        assertThat(result.latestResult().json()).contains("\"comparedTables\" : [ ]");
+        assertThat(result.latestResult().tableCount()).isZero();
+        verify(fixture.executionService, never()).compare(any(), isNull(), any());
     }
 
     @Test

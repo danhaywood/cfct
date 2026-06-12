@@ -36,7 +36,19 @@ public final class JsonMultiTableComparisonReportRenderer {
     private Map<String, Object> toJsonModel(final MultiTableComparisonResult result) {
         final Map<String, Object> model = new LinkedHashMap<>();
         model.put("hasDifferences", result.hasDifferences());
-        model.put("tables", result.tableResults().stream().map(this::toTableModel).toList());
+        model.put("differingTables", result.tableResults().stream()
+                .filter(TableComparisonResult::hasDifferences)
+                .map(this::toTableModel)
+                .toList());
+        model.put("comparedTables", result.tableResults().stream()
+                .map(this::toComparedTableModel)
+                .toList());
+        return model;
+    }
+
+    private Map<String, Object> toComparedTableModel(final TableComparisonResult result) {
+        final Map<String, Object> model = new LinkedHashMap<>();
+        model.put("table", tableModel(result));
         return model;
     }
 

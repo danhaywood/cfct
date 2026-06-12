@@ -28,9 +28,12 @@ class JsonMultiTableComparisonReportRendererTest {
         final String json = renderer.render(new MultiTableComparisonResult(List.of(tableResult())));
 
         final JsonNode root = objectMapper.readTree(json);
-        final JsonNode table = root.path("tables").path(0);
+        final JsonNode table = root.path("differingTables").path(0);
 
         assertThat(root.path("hasDifferences").asBoolean()).isTrue();
+        assertThat(root.path("tables").isMissingNode()).isTrue();
+        assertThat(root.path("comparedTables").path(0).path("table").path("schema").asText()).isEqualTo("dbo");
+        assertThat(root.path("comparedTables").path(0).path("table").path("name").asText()).isEqualTo("Supplier");
         assertThat(table.path("table").path("schema").asText()).isEqualTo("dbo");
         assertThat(table.path("table").path("name").asText()).isEqualTo("Supplier");
         assertThat(table.path("summary").path("comparedColumnCount").asInt()).isEqualTo(2);
@@ -67,6 +70,31 @@ class JsonMultiTableComparisonReportRendererTest {
         assertThat(differing.path("differences").path(0).path("right").asText()).isEqualTo("INACTIVE");
     }
 
+    @Test
+    void omitsCleanTablesFromDifferingTablesButIncludesThemInComparedTables() throws Exception {
+        final String json = renderer.render(new MultiTableComparisonResult(List.of(tableResult(), cleanTableResult())));
+
+        final JsonNode root = objectMapper.readTree(json);
+
+        assertThat(root.path("hasDifferences").asBoolean()).isTrue();
+        assertThat(root.path("differingTables")).hasSize(1);
+        assertThat(root.path("differingTables").path(0).path("table").path("name").asText()).isEqualTo("Supplier");
+        assertThat(root.path("comparedTables")).hasSize(2);
+        assertThat(root.path("comparedTables").path(0).path("table").path("name").asText()).isEqualTo("Supplier");
+        assertThat(root.path("comparedTables").path(1).path("table").path("name").asText()).isEqualTo("Product");
+    }
+
+    @Test
+    void rendersEmptyComparisonReport() throws Exception {
+        final String json = renderer.render(new MultiTableComparisonResult(List.of()));
+
+        final JsonNode root = objectMapper.readTree(json);
+
+        assertThat(root.path("hasDifferences").asBoolean()).isFalse();
+        assertThat(root.path("differingTables")).isEmpty();
+        assertThat(root.path("comparedTables")).isEmpty();
+    }
+
     private TableComparisonResult tableResult() {
         final ColumnRef name = new ColumnRef("name");
         final ColumnRef status = new ColumnRef("status");
@@ -92,5 +120,19 @@ class JsonMultiTableComparisonReportRendererTest {
                         List.of(new ColumnDifference(status, "ACTIVE", "INACTIVE")))),
                 Map.of(leftOnly, leftOnlyValues),
                 Map.of(rightOnly, rightOnlyValues));
+    }
+
+    private TableComparisonResult cleanTableResult() {
+        final ColumnRef name = new ColumnRef("name");
+        return new TableComparisonResult(
+                new TableRef("dbo", "Product"),
+                new BusinessKey("Product_PK", List.of(new ColumnRef("sku"))),
+                List.of(name),
+                List.of(new ColumnRef("id")),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Map.of());
     }
 }

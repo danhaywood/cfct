@@ -25,6 +25,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Service
 public class AutomationComparisonService {
 
+    private static final String EMPTY_COMPARISON_JSON = """
+            {
+              \"hasDifferences\" : false,
+              \"differingTables\" : [ ],
+              \"comparedTables\" : [ ]
+            }
+            """;
+
     private final WebappComparisonProperties comparisonProperties;
     private final WebappDatasourceProperties datasourceProperties;
     private final WebappComparisonExecutionService comparisonExecutionService;
@@ -77,6 +85,12 @@ public class AutomationComparisonService {
         try {
             final AuthenticatedConnectionContext context = automationConnectionContext();
             final List<TableRef> tables = dynamicallyResolvedTables(context);
+            if (tables.isEmpty()) {
+                return AutomationRefreshResult.success(new LatestAutomationResult(
+                        EMPTY_COMPARISON_JSON,
+                        Instant.now(clock),
+                        0));
+            }
             final MultiTableComparisonRequest request = MultiTableComparisonRequest.forTables(tables);
             final WebappComparisonExecutionService.ComparisonExecutionOutcome outcome = comparisonExecutionService.compare(
                     request,
@@ -102,9 +116,6 @@ public class AutomationComparisonService {
                 List.of(interactionId),
                 tableCatalog,
                 context);
-        if (touchedTables.isEmpty()) {
-            throw new IllegalStateException("No eligible touched business tables were resolved for command " + interactionId + ".");
-        }
         return List.copyOf(touchedTables);
     }
 

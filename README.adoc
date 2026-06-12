@@ -266,6 +266,11 @@ Equivalent short-flag example:
 ----
 ./cfct.sh --env-file demo/.env --tables-file demo/tables.txt --output-format json -o comparison.json
 ----
++
+The JSON report uses `hasDifferences` as the top-level summary flag.
+Detailed table result objects appear under `differingTables` for compared tables that have missing rows or differing rows.
+The `comparedTables` array lists every table identity that was compared, including clean tables that are omitted from `differingTables`.
+An empty successful comparison is represented as `hasDifferences: false`, `differingTables: []`, and `comparedTables: []`.
 
 * Writes YAML output instead of the default text output:
 +
@@ -696,6 +701,7 @@ cfct.webapp.automation.right-database=right_db
 The automation endpoints use the same JDBC URL, JDBC driver, username, and password as the webapp datasource configuration.
 If automation-specific left or right database values are omitted, the endpoints fall back to `cfct.webapp.connection.left-database` and `cfct.webapp.connection.right-database`.
 The automation download dynamically selects the newest successful command from the command log, resolves touched eligible business tables using the same command-driven table-selection logic as the Vaadin UI, compares those tables, and returns the refreshed JSON in the same response.
+If the newest successful command does not resolve any eligible touched business tables, the endpoint still succeeds and returns an empty comparison JSON document with `hasDifferences: false`, `differingTables: []`, and `comparedTables: []`.
 
 Refresh and download the automation JSON result with Basic Auth:
 
@@ -776,6 +782,7 @@ jq . comparison-*.json | head -80
 ----
 
 The saved artifact should be valid JSON in the same deterministic comparison format used by existing JSON downloads.
+The JSON contains `differingTables` for detailed difference payloads and `comparedTables` for the complete list of compared table identities.
 Run a second refresh-and-download request to confirm the filename timestamp updates.
 For failure regression, stop the fixture while the webapp remains running:
 
