@@ -59,9 +59,15 @@ class AutomationComparisonServiceTest {
         final AutomationComparisonService.AutomationRefreshResult result = service.refresh();
 
         assertThat(result.conflict()).isFalse();
-        assertThat(result.latestResult().json()).isEqualTo("{\"hasDifferences\":false,\"differingTables\":[],\"comparedTables\":[]}\n");
+        assertThat(result.latestResult().json()).contains("\"hasDifferences\" : false");
+        assertThat(result.latestResult().json()).contains("\"differingTables\" : [ ]");
+        assertThat(result.latestResult().json()).contains("\"comparedTables\" : [ ]");
+        assertThat(result.latestResult().json()).contains("\"command\" : {");
+        assertThat(result.latestResult().json()).contains("\"interactionId\" : \"newest-ok\"");
+        assertThat(result.latestResult().json()).contains("\"timestamp\" : \"2026-06-12T07:00:00\"");
         assertThat(result.latestResult().completedAt()).isEqualTo(Instant.parse("2026-06-12T07:00:00Z"));
         assertThat(result.latestResult().tableCount()).isEqualTo(2);
+        assertThat(result.latestResult().command()).isEqualTo(new AutomationComparisonService.CommandMetadata("newest-ok", "2026-06-12T07:00:00"));
         verify(fixture.commandCatalogService).discoverCommandCatalog(EXPECTED_CONTEXT);
         verify(fixture.tableCatalogService).discoverTableCatalog(EXPECTED_CONTEXT);
         verify(fixture.commandDrivenTableSelectionService).resolveTouchedBusinessTables(
@@ -109,7 +115,9 @@ class AutomationComparisonServiceTest {
                 .thenThrow(new IllegalStateException("database unavailable"));
         final AutomationComparisonService service = fixture.service();
 
-        assertThat(service.refresh().latestResult().json()).isEqualTo("{\"ok\":true}\n");
+        final String firstJson = service.refresh().latestResult().json();
+        assertThat(firstJson).contains("\"ok\" : true");
+        assertThat(firstJson).contains("\"command\" : {");
         assertThatThrownBy(service::refresh)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("database unavailable");
@@ -134,6 +142,10 @@ class AutomationComparisonServiceTest {
         assertThat(result.latestResult().json()).contains("\"hasDifferences\" : false");
         assertThat(result.latestResult().json()).contains("\"differingTables\" : [ ]");
         assertThat(result.latestResult().json()).contains("\"comparedTables\" : [ ]");
+        assertThat(result.latestResult().json()).contains("\"command\" : {");
+        assertThat(result.latestResult().json()).contains("\"interactionId\" : \"newest-ok\"");
+        assertThat(result.latestResult().json()).contains("\"timestamp\" : \"2026-06-12T07:00:00\"");
+        assertThat(result.latestResult().command()).isEqualTo(new AutomationComparisonService.CommandMetadata("newest-ok", "2026-06-12T07:00:00"));
         assertThat(result.latestResult().tableCount()).isZero();
         verify(fixture.executionService, never()).compare(any(), isNull(), any());
     }

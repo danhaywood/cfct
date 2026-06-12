@@ -11,6 +11,10 @@ import com.danhaywood.cfct.webapp.selection.CommandDrivenTableSelectionService;
 import com.danhaywood.cfct.webapp.selection.SqlServerCommandCatalogService;
 import com.danhaywood.cfct.webapp.selection.SqlServerTableCatalogService;
 import com.danhaywood.cfct.webapp.selection.TableCatalogEntry;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,6 +36,7 @@ public class AutomationComparisonService {
               \"comparedTables\" : [ ]
             }
             """;
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
     private final WebappComparisonProperties comparisonProperties;
     private final WebappDatasourceProperties datasourceProperties;
@@ -84,12 +89,18 @@ public class AutomationComparisonService {
         }
         try {
             final AuthenticatedConnectionContext context = automationConnectionContext();
-            final List<TableRef> tables = dynamicallyResolvedTables(context);
+            final CommandCatalogEntry command = newestSuccessfulCommand(commandCatalogService.discoverCommandCatalog(context));
+            if (command == null) {
+                throw new IllegalStateException("No successful command is available for automation refresh.");
+            }
+            final CommandMetadata commandMetadata = CommandMetadata.from(command);
+            final List<TableRef> tables = dynamicallyResolvedTables(context, command);
             if (tables.isEmpty()) {
                 return AutomationRefreshResult.success(new LatestAutomationResult(
-                        EMPTY_COMPARISON_JSON,
+                        withCommandMetadata(EMPTY_COMPARISON_JSON, commandMetadata),
                         Instant.now(clock),
-                        0));
+                        0,
+                        commandMetadata));
             }
             final MultiTableComparisonRequest request = MultiTableComparisonRequest.forTables(tables);
             final WebappComparisonExecutionService.ComparisonExecutionOutcome outcome = comparisonExecutionService.compare(
@@ -97,34 +108,45 @@ public class AutomationComparisonService {
                     null,
                     context);
             final LatestAutomationResult result = new LatestAutomationResult(
-                    outcome.json(),
+                    withCommandMetadata(outcome.json(), commandMetadata),
                     Instant.now(clock),
-                    request.tables().size());
+                    request.tables().size(),
+                    commandMetadata);
             return AutomationRefreshResult.success(result);
         } finally {
             refreshInProgress.set(false);
         }
     }
 
-    private List<TableRef> dynamicallyResolvedTables(final AuthenticatedConnectionContext context) {
-        final String interactionId = newestSuccessfulCommandInteractionId(commandCatalogService.discoverCommandCatalog(context));
-        if (interactionId == null) {
-            throw new IllegalStateException("No successful command is available for automation refresh.");
-        }
+    private List<TableRef> dynamicallyResolvedTables(
+            final AuthenticatedConnectionContext context,
+            final CommandCatalogEntry command) {
         final List<TableCatalogEntry> tableCatalog = tableCatalogService.discoverTableCatalog(context);
         final Set<TableRef> touchedTables = commandDrivenTableSelectionService.resolveTouchedBusinessTables(
-                List.of(interactionId),
+                List.of(command.interactionId()),
                 tableCatalog,
                 context);
         return List.copyOf(touchedTables);
     }
 
-    private String newestSuccessfulCommandInteractionId(final List<CommandCatalogEntry> entries) {
+    private CommandCatalogEntry newestSuccessfulCommand(final List<CommandCatalogEntry> entries) {
         return entries.stream()
                 .filter(entry -> "OK".equalsIgnoreCase(entry.replayState()))
                 .max(Comparator.comparing(CommandCatalogEntry::timestamp, String.CASE_INSENSITIVE_ORDER))
-                .map(CommandCatalogEntry::interactionId)
                 .orElse(null);
+    }
+
+    private static String withCommandMetadata(final String json, final CommandMetadata commandMetadata) {
+        try {
+            final ObjectNode root = (ObjectNode) JSON_MAPPER.readTree(json);
+            final ObjectNode commandNode = JSON_MAPPER.createObjectNode();
+            commandNode.put("interactionId", commandMetadata.interactionId());
+            commandNode.put("timestamp", commandMetadata.timestamp());
+            root.set("command", commandNode);
+            return JSON_MAPPER.writeValueAsString(root) + System.lineSeparator();
+        } catch (JsonProcessingException | ClassCastException ex) {
+            throw new IllegalStateException("Failed to add automation command metadata to JSON comparison result", ex);
+        }
     }
 
     private void ensureEnabled() {
@@ -154,7 +176,13 @@ public class AutomationComparisonService {
         throw new IllegalStateException("Automation " + label + " must be configured.");
     }
 
-    public record LatestAutomationResult(String json, Instant completedAt, int tableCount) {
+    public record CommandMetadata(String interactionId, String timestamp) {
+        static CommandMetadata from(final CommandCatalogEntry command) {
+            return new CommandMetadata(command.interactionId(), command.timestamp());
+        }
+    }
+
+    public record LatestAutomationResult(String json, Instant completedAt, int tableCount, CommandMetadata command) {
         public String filename() {
             return "comparison-" + completedAt.toString().replace(':', '-') + ".json";
         }
