@@ -46,10 +46,11 @@ class AutomationControllerTest {
         final AutomationComparisonService service = mock(AutomationComparisonService.class);
         when(service.refresh()).thenReturn(AutomationComparisonService.AutomationRefreshResult.success(
                 new AutomationComparisonService.LatestAutomationResult(
-                        "{\"hasDifferences\":false,\"differingTables\":[],\"comparedTables\":[],\"command\":{\"interactionId\":\"newest-ok\",\"timestamp\":\"2026-06-12T07:00:00\"}}\n",
+                        "{\"hasDifferences\":false,\"differingTables\":[],\"comparedTables\":[],\"command\":{\"interactionId\":\"newest-ok\",\"timestamp\":\"2026-06-12T07:00:00\"},\"backgroundCommands\":{\"pending\":2}}\n",
                         Instant.parse("2026-06-12T07:00:00Z"),
                         0,
-                        new AutomationComparisonService.CommandMetadata("newest-ok", "2026-06-12T07:00:00"))));
+                        new AutomationComparisonService.CommandMetadata("newest-ok", "2026-06-12T07:00:00"),
+                        new AutomationComparisonService.BackgroundCommandsMetadata(2))));
         final MockMvc mockMvc = mockMvc(service);
 
         mockMvc.perform(get("/api/automation/comparison.json")
@@ -57,9 +58,10 @@ class AutomationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.CONTENT_TYPE, containsString("application/json")))
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("comparison-2026-06-12T07-00-00Z.json")))
-                .andExpect(content().json("{\"hasDifferences\":false,\"differingTables\":[],\"comparedTables\":[],\"command\":{\"interactionId\":\"newest-ok\",\"timestamp\":\"2026-06-12T07:00:00\"}}"))
+                .andExpect(content().json("{\"hasDifferences\":false,\"differingTables\":[],\"comparedTables\":[],\"command\":{\"interactionId\":\"newest-ok\",\"timestamp\":\"2026-06-12T07:00:00\"},\"backgroundCommands\":{\"pending\":2}}"))
                 .andExpect(jsonPath("$.command.interactionId").value("newest-ok"))
-                .andExpect(jsonPath("$.command.timestamp").value("2026-06-12T07:00:00"));
+                .andExpect(jsonPath("$.command.timestamp").value("2026-06-12T07:00:00"))
+                .andExpect(jsonPath("$.backgroundCommands.pending").value(2));
 
         verify(service).refresh();
     }

@@ -65,9 +65,12 @@ class AutomationComparisonServiceTest {
         assertThat(result.latestResult().json()).contains("\"command\" : {");
         assertThat(result.latestResult().json()).contains("\"interactionId\" : \"newest-ok\"");
         assertThat(result.latestResult().json()).contains("\"timestamp\" : \"2026-06-12T07:00:00\"");
+        assertThat(result.latestResult().json()).contains("\"backgroundCommands\" : {");
+        assertThat(result.latestResult().json()).contains("\"pending\" : 1");
         assertThat(result.latestResult().completedAt()).isEqualTo(Instant.parse("2026-06-12T07:00:00Z"));
         assertThat(result.latestResult().tableCount()).isEqualTo(2);
         assertThat(result.latestResult().command()).isEqualTo(new AutomationComparisonService.CommandMetadata("newest-ok", "2026-06-12T07:00:00"));
+        assertThat(result.latestResult().backgroundCommands()).isEqualTo(new AutomationComparisonService.BackgroundCommandsMetadata(1));
         verify(fixture.commandCatalogService).discoverCommandCatalog(EXPECTED_CONTEXT);
         verify(fixture.tableCatalogService).discoverTableCatalog(EXPECTED_CONTEXT);
         verify(fixture.commandDrivenTableSelectionService).resolveTouchedBusinessTables(
@@ -81,10 +84,14 @@ class AutomationComparisonServiceTest {
     }
 
     @Test
-    void newestSuccessfulCommandIgnoresNewerFailedCommands() {
+    void newestSuccessfulCommandIgnoresNewerFailedCommandsAndCountsOnlyPendingBackgroundCommands() {
         final Fixture fixture = fixture(List.of(
-                command("newer-failed", "FAILED", "2026-06-12T08:00:00"),
+                command("newer-failed", "FAILED", "FOREGROUND", "2026-06-12T08:00:00"),
+                command("background-pending", "PENDING", "BACKGROUND", "2026-06-12T07:30:00"),
+                command("foreground-pending", "PENDING", "FOREGROUND", "2026-06-12T07:10:00"),
+                command("background-failed", "FAILED", "BACKGROUND", "2026-06-12T07:05:00"),
                 command("newest-ok", "OK", "2026-06-12T07:00:00"),
+                command("background-ok", "OK", "BACKGROUND", "2026-06-12T06:45:00"),
                 command("older-ok", "OK", "2026-06-12T06:00:00")));
         when(fixture.executionService.compare(any(), isNull(), any()))
                 .thenReturn(new WebappComparisonExecutionService.ComparisonExecutionOutcome(
@@ -94,8 +101,10 @@ class AutomationComparisonServiceTest {
                         "{}\n",
                         new byte[]{1}));
 
-        fixture.service().refresh();
+        final AutomationComparisonService.AutomationRefreshResult result = fixture.service().refresh();
 
+        assertThat(result.latestResult().backgroundCommands()).isEqualTo(new AutomationComparisonService.BackgroundCommandsMetadata(1));
+        assertThat(result.latestResult().json()).contains("\"pending\" : 1");
         verify(fixture.commandDrivenTableSelectionService).resolveTouchedBusinessTables(
                 List.of("newest-ok"),
                 fixture.tableCatalog,
@@ -118,6 +127,7 @@ class AutomationComparisonServiceTest {
         final String firstJson = service.refresh().latestResult().json();
         assertThat(firstJson).contains("\"ok\" : true");
         assertThat(firstJson).contains("\"command\" : {");
+        assertThat(firstJson).contains("\"backgroundCommands\" : {");
         assertThatThrownBy(service::refresh)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("database unavailable");
@@ -145,7 +155,10 @@ class AutomationComparisonServiceTest {
         assertThat(result.latestResult().json()).contains("\"command\" : {");
         assertThat(result.latestResult().json()).contains("\"interactionId\" : \"newest-ok\"");
         assertThat(result.latestResult().json()).contains("\"timestamp\" : \"2026-06-12T07:00:00\"");
+        assertThat(result.latestResult().json()).contains("\"backgroundCommands\" : {");
+        assertThat(result.latestResult().json()).contains("\"pending\" : 1");
         assertThat(result.latestResult().command()).isEqualTo(new AutomationComparisonService.CommandMetadata("newest-ok", "2026-06-12T07:00:00"));
+        assertThat(result.latestResult().backgroundCommands()).isEqualTo(new AutomationComparisonService.BackgroundCommandsMetadata(1));
         assertThat(result.latestResult().tableCount()).isZero();
         verify(fixture.executionService, never()).compare(any(), isNull(), any());
     }
@@ -197,6 +210,7 @@ class AutomationComparisonServiceTest {
     private static Fixture fixture() {
         return fixture(List.of(
                 command("newest-ok", "OK", "2026-06-12T07:00:00"),
+                command("background-pending", "PENDING", "BACKGROUND", "2026-06-12T06:30:00"),
                 command("older-ok", "OK", "2026-06-12T06:00:00")));
     }
 
@@ -205,7 +219,9 @@ class AutomationComparisonServiceTest {
     }
 
     private static Fixture fixture(final Set<TableRef> touchedTables) {
-        return fixture(List.of(command("newest-ok", "OK", "2026-06-12T07:00:00")), touchedTables);
+        return fixture(List.of(
+                command("newest-ok", "OK", "2026-06-12T07:00:00"),
+                command("background-pending", "PENDING", "BACKGROUND", "2026-06-12T06:30:00")), touchedTables);
     }
 
     private static Fixture fixture(final List<CommandCatalogEntry> commandCatalog, final Set<TableRef> touchedTables) {
@@ -222,7 +238,15 @@ class AutomationComparisonServiceTest {
     }
 
     private static CommandCatalogEntry command(final String interactionId, final String replayState, final String timestamp) {
-        return new CommandCatalogEntry(interactionId, "member", "target", replayState, "FOREGROUND", timestamp, timestamp, false);
+        return command(interactionId, replayState, "FOREGROUND", timestamp);
+    }
+
+    private static CommandCatalogEntry command(
+            final String interactionId,
+            final String replayState,
+            final String executeIn,
+            final String timestamp) {
+        return new CommandCatalogEntry(interactionId, "member", "target", replayState, executeIn, timestamp, timestamp, false);
     }
 
     private static WebappComparisonProperties properties() {

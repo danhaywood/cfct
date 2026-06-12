@@ -89,18 +89,21 @@ public class AutomationComparisonService {
         }
         try {
             final AuthenticatedConnectionContext context = automationConnectionContext();
-            final CommandCatalogEntry command = newestSuccessfulCommand(commandCatalogService.discoverCommandCatalog(context));
+            final List<CommandCatalogEntry> commandCatalog = commandCatalogService.discoverCommandCatalog(context);
+            final CommandCatalogEntry command = newestSuccessfulCommand(commandCatalog);
             if (command == null) {
                 throw new IllegalStateException("No successful command is available for automation refresh.");
             }
             final CommandMetadata commandMetadata = CommandMetadata.from(command);
+            final BackgroundCommandsMetadata backgroundCommandsMetadata = BackgroundCommandsMetadata.from(commandCatalog);
             final List<TableRef> tables = dynamicallyResolvedTables(context, command);
             if (tables.isEmpty()) {
                 return AutomationRefreshResult.success(new LatestAutomationResult(
-                        withCommandMetadata(EMPTY_COMPARISON_JSON, commandMetadata),
+                        withAutomationMetadata(EMPTY_COMPARISON_JSON, commandMetadata, backgroundCommandsMetadata),
                         Instant.now(clock),
                         0,
-                        commandMetadata));
+                        commandMetadata,
+                        backgroundCommandsMetadata));
             }
             final MultiTableComparisonRequest request = MultiTableComparisonRequest.forTables(tables);
             final WebappComparisonExecutionService.ComparisonExecutionOutcome outcome = comparisonExecutionService.compare(
@@ -108,10 +111,11 @@ public class AutomationComparisonService {
                     null,
                     context);
             final LatestAutomationResult result = new LatestAutomationResult(
-                    withCommandMetadata(outcome.json(), commandMetadata),
+                    withAutomationMetadata(outcome.json(), commandMetadata, backgroundCommandsMetadata),
                     Instant.now(clock),
                     request.tables().size(),
-                    commandMetadata);
+                    commandMetadata,
+                    backgroundCommandsMetadata);
             return AutomationRefreshResult.success(result);
         } finally {
             refreshInProgress.set(false);
@@ -136,16 +140,22 @@ public class AutomationComparisonService {
                 .orElse(null);
     }
 
-    private static String withCommandMetadata(final String json, final CommandMetadata commandMetadata) {
+    private static String withAutomationMetadata(
+            final String json,
+            final CommandMetadata commandMetadata,
+            final BackgroundCommandsMetadata backgroundCommandsMetadata) {
         try {
             final ObjectNode root = (ObjectNode) JSON_MAPPER.readTree(json);
             final ObjectNode commandNode = JSON_MAPPER.createObjectNode();
             commandNode.put("interactionId", commandMetadata.interactionId());
             commandNode.put("timestamp", commandMetadata.timestamp());
             root.set("command", commandNode);
+            final ObjectNode backgroundCommandsNode = JSON_MAPPER.createObjectNode();
+            backgroundCommandsNode.put("pending", backgroundCommandsMetadata.pending());
+            root.set("backgroundCommands", backgroundCommandsNode);
             return JSON_MAPPER.writeValueAsString(root) + System.lineSeparator();
         } catch (JsonProcessingException | ClassCastException ex) {
-            throw new IllegalStateException("Failed to add automation command metadata to JSON comparison result", ex);
+            throw new IllegalStateException("Failed to add automation metadata to JSON comparison result", ex);
         }
     }
 
@@ -182,7 +192,25 @@ public class AutomationComparisonService {
         }
     }
 
-    public record LatestAutomationResult(String json, Instant completedAt, int tableCount, CommandMetadata command) {
+    public record BackgroundCommandsMetadata(int pending) {
+        static BackgroundCommandsMetadata from(final List<CommandCatalogEntry> commandCatalog) {
+            return new BackgroundCommandsMetadata((int) commandCatalog.stream()
+                    .filter(BackgroundCommandsMetadata::isPendingBackgroundCommand)
+                    .count());
+        }
+
+        private static boolean isPendingBackgroundCommand(final CommandCatalogEntry command) {
+            return "BACKGROUND".equalsIgnoreCase(command.executeIn())
+                    && "PENDING".equalsIgnoreCase(command.replayState());
+        }
+    }
+
+    public record LatestAutomationResult(
+            String json,
+            Instant completedAt,
+            int tableCount,
+            CommandMetadata command,
+            BackgroundCommandsMetadata backgroundCommands) {
         public String filename() {
             return "comparison-" + completedAt.toString().replace(':', '-') + ".json";
         }
