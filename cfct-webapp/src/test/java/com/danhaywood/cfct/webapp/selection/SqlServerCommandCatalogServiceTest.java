@@ -10,6 +10,7 @@ class SqlServerCommandCatalogServiceTest {
     void mapsDiscoveredCommandRowWithNullCompletedAt() {
         final CommandCatalogEntry entry = SqlServerCommandCatalogService.mapDiscoveredCommand(
                 "11111111-1111-1111-1111-111111111111",
+                null,
                 "supplier.Supplier#registerProduct",
                 "supplier.Supplier:301",
                 "EXPORTED",
@@ -24,6 +25,7 @@ class SqlServerCommandCatalogServiceTest {
     void mapsDiscoveredCommandRowWithBlankCompletedAt() {
         final CommandCatalogEntry entry = SqlServerCommandCatalogService.mapDiscoveredCommand(
                 "11111111-1111-1111-1111-111111111111",
+                null,
                 "supplier.Supplier#registerProduct",
                 "supplier.Supplier:301",
                 "EXPORTED",
@@ -39,6 +41,7 @@ class SqlServerCommandCatalogServiceTest {
     void mapsDiscoveredCommandRowToCatalogEntry() {
         final CommandCatalogEntry entry = SqlServerCommandCatalogService.mapDiscoveredCommand(
                 "11111111-1111-1111-1111-111111111111",
+                "00000000-0000-0000-0000-000000000000",
                 "supplier.Supplier#registerProduct",
                 "supplier.Supplier:301",
                 "EXPORTED",
@@ -47,6 +50,7 @@ class SqlServerCommandCatalogServiceTest {
                 "2026-04-05T10:01:02.000");
 
         assertThat(entry.interactionId()).isEqualTo("11111111-1111-1111-1111-111111111111");
+        assertThat(entry.parentInteractionId()).isEqualTo("00000000-0000-0000-0000-000000000000");
         assertThat(entry.logicalMemberIdentifier()).isEqualTo("supplier.Supplier#registerProduct");
         assertThat(entry.target()).isEqualTo("supplier.Supplier:301");
         assertThat(entry.replayState()).isEqualTo("EXPORTED");

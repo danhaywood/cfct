@@ -8,6 +8,7 @@ import com.danhaywood.cfct.webapp.config.WebappComparisonProperties;
 import com.danhaywood.cfct.webapp.config.WebappDatasourceProperties;
 import com.danhaywood.cfct.webapp.selection.CommandCatalogEntry;
 import com.danhaywood.cfct.webapp.selection.CommandDrivenTableSelectionService;
+import com.danhaywood.cfct.webapp.selection.DatabaseSide;
 import com.danhaywood.cfct.webapp.selection.SqlServerCommandCatalogService;
 import com.danhaywood.cfct.webapp.selection.SqlServerTableCatalogService;
 import com.danhaywood.cfct.webapp.selection.TableCatalogEntry;
@@ -21,8 +22,13 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -89,70 +95,164 @@ public class AutomationComparisonService {
         }
         try {
             final AuthenticatedConnectionContext context = automationConnectionContext();
-            final List<CommandCatalogEntry> commandCatalog = commandCatalogService.discoverCommandCatalog(context);
-            final CommandCatalogEntry command = newestSuccessfulCommand(commandCatalog);
+            final List<CommandCatalogEntry> leftCatalog = commandCatalogService.discoverCommandCatalog(context, DatabaseSide.LEFT);
+            final List<CommandCatalogEntry> rightCatalog = commandCatalogService.discoverCommandCatalog(context, DatabaseSide.RIGHT);
+            final CommandCatalogEntry command = newestCommonSuccessfulForeground(leftCatalog, rightCatalog);
             if (command == null) {
-                throw new IllegalStateException("No successful command is available for automation refresh.");
+                final BackgroundCommandsMetadata backgroundCommands = BackgroundCommandsMetadata.empty();
+                return AutomationRefreshResult.success(new LatestAutomationResult(
+                        withAutomationMetadata(EMPTY_COMPARISON_JSON, null, backgroundCommands, "no_completed_foreground"),
+                        Instant.now(clock),
+                        0,
+                        null,
+                        backgroundCommands));
             }
+
+            final List<CommandCatalogEntry> leftBackground = backgroundDescendants(leftCatalog, command.interactionId());
+            final List<CommandCatalogEntry> rightBackground = backgroundDescendants(rightCatalog, command.interactionId());
+            final BackgroundCommandsMetadata backgroundCommands = BackgroundCommandsMetadata.from(leftBackground, rightBackground);
             final CommandMetadata commandMetadata = CommandMetadata.from(command);
-            final BackgroundCommandsMetadata backgroundCommandsMetadata = BackgroundCommandsMetadata.from(commandCatalog);
-            final List<TableRef> tables = dynamicallyResolvedTables(context, command);
+            final Set<TableRef> tables = dynamicallyResolvedTables(
+                    context,
+                    command,
+                    leftBackground,
+                    rightBackground);
             if (tables.isEmpty()) {
                 return AutomationRefreshResult.success(new LatestAutomationResult(
-                        withAutomationMetadata(EMPTY_COMPARISON_JSON, commandMetadata, backgroundCommandsMetadata),
+                        withAutomationMetadata(EMPTY_COMPARISON_JSON, commandMetadata, backgroundCommands, null),
                         Instant.now(clock),
                         0,
                         commandMetadata,
-                        backgroundCommandsMetadata));
+                        backgroundCommands));
             }
-            final MultiTableComparisonRequest request = MultiTableComparisonRequest.forTables(tables);
+
+            final MultiTableComparisonRequest request = MultiTableComparisonRequest.forTables(List.copyOf(tables));
             final WebappComparisonExecutionService.ComparisonExecutionOutcome outcome = comparisonExecutionService.compare(
                     request,
                     null,
                     context);
             final LatestAutomationResult result = new LatestAutomationResult(
-                    withAutomationMetadata(outcome.json(), commandMetadata, backgroundCommandsMetadata),
+                    withAutomationMetadata(outcome.json(), commandMetadata, backgroundCommands, null),
                     Instant.now(clock),
                     request.tables().size(),
                     commandMetadata,
-                    backgroundCommandsMetadata);
+                    backgroundCommands);
             return AutomationRefreshResult.success(result);
         } finally {
             refreshInProgress.set(false);
         }
     }
 
-    private List<TableRef> dynamicallyResolvedTables(
+    private Set<TableRef> dynamicallyResolvedTables(
             final AuthenticatedConnectionContext context,
-            final CommandCatalogEntry command) {
-        final List<TableCatalogEntry> tableCatalog = tableCatalogService.discoverTableCatalog(context);
-        final Set<TableRef> touchedTables = commandDrivenTableSelectionService.resolveTouchedBusinessTables(
-                List.of(command.interactionId()),
-                tableCatalog,
-                context);
-        return List.copyOf(touchedTables);
+            final CommandCatalogEntry command,
+            final List<CommandCatalogEntry> leftBackground,
+            final List<CommandCatalogEntry> rightBackground) {
+        final List<TableCatalogEntry> leftTables = tableCatalogService.discoverTableCatalog(context, DatabaseSide.LEFT);
+        final List<TableCatalogEntry> rightTables = tableCatalogService.discoverTableCatalog(context, DatabaseSide.RIGHT);
+        final Set<TableRef> resolved = new LinkedHashSet<>();
+        resolved.addAll(commandDrivenTableSelectionService.resolveTouchedBusinessTables(
+                completedInteractionIds(command, leftBackground),
+                leftTables,
+                context,
+                DatabaseSide.LEFT));
+        resolved.addAll(commandDrivenTableSelectionService.resolveTouchedBusinessTables(
+                completedInteractionIds(command, rightBackground),
+                rightTables,
+                context,
+                DatabaseSide.RIGHT));
+        return resolved;
     }
 
-    private CommandCatalogEntry newestSuccessfulCommand(final List<CommandCatalogEntry> entries) {
-        return entries.stream()
-                .filter(entry -> "OK".equalsIgnoreCase(entry.replayState()))
+    private static List<String> completedInteractionIds(
+            final CommandCatalogEntry root,
+            final List<CommandCatalogEntry> backgroundCommands) {
+        final List<String> interactionIds = new ArrayList<>();
+        interactionIds.add(root.interactionId());
+        backgroundCommands.stream()
+                .filter(command -> statusOf(command) == BackgroundCommandStatus.COMPLETED)
+                .map(CommandCatalogEntry::interactionId)
+                .forEach(interactionIds::add);
+        return interactionIds;
+    }
+
+    private static CommandCatalogEntry newestCommonSuccessfulForeground(
+            final List<CommandCatalogEntry> leftCatalog,
+            final List<CommandCatalogEntry> rightCatalog) {
+        final Set<String> successfulRightForegroundIds = new HashSet<>();
+        rightCatalog.stream()
+                .filter(AutomationComparisonService::isSuccessfulForeground)
+                .map(CommandCatalogEntry::interactionId)
+                .map(AutomationComparisonService::normalizedId)
+                .forEach(successfulRightForegroundIds::add);
+        return leftCatalog.stream()
+                .filter(AutomationComparisonService::isSuccessfulForeground)
+                .filter(command -> successfulRightForegroundIds.contains(normalizedId(command.interactionId())))
                 .max(Comparator.comparing(CommandCatalogEntry::timestamp, String.CASE_INSENSITIVE_ORDER))
                 .orElse(null);
+    }
+
+    private static boolean isSuccessfulForeground(final CommandCatalogEntry command) {
+        return "FOREGROUND".equalsIgnoreCase(command.executeIn())
+                && "OK".equalsIgnoreCase(command.replayState());
+    }
+
+    static List<CommandCatalogEntry> backgroundDescendants(
+            final List<CommandCatalogEntry> catalog,
+            final String rootInteractionId) {
+        final List<CommandCatalogEntry> descendants = new ArrayList<>();
+        final Set<String> discoveredParentIds = new HashSet<>();
+        final ArrayDeque<String> pendingParentIds = new ArrayDeque<>();
+        pendingParentIds.add(normalizedId(rootInteractionId));
+        while (!pendingParentIds.isEmpty()) {
+            final String parentId = pendingParentIds.removeFirst();
+            if (!discoveredParentIds.add(parentId)) {
+                continue;
+            }
+            catalog.stream()
+                    .filter(command -> "BACKGROUND".equalsIgnoreCase(command.executeIn()))
+                    .filter(command -> parentId.equals(normalizedId(command.parentInteractionId())))
+                    .forEach(command -> {
+                        descendants.add(command);
+                        pendingParentIds.addLast(normalizedId(command.interactionId()));
+                    });
+        }
+        descendants.sort(Comparator.comparing(CommandCatalogEntry::timestamp, String.CASE_INSENSITIVE_ORDER));
+        return List.copyOf(descendants);
+    }
+
+    private static String normalizedId(final String interactionId) {
+        return interactionId == null ? "" : interactionId.toLowerCase(Locale.ROOT);
+    }
+
+    private static BackgroundCommandStatus statusOf(final CommandCatalogEntry command) {
+        if ("FAILED".equalsIgnoreCase(command.replayState())) {
+            return BackgroundCommandStatus.FAILED;
+        }
+        if ("PENDING".equalsIgnoreCase(command.replayState()) || isBlank(command.completedAt())) {
+            return BackgroundCommandStatus.PENDING;
+        }
+        return BackgroundCommandStatus.COMPLETED;
+    }
+
+    private static boolean isBlank(final String value) {
+        return value == null || value.isBlank();
     }
 
     private static String withAutomationMetadata(
             final String json,
             final CommandMetadata commandMetadata,
-            final BackgroundCommandsMetadata backgroundCommandsMetadata) {
+            final BackgroundCommandsMetadata backgroundCommandsMetadata,
+            final String status) {
         try {
             final ObjectNode root = (ObjectNode) JSON_MAPPER.readTree(json);
-            final ObjectNode commandNode = JSON_MAPPER.createObjectNode();
-            commandNode.put("interactionId", commandMetadata.interactionId());
-            commandNode.put("timestamp", commandMetadata.timestamp());
-            root.set("command", commandNode);
-            final ObjectNode backgroundCommandsNode = JSON_MAPPER.createObjectNode();
-            backgroundCommandsNode.put("pending", backgroundCommandsMetadata.pending());
-            root.set("backgroundCommands", backgroundCommandsNode);
+            if (status != null) {
+                root.put("status", status);
+            }
+            if (commandMetadata != null) {
+                root.set("command", JSON_MAPPER.valueToTree(commandMetadata));
+            }
+            root.set("backgroundCommands", JSON_MAPPER.valueToTree(backgroundCommandsMetadata));
             return JSON_MAPPER.writeValueAsString(root) + System.lineSeparator();
         } catch (JsonProcessingException | ClassCastException ex) {
             throw new IllegalStateException("Failed to add automation metadata to JSON comparison result", ex);
@@ -192,16 +292,80 @@ public class AutomationComparisonService {
         }
     }
 
-    public record BackgroundCommandsMetadata(int pending) {
-        static BackgroundCommandsMetadata from(final List<CommandCatalogEntry> commandCatalog) {
-            return new BackgroundCommandsMetadata((int) commandCatalog.stream()
-                    .filter(BackgroundCommandsMetadata::isPendingBackgroundCommand)
-                    .count());
+    public enum BackgroundCommandStatus {
+        PENDING,
+        COMPLETED,
+        FAILED
+    }
+
+    public record BackgroundCommandMetadata(
+            String interactionId,
+            String parentInteractionId,
+            String logicalMemberIdentifier,
+            String replayState,
+            String executeIn,
+            String timestamp,
+            String completedAt,
+            BackgroundCommandStatus status) {
+        static BackgroundCommandMetadata from(final CommandCatalogEntry command) {
+            return new BackgroundCommandMetadata(
+                    command.interactionId(),
+                    command.parentInteractionId(),
+                    command.logicalMemberIdentifier(),
+                    command.replayState(),
+                    command.executeIn(),
+                    command.timestamp(),
+                    command.completedAt(),
+                    statusOf(command));
+        }
+    }
+
+    public record BackgroundSideMetadata(
+            int pending,
+            int completed,
+            int failed,
+            List<BackgroundCommandMetadata> commands) {
+        static BackgroundSideMetadata from(final List<CommandCatalogEntry> commands) {
+            final List<BackgroundCommandMetadata> details = commands.stream()
+                    .map(BackgroundCommandMetadata::from)
+                    .toList();
+            return new BackgroundSideMetadata(
+                    (int) details.stream().filter(command -> command.status() == BackgroundCommandStatus.PENDING).count(),
+                    (int) details.stream().filter(command -> command.status() == BackgroundCommandStatus.COMPLETED).count(),
+                    (int) details.stream().filter(command -> command.status() == BackgroundCommandStatus.FAILED).count(),
+                    details);
         }
 
-        private static boolean isPendingBackgroundCommand(final CommandCatalogEntry command) {
-            return "BACKGROUND".equalsIgnoreCase(command.executeIn())
-                    && "PENDING".equalsIgnoreCase(command.replayState());
+        static BackgroundSideMetadata empty() {
+            return new BackgroundSideMetadata(0, 0, 0, List.of());
+        }
+    }
+
+    public record BackgroundCommandsMetadata(
+            int pending,
+            int completed,
+            int failed,
+            BackgroundSideMetadata appA,
+            BackgroundSideMetadata appB) {
+        public BackgroundCommandsMetadata(final int pending) {
+            this(pending, 0, 0, BackgroundSideMetadata.empty(), BackgroundSideMetadata.empty());
+        }
+
+        static BackgroundCommandsMetadata from(
+                final List<CommandCatalogEntry> leftCommands,
+                final List<CommandCatalogEntry> rightCommands) {
+            final BackgroundSideMetadata left = BackgroundSideMetadata.from(leftCommands);
+            final BackgroundSideMetadata right = BackgroundSideMetadata.from(rightCommands);
+            return new BackgroundCommandsMetadata(
+                    left.pending() + right.pending(),
+                    left.completed() + right.completed(),
+                    left.failed() + right.failed(),
+                    left,
+                    right);
+        }
+
+        static BackgroundCommandsMetadata empty() {
+            return new BackgroundCommandsMetadata(0);
         }
     }
 

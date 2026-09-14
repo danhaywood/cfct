@@ -8,6 +8,7 @@ import com.danhaywood.cfct.webapp.config.WebappDataSources;
 
 import org.springframework.stereotype.Service;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -42,11 +43,18 @@ public class SqlServerTableCatalogService {
     }
 
     public List<TableCatalogEntry> discoverTableCatalog() {
-        return discoverTableCatalog(authenticatedContextHolder.required());
+        return discoverTableCatalog(authenticatedContextHolder.required(), DatabaseSide.LEFT);
     }
 
     public List<TableCatalogEntry> discoverTableCatalog(final AuthenticatedConnectionContext authenticatedContext) {
+        return discoverTableCatalog(authenticatedContext, DatabaseSide.LEFT);
+    }
+
+    public List<TableCatalogEntry> discoverTableCatalog(
+            final AuthenticatedConnectionContext authenticatedContext,
+            final DatabaseSide side) {
         final WebappDataSources dataSources = dataSourceConfiguration.dataSourcesFor(authenticatedContext);
+        final DataSource dataSource = side == DatabaseSide.LEFT ? dataSources.left() : dataSources.right();
         final String sql = """
                 SELECT s.name AS schema_name,
                        t.name AS table_name,
@@ -69,7 +77,7 @@ public class SqlServerTableCatalogService {
                 ORDER BY s.name, t.name, i.name
                 """;
 
-        try (Connection jdbc = dataSources.left().getConnection();
+        try (Connection jdbc = dataSource.getConnection();
              PreparedStatement statement = jdbc.prepareStatement(sql)) {
             statement.setString(1, TABLE_IGNORED_PROPERTY_NAME);
             try (ResultSet resultSet = statement.executeQuery()) {
@@ -102,7 +110,7 @@ public class SqlServerTableCatalogService {
                 return rows;
             }
         } catch (SQLException ex) {
-            throw new IllegalStateException("Failed to discover tables for manual selection.", ex);
+            throw new IllegalStateException("Failed to discover tables for " + side.name().toLowerCase() + " database.", ex);
         }
     }
 

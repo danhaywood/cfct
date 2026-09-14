@@ -7,6 +7,7 @@ import com.danhaywood.cfct.webapp.config.WebappDataSources;
 
 import org.springframework.stereotype.Service;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,14 +29,22 @@ public class SqlServerCommandCatalogService {
     }
 
     public List<CommandCatalogEntry> discoverCommandCatalog() {
-        return discoverCommandCatalog(authenticatedContextHolder.required());
+        return discoverCommandCatalog(authenticatedContextHolder.required(), DatabaseSide.LEFT);
     }
 
     public List<CommandCatalogEntry> discoverCommandCatalog(final AuthenticatedConnectionContext authenticatedContext) {
+        return discoverCommandCatalog(authenticatedContext, DatabaseSide.LEFT);
+    }
+
+    public List<CommandCatalogEntry> discoverCommandCatalog(
+            final AuthenticatedConnectionContext authenticatedContext,
+            final DatabaseSide side) {
         final WebappDataSources dataSources = dataSourceConfiguration.dataSourcesFor(authenticatedContext);
+        final DataSource dataSource = side == DatabaseSide.LEFT ? dataSources.left() : dataSources.right();
         final String sql = """
                 SELECT
                     CONVERT(varchar(36), interactionId) AS interaction_id,
+                    CONVERT(varchar(36), parentInteractionId) AS parent_interaction_id,
                     logicalMemberIdentifier,
                     target,
                     replayState,
@@ -46,13 +55,14 @@ public class SqlServerCommandCatalogService {
                 ORDER BY [timestamp] DESC, interactionId DESC
                 """;
 
-        try (Connection jdbc = dataSources.left().getConnection();
+        try (Connection jdbc = dataSource.getConnection();
              PreparedStatement statement = jdbc.prepareStatement(sql);
              ResultSet resultSet = statement.executeQuery()) {
             final List<CommandCatalogEntry> rows = new ArrayList<>();
             while (resultSet.next()) {
                 rows.add(mapDiscoveredCommand(
                         resultSet.getString("interaction_id"),
+                        resultSet.getString("parent_interaction_id"),
                         resultSet.getString("logicalMemberIdentifier"),
                         resultSet.getString("target"),
                         resultSet.getString("replayState"),
@@ -62,12 +72,13 @@ public class SqlServerCommandCatalogService {
             }
             return rows;
         } catch (SQLException ex) {
-            throw new IllegalStateException("Failed to discover command catalog for selection.", ex);
+            throw new IllegalStateException("Failed to discover command catalog for " + side.name().toLowerCase() + " database.", ex);
         }
     }
 
     static CommandCatalogEntry mapDiscoveredCommand(
             final String interactionId,
+            final String parentInteractionId,
             final String logicalMemberIdentifier,
             final String target,
             final String replayState,
@@ -76,6 +87,7 @@ public class SqlServerCommandCatalogService {
             final String completedAt) {
         return new CommandCatalogEntry(
                 interactionId,
+                parentInteractionId,
                 logicalMemberIdentifier,
                 target,
                 replayState,

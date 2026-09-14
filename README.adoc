@@ -700,8 +700,13 @@ cfct.webapp.automation.right-database=right_db
 
 The automation endpoints use the same JDBC URL, JDBC driver, username, and password as the webapp datasource configuration.
 If automation-specific left or right database values are omitted, the endpoints fall back to `cfct.webapp.connection.left-database` and `cfct.webapp.connection.right-database`.
-The automation download dynamically selects the newest successful command from the command log, resolves touched eligible business tables using the same command-driven table-selection logic as the Vaadin UI, compares those tables, and returns the refreshed JSON in the same response.
-If the newest successful command does not resolve any eligible touched business tables, the endpoint still succeeds and returns an empty comparison JSON document with `hasDifferences: false`, `differingTables: []`, and `comparedTables: []`.
+The automation download dynamically selects the newest successful foreground command present on both database sides.
+It recursively discovers that foreground command's background descendants through `parentInteractionId` independently on each side, so generated child interaction IDs do not need to match.
+It resolves touched eligible business tables for the foreground command and every completed descendant on each side using the same command-driven table-selection logic as the Vaadin UI.
+It compares the union of the two resolved table sets and returns the refreshed JSON in the same response.
+A background command is pending when its replay state is `PENDING` or it has no `completedAt` value, failed when its replay state is `FAILED`, and otherwise completed when `completedAt` is populated.
+If the selected foreground group does not resolve any eligible touched business tables, the endpoint still succeeds and returns an empty comparison JSON document with `hasDifferences: false`, `differingTables: []`, and `comparedTables: []`.
+If no completed successful foreground command is common to both sides, the endpoint returns `200 OK` with `status: no_completed_foreground`.
 
 Refresh and download the automation JSON result with Basic Auth:
 
@@ -782,7 +787,8 @@ jq . comparison-*.json | head -80
 ----
 
 The saved artifact should be valid JSON in the same deterministic comparison format used by existing JSON downloads.
-The JSON contains `differingTables` for detailed difference payloads and `comparedTables` for the complete list of compared table identities.
+The JSON preserves `hasDifferences`, `differingTables`, and `comparedTables`, keeps the selected foreground command in the top-level `command` object, and adds `backgroundCommands`.
+The `backgroundCommands` object contains aggregate `pending`, `completed`, and `failed` counts plus separate `appA` and `appB` command lists with interaction ID, parent ID, member, replay state, execution mode, timestamps, and classified status.
 Run a second refresh-and-download request to confirm the filename timestamp updates.
 For failure regression, stop the fixture while the webapp remains running:
 

@@ -8,6 +8,7 @@ import com.danhaywood.cfct.webapp.config.WebappComparisonProperties;
 import com.danhaywood.cfct.webapp.config.WebappDatasourceProperties;
 import com.danhaywood.cfct.webapp.selection.CommandCatalogEntry;
 import com.danhaywood.cfct.webapp.selection.CommandDrivenTableSelectionService;
+import com.danhaywood.cfct.webapp.selection.DatabaseSide;
 import com.danhaywood.cfct.webapp.selection.SqlServerCommandCatalogService;
 import com.danhaywood.cfct.webapp.selection.SqlServerTableCatalogService;
 import com.danhaywood.cfct.webapp.selection.TableCatalogEntry;
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -45,120 +47,111 @@ class AutomationComparisonServiceTest {
     private static final TableRef APPLICATION_USER = new TableRef("isisExtSecman", "ApplicationUser");
 
     @Test
-    void refreshDerivesTablesFromNewestSuccessfulCommandAndReturnsCurrentFormatterJson() {
-        final Fixture fixture = fixture();
-        when(fixture.executionService.compare(any(), isNull(), any()))
-                .thenReturn(new WebappComparisonExecutionService.ComparisonExecutionOutcome(
-                        new MultiTableComparisonResult(List.of()),
-                        new com.danhaywood.cfct.model.MultiTableComparisonViewResult(List.of()),
-                        "{\"hasDifferences\":false,\"differingTables\":[],\"comparedTables\":[]}\n",
-                        "tables: []\n",
-                        new byte[]{1}));
-        final AutomationComparisonService service = fixture.service();
-
-        final AutomationComparisonService.AutomationRefreshResult result = service.refresh();
-
-        assertThat(result.conflict()).isFalse();
-        assertThat(result.latestResult().json()).contains("\"hasDifferences\" : false");
-        assertThat(result.latestResult().json()).contains("\"differingTables\" : [ ]");
-        assertThat(result.latestResult().json()).contains("\"comparedTables\" : [ ]");
-        assertThat(result.latestResult().json()).contains("\"command\" : {");
-        assertThat(result.latestResult().json()).contains("\"interactionId\" : \"newest-ok\"");
-        assertThat(result.latestResult().json()).contains("\"timestamp\" : \"2026-06-12T07:00:00\"");
-        assertThat(result.latestResult().json()).contains("\"backgroundCommands\" : {");
-        assertThat(result.latestResult().json()).contains("\"pending\" : 1");
-        assertThat(result.latestResult().completedAt()).isEqualTo(Instant.parse("2026-06-12T07:00:00Z"));
-        assertThat(result.latestResult().tableCount()).isEqualTo(2);
-        assertThat(result.latestResult().command()).isEqualTo(new AutomationComparisonService.CommandMetadata("newest-ok", "2026-06-12T07:00:00"));
-        assertThat(result.latestResult().backgroundCommands()).isEqualTo(new AutomationComparisonService.BackgroundCommandsMetadata(1));
-        verify(fixture.commandCatalogService).discoverCommandCatalog(EXPECTED_CONTEXT);
-        verify(fixture.tableCatalogService).discoverTableCatalog(EXPECTED_CONTEXT);
-        verify(fixture.commandDrivenTableSelectionService).resolveTouchedBusinessTables(
-                List.of("newest-ok"),
-                fixture.tableCatalog,
-                EXPECTED_CONTEXT);
-        verify(fixture.executionService).compare(
-                org.mockito.ArgumentMatchers.argThat(request -> Set.copyOf(request.tables()).equals(Set.of(SUPPLIER, APPLICATION_USER))),
-                isNull(),
-                org.mockito.ArgumentMatchers.eq(EXPECTED_CONTEXT));
-    }
-
-    @Test
-    void newestSuccessfulCommandIgnoresNewerFailedCommandsAndCountsOnlyPendingBackgroundCommands() {
-        final Fixture fixture = fixture(List.of(
-                command("newer-failed", "FAILED", "FOREGROUND", "2026-06-12T08:00:00"),
-                command("background-pending", "PENDING", "BACKGROUND", "2026-06-12T07:30:00"),
-                command("foreground-pending", "PENDING", "FOREGROUND", "2026-06-12T07:10:00"),
-                command("background-failed", "FAILED", "BACKGROUND", "2026-06-12T07:05:00"),
-                command("newest-ok", "OK", "2026-06-12T07:00:00"),
-                command("background-ok", "OK", "BACKGROUND", "2026-06-12T06:45:00"),
-                command("older-ok", "OK", "2026-06-12T06:00:00")));
-        when(fixture.executionService.compare(any(), isNull(), any()))
-                .thenReturn(new WebappComparisonExecutionService.ComparisonExecutionOutcome(
-                        new MultiTableComparisonResult(List.of()),
-                        new com.danhaywood.cfct.model.MultiTableComparisonViewResult(List.of()),
-                        "{}\n",
-                        "{}\n",
-                        new byte[]{1}));
+    void refreshUnionsCompletedBackgroundFootprintsFromBothDatabasesAndReportsPendingWork() {
+        final List<CommandCatalogEntry> left = List.of(
+                foreground("newest-ok", "OK", "2026-06-12T07:00:00"),
+                background("left-completed", "newest-ok", "UNDEFINED", "2026-06-12T07:01:00", "2026-06-12T07:02:00"),
+                background("left-pending", "newest-ok", "UNDEFINED", "2026-06-12T07:03:00", null),
+                background("left-failed", "newest-ok", "FAILED", "2026-06-12T07:04:00", "2026-06-12T07:05:00"));
+        final List<CommandCatalogEntry> right = List.of(
+                foreground("newest-ok", "OK", "2026-06-12T07:00:00"),
+                background("different-right-id", "newest-ok", "UNDEFINED", "2026-06-12T07:01:30", "2026-06-12T07:02:30"));
+        final Fixture fixture = fixture(left, right, Set.of(SUPPLIER), Set.of(APPLICATION_USER));
+        stubComparison(fixture);
 
         final AutomationComparisonService.AutomationRefreshResult result = fixture.service().refresh();
 
-        assertThat(result.latestResult().backgroundCommands()).isEqualTo(new AutomationComparisonService.BackgroundCommandsMetadata(1));
-        assertThat(result.latestResult().json()).contains("\"pending\" : 1");
+        assertThat(result.conflict()).isFalse();
+        assertThat(result.latestResult().json())
+                .contains("\"command\" : {")
+                .contains("\"interactionId\" : \"newest-ok\"")
+                .contains("\"pending\" : 1")
+                .contains("\"completed\" : 2")
+                .contains("\"failed\" : 1")
+                .contains("\"appA\" : {")
+                .contains("\"appB\" : {")
+                .contains("\"left-completed\"")
+                .contains("\"different-right-id\"");
+        assertThat(result.latestResult().tableCount()).isEqualTo(2);
+        assertThat(result.latestResult().backgroundCommands().pending()).isEqualTo(1);
+        assertThat(result.latestResult().backgroundCommands().completed()).isEqualTo(2);
+        assertThat(result.latestResult().backgroundCommands().failed()).isEqualTo(1);
         verify(fixture.commandDrivenTableSelectionService).resolveTouchedBusinessTables(
-                List.of("newest-ok"),
-                fixture.tableCatalog,
-                EXPECTED_CONTEXT);
+                List.of("newest-ok", "left-completed"), fixture.tableCatalog, EXPECTED_CONTEXT, DatabaseSide.LEFT);
+        verify(fixture.commandDrivenTableSelectionService).resolveTouchedBusinessTables(
+                List.of("newest-ok", "different-right-id"), fixture.tableCatalog, EXPECTED_CONTEXT, DatabaseSide.RIGHT);
+        verify(fixture.executionService).compare(
+                org.mockito.ArgumentMatchers.argThat(request -> Set.copyOf(request.tables()).equals(Set.of(SUPPLIER, APPLICATION_USER))),
+                isNull(),
+                eq(EXPECTED_CONTEXT));
+    }
+
+    @Test
+    void discoversNestedDescendantsWithoutIncludingUnrelatedBackgroundCommands() {
+        final List<CommandCatalogEntry> catalog = List.of(
+                background("child", "root", "UNDEFINED", "2026-06-12T07:01:00", "done"),
+                background("grandchild", "child", "UNDEFINED", "2026-06-12T07:02:00", "done"),
+                background("unrelated", "other", "UNDEFINED", "2026-06-12T07:03:00", "done"));
+
+        assertThat(AutomationComparisonService.backgroundDescendants(catalog, "ROOT"))
+                .extracting(CommandCatalogEntry::interactionId)
+                .containsExactly("child", "grandchild");
+    }
+
+    @Test
+    void selectsNewestCommonSuccessfulForeground() {
+        final List<CommandCatalogEntry> left = List.of(
+                foreground("left-only-newer", "OK", "2026-06-12T08:00:00"),
+                foreground("common", "OK", "2026-06-12T07:00:00"));
+        final List<CommandCatalogEntry> right = List.of(
+                foreground("left-only-newer", "PENDING", "2026-06-12T08:00:00"),
+                foreground("common", "OK", "2026-06-12T07:00:00"));
+        final Fixture fixture = fixture(left, right, Set.of(), Set.of());
+
+        final AutomationComparisonService.AutomationRefreshResult result = fixture.service().refresh();
+
+        assertThat(result.latestResult().command().interactionId()).isEqualTo("common");
+    }
+
+    @Test
+    void refreshReturnsMachineReadableOutcomeWhenNoCommonSuccessfulForegroundExists() {
+        final Fixture fixture = fixture(
+                List.of(foreground("left", "OK", "2026-06-12T08:00:00")),
+                List.of(foreground("right", "OK", "2026-06-12T08:00:00")),
+                Set.of(),
+                Set.of());
+
+        final AutomationComparisonService.AutomationRefreshResult result = fixture.service().refresh();
+
+        assertThat(result.latestResult().json()).contains("\"status\" : \"no_completed_foreground\"");
+        assertThat(result.latestResult().command()).isNull();
+        verify(fixture.tableCatalogService, never()).discoverTableCatalog(any(), any());
     }
 
     @Test
     void refreshFailureDoesNotReturnCachedResult() {
         final Fixture fixture = fixture();
         when(fixture.executionService.compare(any(), isNull(), any()))
-                .thenReturn(new WebappComparisonExecutionService.ComparisonExecutionOutcome(
-                        new MultiTableComparisonResult(List.of()),
-                        new com.danhaywood.cfct.model.MultiTableComparisonViewResult(List.of()),
-                        "{\"ok\":true}\n",
-                        "ok: true\n",
-                        new byte[]{1}))
+                .thenReturn(outcome("{\"ok\":true}\n"))
                 .thenThrow(new IllegalStateException("database unavailable"));
         final AutomationComparisonService service = fixture.service();
 
-        final String firstJson = service.refresh().latestResult().json();
-        assertThat(firstJson).contains("\"ok\" : true");
-        assertThat(firstJson).contains("\"command\" : {");
-        assertThat(firstJson).contains("\"backgroundCommands\" : {");
+        assertThat(service.refresh().latestResult().json()).contains("\"ok\" : true");
         assertThatThrownBy(service::refresh)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("database unavailable");
     }
 
     @Test
-    void refreshFailsWhenNoSuccessfulCommandExists() {
-        final Fixture fixture = fixture(List.of(command("failed", "FAILED", "2026-06-12T08:00:00")));
-
-        assertThatThrownBy(fixture.service()::refresh)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("No successful command is available for automation refresh.");
-    }
-
-    @Test
     void refreshReturnsEmptyJsonWhenNoEligibleTouchedTablesResolve() {
-        final Fixture fixture = fixture(Set.of());
+        final Fixture fixture = fixture(List.of(foreground("newest-ok", "OK", "2026-06-12T07:00:00")),
+                List.of(foreground("newest-ok", "OK", "2026-06-12T07:00:00")), Set.of(), Set.of());
 
         final AutomationComparisonService.AutomationRefreshResult result = fixture.service().refresh();
 
-        assertThat(result.conflict()).isFalse();
-        assertThat(result.latestResult().json()).contains("\"hasDifferences\" : false");
-        assertThat(result.latestResult().json()).contains("\"differingTables\" : [ ]");
-        assertThat(result.latestResult().json()).contains("\"comparedTables\" : [ ]");
-        assertThat(result.latestResult().json()).contains("\"command\" : {");
-        assertThat(result.latestResult().json()).contains("\"interactionId\" : \"newest-ok\"");
-        assertThat(result.latestResult().json()).contains("\"timestamp\" : \"2026-06-12T07:00:00\"");
-        assertThat(result.latestResult().json()).contains("\"backgroundCommands\" : {");
-        assertThat(result.latestResult().json()).contains("\"pending\" : 1");
-        assertThat(result.latestResult().command()).isEqualTo(new AutomationComparisonService.CommandMetadata("newest-ok", "2026-06-12T07:00:00"));
-        assertThat(result.latestResult().backgroundCommands()).isEqualTo(new AutomationComparisonService.BackgroundCommandsMetadata(1));
+        assertThat(result.latestResult().json())
+                .contains("\"hasDifferences\" : false")
+                .contains("\"command\" : {");
         assertThat(result.latestResult().tableCount()).isZero();
         verify(fixture.executionService, never()).compare(any(), isNull(), any());
     }
@@ -171,21 +164,14 @@ class AutomationComparisonServiceTest {
         when(fixture.executionService.compare(any(), isNull(), any())).thenAnswer(invocation -> {
             entered.countDown();
             release.await(5, TimeUnit.SECONDS);
-            return new WebappComparisonExecutionService.ComparisonExecutionOutcome(
-                    new MultiTableComparisonResult(List.of()),
-                    new com.danhaywood.cfct.model.MultiTableComparisonViewResult(List.of()),
-                    "{}\n",
-                    "{}\n",
-                    new byte[]{1});
+            return outcome("{}\n");
         });
         final AutomationComparisonService service = fixture.service();
         final Thread refreshThread = new Thread(service::refresh);
         refreshThread.start();
         assertThat(entered.await(5, TimeUnit.SECONDS)).isTrue();
 
-        final AutomationComparisonService.AutomationRefreshResult conflict = service.refresh();
-
-        assertThat(conflict.conflict()).isTrue();
+        assertThat(service.refresh().conflict()).isTrue();
         release.countDown();
         refreshThread.join(5_000);
     }
@@ -208,45 +194,62 @@ class AutomationComparisonServiceTest {
     }
 
     private static Fixture fixture() {
-        return fixture(List.of(
-                command("newest-ok", "OK", "2026-06-12T07:00:00"),
-                command("background-pending", "PENDING", "BACKGROUND", "2026-06-12T06:30:00"),
-                command("older-ok", "OK", "2026-06-12T06:00:00")));
+        return fixture(
+                List.of(foreground("newest-ok", "OK", "2026-06-12T07:00:00")),
+                List.of(foreground("newest-ok", "OK", "2026-06-12T07:00:00")),
+                Set.of(SUPPLIER),
+                Set.of(APPLICATION_USER));
     }
 
-    private static Fixture fixture(final List<CommandCatalogEntry> commandCatalog) {
-        return fixture(commandCatalog, Set.of(SUPPLIER, APPLICATION_USER));
-    }
-
-    private static Fixture fixture(final Set<TableRef> touchedTables) {
-        return fixture(List.of(
-                command("newest-ok", "OK", "2026-06-12T07:00:00"),
-                command("background-pending", "PENDING", "BACKGROUND", "2026-06-12T06:30:00")), touchedTables);
-    }
-
-    private static Fixture fixture(final List<CommandCatalogEntry> commandCatalog, final Set<TableRef> touchedTables) {
+    private static Fixture fixture(
+            final List<CommandCatalogEntry> leftCommands,
+            final List<CommandCatalogEntry> rightCommands,
+            final Set<TableRef> leftTouchedTables,
+            final Set<TableRef> rightTouchedTables) {
         final WebappComparisonExecutionService executionService = mock(WebappComparisonExecutionService.class);
         final SqlServerCommandCatalogService commandCatalogService = mock(SqlServerCommandCatalogService.class);
         final SqlServerTableCatalogService tableCatalogService = mock(SqlServerTableCatalogService.class);
         final CommandDrivenTableSelectionService commandDrivenTableSelectionService = mock(CommandDrivenTableSelectionService.class);
         final List<TableCatalogEntry> tableCatalog = List.of(TableCatalogEntry.eligible(SUPPLIER), TableCatalogEntry.eligible(APPLICATION_USER));
-        when(commandCatalogService.discoverCommandCatalog(EXPECTED_CONTEXT)).thenReturn(commandCatalog);
-        when(tableCatalogService.discoverTableCatalog(EXPECTED_CONTEXT)).thenReturn(tableCatalog);
-        when(commandDrivenTableSelectionService.resolveTouchedBusinessTables(List.of("newest-ok"), tableCatalog, EXPECTED_CONTEXT))
-                .thenReturn(touchedTables);
+        when(commandCatalogService.discoverCommandCatalog(EXPECTED_CONTEXT, DatabaseSide.LEFT)).thenReturn(leftCommands);
+        when(commandCatalogService.discoverCommandCatalog(EXPECTED_CONTEXT, DatabaseSide.RIGHT)).thenReturn(rightCommands);
+        when(tableCatalogService.discoverTableCatalog(EXPECTED_CONTEXT, DatabaseSide.LEFT)).thenReturn(tableCatalog);
+        when(tableCatalogService.discoverTableCatalog(EXPECTED_CONTEXT, DatabaseSide.RIGHT)).thenReturn(tableCatalog);
+        when(commandDrivenTableSelectionService.resolveTouchedBusinessTables(any(), eq(tableCatalog), eq(EXPECTED_CONTEXT), eq(DatabaseSide.LEFT)))
+                .thenReturn(leftTouchedTables);
+        when(commandDrivenTableSelectionService.resolveTouchedBusinessTables(any(), eq(tableCatalog), eq(EXPECTED_CONTEXT), eq(DatabaseSide.RIGHT)))
+                .thenReturn(rightTouchedTables);
         return new Fixture(executionService, commandCatalogService, tableCatalogService, commandDrivenTableSelectionService, tableCatalog);
     }
 
-    private static CommandCatalogEntry command(final String interactionId, final String replayState, final String timestamp) {
-        return command(interactionId, replayState, "FOREGROUND", timestamp);
+    private static void stubComparison(final Fixture fixture) {
+        when(fixture.executionService.compare(any(), isNull(), any())).thenReturn(outcome(
+                "{\"hasDifferences\":false,\"differingTables\":[],\"comparedTables\":[]}\n"));
     }
 
-    private static CommandCatalogEntry command(
+    private static WebappComparisonExecutionService.ComparisonExecutionOutcome outcome(final String json) {
+        return new WebappComparisonExecutionService.ComparisonExecutionOutcome(
+                new MultiTableComparisonResult(List.of()),
+                new com.danhaywood.cfct.model.MultiTableComparisonViewResult(List.of()),
+                json,
+                "{}\n",
+                new byte[]{1});
+    }
+
+    private static CommandCatalogEntry foreground(
             final String interactionId,
             final String replayState,
-            final String executeIn,
             final String timestamp) {
-        return new CommandCatalogEntry(interactionId, "member", "target", replayState, executeIn, timestamp, timestamp, false);
+        return new CommandCatalogEntry(interactionId, null, "member", "target", replayState, "FOREGROUND", timestamp, timestamp, false);
+    }
+
+    private static CommandCatalogEntry background(
+            final String interactionId,
+            final String parentInteractionId,
+            final String replayState,
+            final String timestamp,
+            final String completedAt) {
+        return new CommandCatalogEntry(interactionId, parentInteractionId, "member", "target", replayState, "BACKGROUND", timestamp, completedAt, false);
     }
 
     private static WebappComparisonProperties properties() {
