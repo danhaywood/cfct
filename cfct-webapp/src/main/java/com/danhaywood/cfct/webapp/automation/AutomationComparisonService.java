@@ -110,14 +110,16 @@ public class AutomationComparisonService {
 
             final List<CommandCatalogEntry> leftBackground = backgroundDescendants(leftCatalog, command.interactionId());
             final List<CommandCatalogEntry> rightBackground = backgroundDescendants(rightCatalog, command.interactionId());
-            final BackgroundCommandsMetadata backgroundCommands = BackgroundCommandsMetadata.from(leftBackground, rightBackground);
             final CommandMetadata commandMetadata = CommandMetadata.from(command);
-            final Set<TableRef> tables = dynamicallyResolvedTables(
+            final ResolvedTableFootprint tableFootprint = dynamicallyResolvedTables(
                     context,
                     command,
                     leftBackground,
                     rightBackground);
-            if (tables.isEmpty()) {
+            final BackgroundCommandsMetadata backgroundCommands = BackgroundCommandsMetadata
+                    .from(leftBackground, rightBackground)
+                    .withTableFootprint(tableFootprint.backgroundMetadata());
+            if (tableFootprint.comparisonTables().isEmpty()) {
                 return AutomationRefreshResult.success(new LatestAutomationResult(
                         withAutomationMetadata(EMPTY_COMPARISON_JSON, commandMetadata, backgroundCommands, null),
                         Instant.now(clock),
@@ -126,7 +128,8 @@ public class AutomationComparisonService {
                         backgroundCommands));
             }
 
-            final MultiTableComparisonRequest request = MultiTableComparisonRequest.forTables(List.copyOf(tables));
+            final MultiTableComparisonRequest request = MultiTableComparisonRequest.forTables(
+                    List.copyOf(tableFootprint.comparisonTables()));
             final WebappComparisonExecutionService.ComparisonExecutionOutcome outcome = comparisonExecutionService.compare(
                     request,
                     null,
@@ -143,37 +146,47 @@ public class AutomationComparisonService {
         }
     }
 
-    private Set<TableRef> dynamicallyResolvedTables(
+    private ResolvedTableFootprint dynamicallyResolvedTables(
             final AuthenticatedConnectionContext context,
             final CommandCatalogEntry command,
             final List<CommandCatalogEntry> leftBackground,
             final List<CommandCatalogEntry> rightBackground) {
         final List<TableCatalogEntry> leftTables = tableCatalogService.discoverTableCatalog(context, DatabaseSide.LEFT);
         final List<TableCatalogEntry> rightTables = tableCatalogService.discoverTableCatalog(context, DatabaseSide.RIGHT);
-        final Set<TableRef> resolved = new LinkedHashSet<>();
-        resolved.addAll(commandDrivenTableSelectionService.resolveTouchedBusinessTables(
-                completedInteractionIds(command, leftBackground),
+        final Set<TableRef> leftForegroundTables = commandDrivenTableSelectionService.resolveTouchedBusinessTables(
+                List.of(command.interactionId()),
                 leftTables,
                 context,
-                DatabaseSide.LEFT));
-        resolved.addAll(commandDrivenTableSelectionService.resolveTouchedBusinessTables(
-                completedInteractionIds(command, rightBackground),
+                DatabaseSide.LEFT);
+        final Set<TableRef> rightForegroundTables = commandDrivenTableSelectionService.resolveTouchedBusinessTables(
+                List.of(command.interactionId()),
                 rightTables,
                 context,
-                DatabaseSide.RIGHT));
-        return resolved;
+                DatabaseSide.RIGHT);
+        final Set<TableRef> leftBackgroundTables = commandDrivenTableSelectionService.resolveTouchedBusinessTables(
+                completedBackgroundInteractionIds(leftBackground),
+                leftTables,
+                context,
+                DatabaseSide.LEFT);
+        final Set<TableRef> rightBackgroundTables = commandDrivenTableSelectionService.resolveTouchedBusinessTables(
+                completedBackgroundInteractionIds(rightBackground),
+                rightTables,
+                context,
+                DatabaseSide.RIGHT);
+        final Set<TableRef> comparisonTables = new LinkedHashSet<>();
+        comparisonTables.addAll(leftForegroundTables);
+        comparisonTables.addAll(rightForegroundTables);
+        comparisonTables.addAll(leftBackgroundTables);
+        comparisonTables.addAll(rightBackgroundTables);
+        return new ResolvedTableFootprint(comparisonTables, leftBackgroundTables, rightBackgroundTables);
     }
 
-    private static List<String> completedInteractionIds(
-            final CommandCatalogEntry root,
+    private static List<String> completedBackgroundInteractionIds(
             final List<CommandCatalogEntry> backgroundCommands) {
-        final List<String> interactionIds = new ArrayList<>();
-        interactionIds.add(root.interactionId());
-        backgroundCommands.stream()
+        return backgroundCommands.stream()
                 .filter(command -> statusOf(command) == BackgroundCommandStatus.COMPLETED)
                 .map(CommandCatalogEntry::interactionId)
-                .forEach(interactionIds::add);
-        return interactionIds;
+                .toList();
     }
 
     private static CommandCatalogEntry newestCommonSuccessfulForeground(
@@ -292,6 +305,48 @@ public class AutomationComparisonService {
         }
     }
 
+    private record ResolvedTableFootprint(
+            Set<TableRef> comparisonTables,
+            Set<TableRef> appABackgroundTables,
+            Set<TableRef> appBBackgroundTables) {
+        BackgroundTableFootprintMetadata backgroundMetadata() {
+            return BackgroundTableFootprintMetadata.from(appABackgroundTables, appBBackgroundTables);
+        }
+    }
+
+    public record TableIdentityMetadata(String schema, String name) {
+        static TableIdentityMetadata from(final TableRef table) {
+            return new TableIdentityMetadata(table.schemaName(), table.tableName());
+        }
+    }
+
+    public record BackgroundTableFootprintMetadata(
+            List<TableIdentityMetadata> appA,
+            List<TableIdentityMetadata> appB,
+            List<TableIdentityMetadata> union) {
+        static BackgroundTableFootprintMetadata from(
+                final Set<TableRef> appATables,
+                final Set<TableRef> appBTables) {
+            final Set<TableRef> union = new LinkedHashSet<>(appATables);
+            union.addAll(appBTables);
+            return new BackgroundTableFootprintMetadata(
+                    sortedTables(appATables),
+                    sortedTables(appBTables),
+                    sortedTables(union));
+        }
+
+        static BackgroundTableFootprintMetadata empty() {
+            return new BackgroundTableFootprintMetadata(List.of(), List.of(), List.of());
+        }
+
+        private static List<TableIdentityMetadata> sortedTables(final Set<TableRef> tables) {
+            return tables.stream()
+                    .sorted(Comparator.comparing(TableRef::displayName, String.CASE_INSENSITIVE_ORDER))
+                    .map(TableIdentityMetadata::from)
+                    .toList();
+        }
+    }
+
     public enum BackgroundCommandStatus {
         PENDING,
         COMPLETED,
@@ -346,9 +401,16 @@ public class AutomationComparisonService {
             int completed,
             int failed,
             BackgroundSideMetadata appA,
-            BackgroundSideMetadata appB) {
+            BackgroundSideMetadata appB,
+            BackgroundTableFootprintMetadata tableFootprint) {
         public BackgroundCommandsMetadata(final int pending) {
-            this(pending, 0, 0, BackgroundSideMetadata.empty(), BackgroundSideMetadata.empty());
+            this(
+                    pending,
+                    0,
+                    0,
+                    BackgroundSideMetadata.empty(),
+                    BackgroundSideMetadata.empty(),
+                    BackgroundTableFootprintMetadata.empty());
         }
 
         static BackgroundCommandsMetadata from(
@@ -361,7 +423,12 @@ public class AutomationComparisonService {
                     left.completed() + right.completed(),
                     left.failed() + right.failed(),
                     left,
-                    right);
+                    right,
+                    BackgroundTableFootprintMetadata.empty());
+        }
+
+        BackgroundCommandsMetadata withTableFootprint(final BackgroundTableFootprintMetadata tableFootprint) {
+            return new BackgroundCommandsMetadata(pending, completed, failed, appA, appB, tableFootprint);
         }
 
         static BackgroundCommandsMetadata empty() {

@@ -70,20 +70,57 @@ class AutomationComparisonServiceTest {
                 .contains("\"failed\" : 1")
                 .contains("\"appA\" : {")
                 .contains("\"appB\" : {")
+                .contains("\"tableFootprint\" : {")
+                .contains("\"schema\" : \"dbo\"")
+                .contains("\"name\" : \"Supplier\"")
+                .contains("\"name\" : \"ApplicationUser\"")
                 .contains("\"left-completed\"")
                 .contains("\"different-right-id\"");
         assertThat(result.latestResult().tableCount()).isEqualTo(2);
         assertThat(result.latestResult().backgroundCommands().pending()).isEqualTo(1);
         assertThat(result.latestResult().backgroundCommands().completed()).isEqualTo(2);
         assertThat(result.latestResult().backgroundCommands().failed()).isEqualTo(1);
+        assertThat(result.latestResult().backgroundCommands().tableFootprint().appA())
+                .containsExactly(new AutomationComparisonService.TableIdentityMetadata("dbo", "Supplier"));
+        assertThat(result.latestResult().backgroundCommands().tableFootprint().appB())
+                .containsExactly(new AutomationComparisonService.TableIdentityMetadata("isisExtSecman", "ApplicationUser"));
+        assertThat(result.latestResult().backgroundCommands().tableFootprint().union())
+                .containsExactly(
+                        new AutomationComparisonService.TableIdentityMetadata("dbo", "Supplier"),
+                        new AutomationComparisonService.TableIdentityMetadata("isisExtSecman", "ApplicationUser"));
         verify(fixture.commandDrivenTableSelectionService).resolveTouchedBusinessTables(
-                List.of("newest-ok", "left-completed"), fixture.tableCatalog, EXPECTED_CONTEXT, DatabaseSide.LEFT);
+                List.of("newest-ok"), fixture.tableCatalog, EXPECTED_CONTEXT, DatabaseSide.LEFT);
         verify(fixture.commandDrivenTableSelectionService).resolveTouchedBusinessTables(
-                List.of("newest-ok", "different-right-id"), fixture.tableCatalog, EXPECTED_CONTEXT, DatabaseSide.RIGHT);
+                List.of("left-completed"), fixture.tableCatalog, EXPECTED_CONTEXT, DatabaseSide.LEFT);
+        verify(fixture.commandDrivenTableSelectionService).resolveTouchedBusinessTables(
+                List.of("newest-ok"), fixture.tableCatalog, EXPECTED_CONTEXT, DatabaseSide.RIGHT);
+        verify(fixture.commandDrivenTableSelectionService).resolveTouchedBusinessTables(
+                List.of("different-right-id"), fixture.tableCatalog, EXPECTED_CONTEXT, DatabaseSide.RIGHT);
         verify(fixture.executionService).compare(
                 org.mockito.ArgumentMatchers.argThat(request -> Set.copyOf(request.tables()).equals(Set.of(SUPPLIER, APPLICATION_USER))),
                 isNull(),
                 eq(EXPECTED_CONTEXT));
+    }
+
+    @Test
+    void deduplicatesOverlappingCompletedBackgroundTableProvenance() {
+        final List<CommandCatalogEntry> left = List.of(
+                foreground("root", "OK", "2026-06-12T07:00:00"),
+                background("left-child", "root", "UNDEFINED", "2026-06-12T07:01:00", "done"));
+        final List<CommandCatalogEntry> right = List.of(
+                foreground("root", "OK", "2026-06-12T07:00:00"),
+                background("right-child", "root", "UNDEFINED", "2026-06-12T07:01:00", "done"));
+        final Fixture fixture = fixture(left, right, Set.of(SUPPLIER), Set.of(SUPPLIER));
+        stubComparison(fixture);
+
+        final AutomationComparisonService.BackgroundTableFootprintMetadata footprint =
+                fixture.service().refresh().latestResult().backgroundCommands().tableFootprint();
+
+        final AutomationComparisonService.TableIdentityMetadata supplier =
+                new AutomationComparisonService.TableIdentityMetadata("dbo", "Supplier");
+        assertThat(footprint.appA()).containsExactly(supplier);
+        assertThat(footprint.appB()).containsExactly(supplier);
+        assertThat(footprint.union()).containsExactly(supplier);
     }
 
     @Test
@@ -151,7 +188,10 @@ class AutomationComparisonServiceTest {
 
         assertThat(result.latestResult().json())
                 .contains("\"hasDifferences\" : false")
-                .contains("\"command\" : {");
+                .contains("\"command\" : {")
+                .contains("\"tableFootprint\" : {")
+                .contains("\"union\" : [ ]");
+        assertThat(result.latestResult().backgroundCommands().tableFootprint().union()).isEmpty();
         assertThat(result.latestResult().tableCount()).isZero();
         verify(fixture.executionService, never()).compare(any(), isNull(), any());
     }
@@ -216,9 +256,13 @@ class AutomationComparisonServiceTest {
         when(tableCatalogService.discoverTableCatalog(EXPECTED_CONTEXT, DatabaseSide.LEFT)).thenReturn(tableCatalog);
         when(tableCatalogService.discoverTableCatalog(EXPECTED_CONTEXT, DatabaseSide.RIGHT)).thenReturn(tableCatalog);
         when(commandDrivenTableSelectionService.resolveTouchedBusinessTables(any(), eq(tableCatalog), eq(EXPECTED_CONTEXT), eq(DatabaseSide.LEFT)))
-                .thenReturn(leftTouchedTables);
+                .thenAnswer(invocation -> ((java.util.Collection<?>) invocation.getArgument(0)).isEmpty()
+                        ? Set.of()
+                        : leftTouchedTables);
         when(commandDrivenTableSelectionService.resolveTouchedBusinessTables(any(), eq(tableCatalog), eq(EXPECTED_CONTEXT), eq(DatabaseSide.RIGHT)))
-                .thenReturn(rightTouchedTables);
+                .thenAnswer(invocation -> ((java.util.Collection<?>) invocation.getArgument(0)).isEmpty()
+                        ? Set.of()
+                        : rightTouchedTables);
         return new Fixture(executionService, commandCatalogService, tableCatalogService, commandDrivenTableSelectionService, tableCatalog);
     }
 

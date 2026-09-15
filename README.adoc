@@ -789,6 +789,8 @@ jq . comparison-*.json | head -80
 The saved artifact should be valid JSON in the same deterministic comparison format used by existing JSON downloads.
 The JSON preserves `hasDifferences`, `differingTables`, and `comparedTables`, keeps the selected foreground command in the top-level `command` object, and adds `backgroundCommands`.
 The `backgroundCommands` object contains aggregate `pending`, `completed`, and `failed` counts plus separate `appA` and `appB` command lists with interaction ID, parent ID, member, replay state, execution mode, timestamps, and classified status.
+Its `tableFootprint` object lists eligible tables attributable to completed background descendants under `appA` and `appB`, together with their deduplicated `union`.
+Each table identity contains `schema` and `name`, and the same union tables participate in the normal comparison request.
 Run a second refresh-and-download request to confirm the filename timestamp updates.
 For failure regression, stop the fixture while the webapp remains running:
 
