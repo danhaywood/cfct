@@ -712,6 +712,13 @@ The union contains the independently resolved foreground and completed-backgroun
 It also compares audit structure independently for the shared foreground interaction and for each side's completed descendants.
 Audit records are grouped by `(target, propertyId)` and compared by occurrence count, so differing background child identifiers and transaction sequences do not affect equality.
 This first audit comparison phase does not compare `postValue`; value masking, timestamp tolerance, and large-value policies are deferred.
+The response additionally includes an independent top-level `executionTiming` object with app-a and app-b observations for the shared foreground command and each side's terminal background descendants.
+Each observation contains side, scope, side-local interaction identity, parent identity where available, logical member identifier, replay status, `startedAt`, `completedAt`, and nullable `durationMillis`.
+`durationMillis` is calculated only from that command's own start and completion timestamps, so nominal replay-clock jumps between commands do not inflate execution duration.
+Missing timestamps or a completion before start produce a null duration rather than zero.
+Timing observations deliberately omit target bookmarks and target object identifiers.
+Background observations remain side-local and are deterministically ordered; their interaction identifiers support deduplication but are not cross-side correlation keys.
+Timing facts do not change business `hasDifferences`, audit `hasDifferences`, background status, or the HTTP outcome.
 A background command is pending when its replay state is `PENDING` or it has no `completedAt` value, failed when its replay state is `FAILED`, and otherwise completed when `completedAt` is populated.
 If the selected foreground group does not resolve any eligible touched business tables, the endpoint still succeeds and returns an empty comparison JSON document with `hasDifferences: false`, `differingTables: []`, and `comparedTables: []`.
 If no completed successful foreground command is common to both sides, the endpoint returns `200 OK` with `status: no_completed_foreground`.

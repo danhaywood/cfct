@@ -1,6 +1,7 @@
 package com.danhaywood.cfct.webapp.automation;
 
 import com.danhaywood.cfct.model.AuditTrailComparisonResult;
+import com.danhaywood.cfct.model.ExecutionTimingResult;
 import com.danhaywood.cfct.model.TableRef;
 import com.danhaywood.cfct.request.MultiTableComparisonRequest;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
@@ -52,6 +53,7 @@ public class AutomationComparisonService {
     private final SqlServerTableCatalogService tableCatalogService;
     private final CommandDrivenTableSelectionService commandDrivenTableSelectionService;
     private final AutomationAuditTrailComparisonService auditTrailComparisonService;
+    private final AutomationExecutionTimingService executionTimingService;
     private final Clock clock;
     private final AtomicBoolean refreshInProgress = new AtomicBoolean();
 
@@ -63,7 +65,8 @@ public class AutomationComparisonService {
             final SqlServerCommandCatalogService commandCatalogService,
             final SqlServerTableCatalogService tableCatalogService,
             final CommandDrivenTableSelectionService commandDrivenTableSelectionService,
-            final AutomationAuditTrailComparisonService auditTrailComparisonService) {
+            final AutomationAuditTrailComparisonService auditTrailComparisonService,
+            final AutomationExecutionTimingService executionTimingService) {
         this(
                 comparisonProperties,
                 datasourceProperties,
@@ -72,6 +75,7 @@ public class AutomationComparisonService {
                 tableCatalogService,
                 commandDrivenTableSelectionService,
                 auditTrailComparisonService,
+                executionTimingService,
                 Clock.systemUTC());
     }
 
@@ -83,6 +87,7 @@ public class AutomationComparisonService {
             final SqlServerTableCatalogService tableCatalogService,
             final CommandDrivenTableSelectionService commandDrivenTableSelectionService,
             final AutomationAuditTrailComparisonService auditTrailComparisonService,
+            final AutomationExecutionTimingService executionTimingService,
             final Clock clock) {
         this.comparisonProperties = comparisonProperties;
         this.datasourceProperties = datasourceProperties;
@@ -91,6 +96,7 @@ public class AutomationComparisonService {
         this.tableCatalogService = tableCatalogService;
         this.commandDrivenTableSelectionService = commandDrivenTableSelectionService;
         this.auditTrailComparisonService = auditTrailComparisonService;
+        this.executionTimingService = executionTimingService;
         this.clock = clock;
     }
 
@@ -107,7 +113,13 @@ public class AutomationComparisonService {
             if (command == null) {
                 final BackgroundCommandsMetadata backgroundCommands = BackgroundCommandsMetadata.empty();
                 return AutomationRefreshResult.success(new LatestAutomationResult(
-                        withAutomationMetadata(EMPTY_COMPARISON_JSON, null, backgroundCommands, null, "no_completed_foreground"),
+                        withAutomationMetadata(
+                                EMPTY_COMPARISON_JSON,
+                                null,
+                                backgroundCommands,
+                                null,
+                                null,
+                                "no_completed_foreground"),
                         Instant.now(clock),
                         0,
                         null,
@@ -130,6 +142,11 @@ public class AutomationComparisonService {
                     command.interactionId(),
                     completedBackgroundInteractionIds(leftBackground),
                     completedBackgroundInteractionIds(rightBackground));
+            final ExecutionTimingResult executionTiming = executionTimingService.read(
+                    context,
+                    command.interactionId(),
+                    terminalBackgroundInteractionIds(leftBackground),
+                    terminalBackgroundInteractionIds(rightBackground));
             if (tableFootprint.comparisonTables().isEmpty()) {
                 return AutomationRefreshResult.success(new LatestAutomationResult(
                         withAutomationMetadata(
@@ -137,6 +154,7 @@ public class AutomationComparisonService {
                                 commandMetadata,
                                 backgroundCommands,
                                 auditTrailComparison,
+                                executionTiming,
                                 null),
                         Instant.now(clock),
                         0,
@@ -156,6 +174,7 @@ public class AutomationComparisonService {
                             commandMetadata,
                             backgroundCommands,
                             auditTrailComparison,
+                            executionTiming,
                             null),
                     Instant.now(clock),
                     request.tables().size(),
@@ -206,6 +225,14 @@ public class AutomationComparisonService {
             final List<CommandCatalogEntry> backgroundCommands) {
         return backgroundCommands.stream()
                 .filter(command -> statusOf(command) == BackgroundCommandStatus.COMPLETED)
+                .map(CommandCatalogEntry::interactionId)
+                .toList();
+    }
+
+    private static List<String> terminalBackgroundInteractionIds(
+            final List<CommandCatalogEntry> backgroundCommands) {
+        return backgroundCommands.stream()
+                .filter(command -> statusOf(command) != BackgroundCommandStatus.PENDING)
                 .map(CommandCatalogEntry::interactionId)
                 .toList();
     }
@@ -278,6 +305,7 @@ public class AutomationComparisonService {
             final CommandMetadata commandMetadata,
             final BackgroundCommandsMetadata backgroundCommandsMetadata,
             final AuditTrailComparisonResult auditTrailComparison,
+            final ExecutionTimingResult executionTiming,
             final String status) {
         try {
             final ObjectNode root = (ObjectNode) JSON_MAPPER.readTree(json);
@@ -290,6 +318,9 @@ public class AutomationComparisonService {
             root.set("backgroundCommands", JSON_MAPPER.valueToTree(backgroundCommandsMetadata));
             if (auditTrailComparison != null) {
                 root.set("auditTrailComparison", JSON_MAPPER.valueToTree(auditTrailComparison));
+            }
+            if (executionTiming != null) {
+                root.set("executionTiming", JSON_MAPPER.valueToTree(executionTiming));
             }
             return JSON_MAPPER.writeValueAsString(root) + System.lineSeparator();
         } catch (JsonProcessingException | ClassCastException ex) {

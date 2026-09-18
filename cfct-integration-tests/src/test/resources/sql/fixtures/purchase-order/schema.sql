@@ -89,9 +89,11 @@ CREATE TABLE dbo.PurchaseOrderTimeline (
 GO
 CREATE TABLE causewayExtCommandLog.CommandLogEntry (
     interactionId UNIQUEIDENTIFIER NOT NULL,
+    parentInteractionId UNIQUEIDENTIFIER NULL,
     executeIn VARCHAR(10) NOT NULL,
     logicalMemberIdentifier VARCHAR(255) NOT NULL,
     [timestamp] DATETIME2 NOT NULL,
+    startedAt DATETIME2 NULL,
     completedAt DATETIME2 NULL,
     target VARCHAR(1500) NOT NULL,
     replayState VARCHAR(20) NOT NULL,

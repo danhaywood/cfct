@@ -3,6 +3,12 @@ package com.danhaywood.cfct.webapp.automation;
 import com.danhaywood.cfct.model.AuditTrailComparisonResult;
 import com.danhaywood.cfct.model.AuditTrailCountDifference;
 import com.danhaywood.cfct.model.AuditTrailScopeComparison;
+import com.danhaywood.cfct.model.BackgroundExecutionTiming;
+import com.danhaywood.cfct.model.CommandExecutionTimingObservation;
+import com.danhaywood.cfct.model.ExecutionTimingResult;
+import com.danhaywood.cfct.model.ExecutionTimingScope;
+import com.danhaywood.cfct.model.ExecutionTimingSide;
+import com.danhaywood.cfct.model.ForegroundExecutionTiming;
 import com.danhaywood.cfct.model.MultiTableComparisonResult;
 import com.danhaywood.cfct.model.TableRef;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
@@ -237,6 +243,77 @@ class AutomationComparisonServiceTest {
     }
 
     @Test
+    void refreshIncludesTargetFreeTimingForForegroundAndTerminalBackgroundCommands() {
+        final List<CommandCatalogEntry> left = List.of(
+                foreground("root", "OK", "2026-06-12T07:00:00"),
+                background("left-completed", "root", "UNDEFINED", "2026-06-12T07:01:00", "done"),
+                background("left-pending", "root", "PENDING", "2026-06-12T07:02:00", null),
+                background("left-failed", "root", "FAILED", "2026-06-12T07:03:00", "done"));
+        final List<CommandCatalogEntry> right = List.of(
+                foreground("root", "OK", "2026-06-12T07:00:00"),
+                background("right-child", "root", "UNDEFINED", "2026-06-12T07:01:30", "done"));
+        final Fixture fixture = fixture(left, right, Set.of(), Set.of());
+        final CommandExecutionTimingObservation foregroundA = timing(
+                ExecutionTimingSide.APP_A, ExecutionTimingScope.FOREGROUND, "root", null, "Lease#revise", 590L);
+        final CommandExecutionTimingObservation foregroundB = timing(
+                ExecutionTimingSide.APP_B, ExecutionTimingScope.FOREGROUND, "root", null, "Lease#revise", 560L);
+        final CommandExecutionTimingObservation failedA = timing(
+                ExecutionTimingSide.APP_A, ExecutionTimingScope.BACKGROUND, "left-failed", "root", "Task#fail", 30L);
+        final CommandExecutionTimingObservation completedA = timing(
+                ExecutionTimingSide.APP_A, ExecutionTimingScope.BACKGROUND, "left-completed", "root", "Task#run", 20L);
+        final CommandExecutionTimingObservation completedB = timing(
+                ExecutionTimingSide.APP_B, ExecutionTimingScope.BACKGROUND, "right-child", "root", "Task#run", 40L);
+        when(fixture.executionTimingService.read(any(), any(), any(), any())).thenReturn(new ExecutionTimingResult(
+                new ForegroundExecutionTiming(foregroundA, foregroundB),
+                new BackgroundExecutionTiming(List.of(completedA, failedA), List.of(completedB))));
+
+        final String json = fixture.service().refresh().latestResult().json();
+        final String timingJson = json.substring(json.indexOf("\"executionTiming\""));
+
+        assertThat(timingJson)
+                .contains("\"executionTiming\" : {")
+                .contains("\"side\" : \"APP_A\"")
+                .contains("\"scope\" : \"FOREGROUND\"")
+                .contains("\"logicalMemberIdentifier\" : \"Lease#revise\"")
+                .contains("\"durationMillis\" : 590")
+                .contains("\"interactionId\" : \"left-failed\"")
+                .contains("\"interactionId\" : \"right-child\"")
+                .doesNotContain("left-pending")
+                .doesNotContain("\"target\"")
+                .doesNotContain("Lease:1");
+        assertThat(timingJson.indexOf("Task#fail")).isLessThan(timingJson.indexOf("Task#run"));
+        verify(fixture.executionTimingService).read(
+                EXPECTED_CONTEXT,
+                "root",
+                List.of("left-completed", "left-failed"),
+                List.of("right-child"));
+    }
+
+    @Test
+    void repeatedRefreshProducesDeterministicExecutionTimingJson() {
+        final List<CommandCatalogEntry> commands = List.of(
+                foreground("root", "OK", "2026-06-12T07:00:00"),
+                background("z-child", "root", "UNDEFINED", "2026-06-12T07:02:00", "done"),
+                background("a-child", "root", "UNDEFINED", "2026-06-12T07:01:00", "done"));
+        final Fixture fixture = fixture(commands, commands, Set.of(), Set.of());
+        when(fixture.executionTimingService.read(any(), any(), any(), any())).thenReturn(new ExecutionTimingResult(
+                new ForegroundExecutionTiming(null, null),
+                new BackgroundExecutionTiming(
+                        List.of(
+                                timing(ExecutionTimingSide.APP_A, ExecutionTimingScope.BACKGROUND,
+                                        "z-child", "root", "Task#z", 20L),
+                                timing(ExecutionTimingSide.APP_A, ExecutionTimingScope.BACKGROUND,
+                                        "a-child", "root", "Task#a", 10L)),
+                        List.of())));
+
+        final String first = fixture.service().refresh().latestResult().json();
+        final String second = fixture.service().refresh().latestResult().json();
+
+        assertThat(second).isEqualTo(first);
+        assertThat(first.indexOf("Task#a")).isLessThan(first.indexOf("Task#z"));
+    }
+
+    @Test
     void refreshReturnsConflictWhenAnotherRefreshIsRunning() throws Exception {
         final CountDownLatch entered = new CountDownLatch(1);
         final CountDownLatch release = new CountDownLatch(1);
@@ -268,6 +345,7 @@ class AutomationComparisonServiceTest {
                 mock(SqlServerTableCatalogService.class),
                 mock(CommandDrivenTableSelectionService.class),
                 mock(AutomationAuditTrailComparisonService.class),
+                mock(AutomationExecutionTimingService.class),
                 FIXED_CLOCK);
 
         assertThatThrownBy(service::refresh)
@@ -292,6 +370,7 @@ class AutomationComparisonServiceTest {
         final SqlServerTableCatalogService tableCatalogService = mock(SqlServerTableCatalogService.class);
         final CommandDrivenTableSelectionService commandDrivenTableSelectionService = mock(CommandDrivenTableSelectionService.class);
         final AutomationAuditTrailComparisonService auditTrailComparisonService = mock(AutomationAuditTrailComparisonService.class);
+        final AutomationExecutionTimingService executionTimingService = mock(AutomationExecutionTimingService.class);
         final List<TableCatalogEntry> tableCatalog = List.of(TableCatalogEntry.eligible(SUPPLIER), TableCatalogEntry.eligible(APPLICATION_USER));
         when(commandCatalogService.discoverCommandCatalog(EXPECTED_CONTEXT, DatabaseSide.LEFT)).thenReturn(leftCommands);
         when(commandCatalogService.discoverCommandCatalog(EXPECTED_CONTEXT, DatabaseSide.RIGHT)).thenReturn(rightCommands);
@@ -306,12 +385,14 @@ class AutomationComparisonServiceTest {
                         ? Set.of()
                         : rightTouchedTables);
         when(auditTrailComparisonService.compare(any(), any(), any(), any())).thenReturn(cleanAuditComparison());
+        when(executionTimingService.read(any(), any(), any(), any())).thenReturn(emptyExecutionTiming());
         return new Fixture(
                 executionService,
                 commandCatalogService,
                 tableCatalogService,
                 commandDrivenTableSelectionService,
                 auditTrailComparisonService,
+                executionTimingService,
                 tableCatalog);
     }
 
@@ -323,6 +404,31 @@ class AutomationComparisonServiceTest {
     private static AuditTrailComparisonResult cleanAuditComparison() {
         final AuditTrailScopeComparison cleanScope = new AuditTrailScopeComparison(false, 0, 0, List.of());
         return new AuditTrailComparisonResult(false, "semantic-key-counts", cleanScope, cleanScope);
+    }
+
+    private static ExecutionTimingResult emptyExecutionTiming() {
+        return new ExecutionTimingResult(
+                new ForegroundExecutionTiming(null, null),
+                new BackgroundExecutionTiming(List.of(), List.of()));
+    }
+
+    private static CommandExecutionTimingObservation timing(
+            final ExecutionTimingSide side,
+            final ExecutionTimingScope scope,
+            final String interactionId,
+            final String parentInteractionId,
+            final String memberIdentifier,
+            final Long durationMillis) {
+        return new CommandExecutionTimingObservation(
+                side,
+                scope,
+                interactionId,
+                parentInteractionId,
+                memberIdentifier,
+                "OK",
+                "2026-06-12T07:00:00",
+                "2026-06-12T07:00:01",
+                durationMillis);
     }
 
     private static WebappComparisonExecutionService.ComparisonExecutionOutcome outcome(final String json) {
@@ -374,6 +480,7 @@ class AutomationComparisonServiceTest {
             SqlServerTableCatalogService tableCatalogService,
             CommandDrivenTableSelectionService commandDrivenTableSelectionService,
             AutomationAuditTrailComparisonService auditTrailComparisonService,
+            AutomationExecutionTimingService executionTimingService,
             List<TableCatalogEntry> tableCatalog) {
         private AutomationComparisonService service() {
             return new AutomationComparisonService(
@@ -384,6 +491,7 @@ class AutomationComparisonServiceTest {
                     tableCatalogService,
                     commandDrivenTableSelectionService,
                     auditTrailComparisonService,
+                    executionTimingService,
                     FIXED_CLOCK);
         }
     }

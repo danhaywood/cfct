@@ -18,12 +18,14 @@ import com.danhaywood.cfct.service.TableComparisonService;
 import com.danhaywood.cfct.spi.AuditTrailEntryReader;
 import com.danhaywood.cfct.spi.ColumnValueNormalizer;
 import com.danhaywood.cfct.spi.CommandAuditTouchedTableResolver;
+import com.danhaywood.cfct.spi.CommandExecutionTimingReader;
 import com.danhaywood.cfct.spi.IgnoreColumnAdvisor;
 import com.danhaywood.cfct.spi.TableMetadataReader;
 import com.danhaywood.cfct.spi.TableRowReader;
 import com.danhaywood.cfct.sqlserver.AuditTrailEntryReaderSqlServer;
 import com.danhaywood.cfct.sqlserver.ColumnValueNormalizerUsingExtendedProperties;
 import com.danhaywood.cfct.sqlserver.CommandAuditTouchedTableResolverSqlServer;
+import com.danhaywood.cfct.sqlserver.CommandExecutionTimingReaderSqlServer;
 import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorForIdentityColumns;
 import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorForTimestamps;
 import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorForUuidColumns;
@@ -94,6 +96,11 @@ public class ComparisonImplementationConfiguration {
     @Bean
     public AuditTrailEntryReader auditTrailEntryReader() {
         return new AuditTrailEntryReaderSqlServer();
+    }
+
+    @Bean
+    public CommandExecutionTimingReader commandExecutionTimingReader() {
+        return new CommandExecutionTimingReaderSqlServer();
     }
 
     @Bean
