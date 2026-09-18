@@ -123,6 +123,7 @@ INSERT INTO causewayExtAuditTrail.AuditTrailEntry (
 ) VALUES
     ('11111111-1111-1111-1111-111111111111', 1, 'supplier.Supplier:301', 'status'),
     ('11111111-1111-1111-1111-111111111111', 2, 'product.Product:701', 'unit_price'),
+    ('11111111-1111-1111-1111-111111111111', 3, 'product.Product:701', 'unit_price'),
     ('44444444-4444-4444-4444-444444444444', 1, 'product.Product:701', 'unit_price'),
     ('55555555-5555-5555-5555-555555555555', 1, 'product.ProductInventory:801', 'quantity_on_hand'),
     ('66666666-6666-6666-6666-666666666666', 1, 'purchaseorder.PurchaseOrder:101', 'status'),

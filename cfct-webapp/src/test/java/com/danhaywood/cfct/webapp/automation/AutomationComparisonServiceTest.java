@@ -1,5 +1,8 @@
 package com.danhaywood.cfct.webapp.automation;
 
+import com.danhaywood.cfct.model.AuditTrailComparisonResult;
+import com.danhaywood.cfct.model.AuditTrailCountDifference;
+import com.danhaywood.cfct.model.AuditTrailScopeComparison;
 import com.danhaywood.cfct.model.MultiTableComparisonResult;
 import com.danhaywood.cfct.model.TableRef;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
@@ -197,6 +200,43 @@ class AutomationComparisonServiceTest {
     }
 
     @Test
+    void refreshIncludesIndependentAuditComparisonForEmptyBusinessFootprint() {
+        final List<CommandCatalogEntry> left = List.of(
+                foreground("root", "OK", "2026-06-12T07:00:00"),
+                background("left-child", "root", "UNDEFINED", "2026-06-12T07:01:00", "done"));
+        final List<CommandCatalogEntry> right = List.of(
+                foreground("root", "OK", "2026-06-12T07:00:00"),
+                background("right-child", "root", "UNDEFINED", "2026-06-12T07:01:00", "done"));
+        final Fixture fixture = fixture(left, right, Set.of(), Set.of());
+        final AuditTrailScopeComparison foreground = new AuditTrailScopeComparison(false, 1, 1, List.of());
+        final AuditTrailScopeComparison background = new AuditTrailScopeComparison(
+                true,
+                2,
+                1,
+                List.of(new AuditTrailCountDifference("customer.Customer:1", "status", 2, 1)));
+        when(fixture.auditTrailComparisonService.compare(any(), any(), any(), any())).thenReturn(
+                new AuditTrailComparisonResult(true, "semantic-key-counts", foreground, background));
+
+        final AutomationComparisonService.AutomationRefreshResult result = fixture.service().refresh();
+
+        assertThat(result.latestResult().json())
+                .contains("\"hasDifferences\" : false")
+                .contains("\"auditTrailComparison\" : {")
+                .contains("\"hasDifferences\" : true")
+                .contains("\"mode\" : \"semantic-key-counts\"")
+                .contains("\"target\" : \"customer.Customer:1\"")
+                .contains("\"memberIdentifier\" : \"status\"")
+                .contains("\"appACount\" : 2")
+                .contains("\"appBCount\" : 1");
+        verify(fixture.auditTrailComparisonService).compare(
+                EXPECTED_CONTEXT,
+                "root",
+                List.of("left-child"),
+                List.of("right-child"));
+        verify(fixture.executionService, never()).compare(any(), isNull(), any());
+    }
+
+    @Test
     void refreshReturnsConflictWhenAnotherRefreshIsRunning() throws Exception {
         final CountDownLatch entered = new CountDownLatch(1);
         final CountDownLatch release = new CountDownLatch(1);
@@ -227,6 +267,7 @@ class AutomationComparisonServiceTest {
                 mock(SqlServerCommandCatalogService.class),
                 mock(SqlServerTableCatalogService.class),
                 mock(CommandDrivenTableSelectionService.class),
+                mock(AutomationAuditTrailComparisonService.class),
                 FIXED_CLOCK);
 
         assertThatThrownBy(service::refresh)
@@ -250,6 +291,7 @@ class AutomationComparisonServiceTest {
         final SqlServerCommandCatalogService commandCatalogService = mock(SqlServerCommandCatalogService.class);
         final SqlServerTableCatalogService tableCatalogService = mock(SqlServerTableCatalogService.class);
         final CommandDrivenTableSelectionService commandDrivenTableSelectionService = mock(CommandDrivenTableSelectionService.class);
+        final AutomationAuditTrailComparisonService auditTrailComparisonService = mock(AutomationAuditTrailComparisonService.class);
         final List<TableCatalogEntry> tableCatalog = List.of(TableCatalogEntry.eligible(SUPPLIER), TableCatalogEntry.eligible(APPLICATION_USER));
         when(commandCatalogService.discoverCommandCatalog(EXPECTED_CONTEXT, DatabaseSide.LEFT)).thenReturn(leftCommands);
         when(commandCatalogService.discoverCommandCatalog(EXPECTED_CONTEXT, DatabaseSide.RIGHT)).thenReturn(rightCommands);
@@ -263,12 +305,24 @@ class AutomationComparisonServiceTest {
                 .thenAnswer(invocation -> ((java.util.Collection<?>) invocation.getArgument(0)).isEmpty()
                         ? Set.of()
                         : rightTouchedTables);
-        return new Fixture(executionService, commandCatalogService, tableCatalogService, commandDrivenTableSelectionService, tableCatalog);
+        when(auditTrailComparisonService.compare(any(), any(), any(), any())).thenReturn(cleanAuditComparison());
+        return new Fixture(
+                executionService,
+                commandCatalogService,
+                tableCatalogService,
+                commandDrivenTableSelectionService,
+                auditTrailComparisonService,
+                tableCatalog);
     }
 
     private static void stubComparison(final Fixture fixture) {
         when(fixture.executionService.compare(any(), isNull(), any())).thenReturn(outcome(
                 "{\"hasDifferences\":false,\"differingTables\":[],\"comparedTables\":[]}\n"));
+    }
+
+    private static AuditTrailComparisonResult cleanAuditComparison() {
+        final AuditTrailScopeComparison cleanScope = new AuditTrailScopeComparison(false, 0, 0, List.of());
+        return new AuditTrailComparisonResult(false, "semantic-key-counts", cleanScope, cleanScope);
     }
 
     private static WebappComparisonExecutionService.ComparisonExecutionOutcome outcome(final String json) {
@@ -319,6 +373,7 @@ class AutomationComparisonServiceTest {
             SqlServerCommandCatalogService commandCatalogService,
             SqlServerTableCatalogService tableCatalogService,
             CommandDrivenTableSelectionService commandDrivenTableSelectionService,
+            AutomationAuditTrailComparisonService auditTrailComparisonService,
             List<TableCatalogEntry> tableCatalog) {
         private AutomationComparisonService service() {
             return new AutomationComparisonService(
@@ -328,6 +383,7 @@ class AutomationComparisonServiceTest {
                     commandCatalogService,
                     tableCatalogService,
                     commandDrivenTableSelectionService,
+                    auditTrailComparisonService,
                     FIXED_CLOCK);
         }
     }

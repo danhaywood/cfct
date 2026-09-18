@@ -1,5 +1,6 @@
 package com.danhaywood.cfct.implspring;
 
+import com.danhaywood.cfct.comparison.AuditTrailComparisonServiceDefault;
 import com.danhaywood.cfct.comparison.MultiTableComparisonServiceDefault;
 import com.danhaywood.cfct.comparison.MultiTableComparisonViewServiceDefault;
 import com.danhaywood.cfct.comparison.TableComparisonServiceDefault;
@@ -9,15 +10,18 @@ import com.danhaywood.cfct.report.MultiTableComparisonReportFormatterDefault;
 import com.danhaywood.cfct.report.TextMultiTableComparisonReportRenderer;
 import com.danhaywood.cfct.report.YamlMultiTableComparisonReportRenderer;
 import com.danhaywood.cfct.report.TextTableComparisonReportRenderer;
+import com.danhaywood.cfct.service.AuditTrailComparisonService;
 import com.danhaywood.cfct.service.MultiTableComparisonReportFormatter;
 import com.danhaywood.cfct.service.MultiTableComparisonService;
 import com.danhaywood.cfct.service.MultiTableComparisonViewService;
 import com.danhaywood.cfct.service.TableComparisonService;
+import com.danhaywood.cfct.spi.AuditTrailEntryReader;
 import com.danhaywood.cfct.spi.ColumnValueNormalizer;
 import com.danhaywood.cfct.spi.CommandAuditTouchedTableResolver;
 import com.danhaywood.cfct.spi.IgnoreColumnAdvisor;
 import com.danhaywood.cfct.spi.TableMetadataReader;
 import com.danhaywood.cfct.spi.TableRowReader;
+import com.danhaywood.cfct.sqlserver.AuditTrailEntryReaderSqlServer;
 import com.danhaywood.cfct.sqlserver.ColumnValueNormalizerUsingExtendedProperties;
 import com.danhaywood.cfct.sqlserver.CommandAuditTouchedTableResolverSqlServer;
 import com.danhaywood.cfct.sqlserver.IgnoreColumnAdvisorForIdentityColumns;
@@ -85,6 +89,16 @@ public class ComparisonImplementationConfiguration {
     @Bean
     public CommandAuditTouchedTableResolver commandAuditTouchedTableResolver() {
         return new CommandAuditTouchedTableResolverSqlServer();
+    }
+
+    @Bean
+    public AuditTrailEntryReader auditTrailEntryReader() {
+        return new AuditTrailEntryReaderSqlServer();
+    }
+
+    @Bean
+    public AuditTrailComparisonService auditTrailComparisonService() {
+        return new AuditTrailComparisonServiceDefault();
     }
 
     @Bean

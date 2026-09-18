@@ -1,5 +1,6 @@
 package com.danhaywood.cfct.webapp.automation;
 
+import com.danhaywood.cfct.model.AuditTrailComparisonResult;
 import com.danhaywood.cfct.model.TableRef;
 import com.danhaywood.cfct.request.MultiTableComparisonRequest;
 import com.danhaywood.cfct.webapp.auth.AuthenticatedConnectionContext;
@@ -50,6 +51,7 @@ public class AutomationComparisonService {
     private final SqlServerCommandCatalogService commandCatalogService;
     private final SqlServerTableCatalogService tableCatalogService;
     private final CommandDrivenTableSelectionService commandDrivenTableSelectionService;
+    private final AutomationAuditTrailComparisonService auditTrailComparisonService;
     private final Clock clock;
     private final AtomicBoolean refreshInProgress = new AtomicBoolean();
 
@@ -60,7 +62,8 @@ public class AutomationComparisonService {
             final WebappComparisonExecutionService comparisonExecutionService,
             final SqlServerCommandCatalogService commandCatalogService,
             final SqlServerTableCatalogService tableCatalogService,
-            final CommandDrivenTableSelectionService commandDrivenTableSelectionService) {
+            final CommandDrivenTableSelectionService commandDrivenTableSelectionService,
+            final AutomationAuditTrailComparisonService auditTrailComparisonService) {
         this(
                 comparisonProperties,
                 datasourceProperties,
@@ -68,6 +71,7 @@ public class AutomationComparisonService {
                 commandCatalogService,
                 tableCatalogService,
                 commandDrivenTableSelectionService,
+                auditTrailComparisonService,
                 Clock.systemUTC());
     }
 
@@ -78,6 +82,7 @@ public class AutomationComparisonService {
             final SqlServerCommandCatalogService commandCatalogService,
             final SqlServerTableCatalogService tableCatalogService,
             final CommandDrivenTableSelectionService commandDrivenTableSelectionService,
+            final AutomationAuditTrailComparisonService auditTrailComparisonService,
             final Clock clock) {
         this.comparisonProperties = comparisonProperties;
         this.datasourceProperties = datasourceProperties;
@@ -85,6 +90,7 @@ public class AutomationComparisonService {
         this.commandCatalogService = commandCatalogService;
         this.tableCatalogService = tableCatalogService;
         this.commandDrivenTableSelectionService = commandDrivenTableSelectionService;
+        this.auditTrailComparisonService = auditTrailComparisonService;
         this.clock = clock;
     }
 
@@ -101,7 +107,7 @@ public class AutomationComparisonService {
             if (command == null) {
                 final BackgroundCommandsMetadata backgroundCommands = BackgroundCommandsMetadata.empty();
                 return AutomationRefreshResult.success(new LatestAutomationResult(
-                        withAutomationMetadata(EMPTY_COMPARISON_JSON, null, backgroundCommands, "no_completed_foreground"),
+                        withAutomationMetadata(EMPTY_COMPARISON_JSON, null, backgroundCommands, null, "no_completed_foreground"),
                         Instant.now(clock),
                         0,
                         null,
@@ -119,9 +125,19 @@ public class AutomationComparisonService {
             final BackgroundCommandsMetadata backgroundCommands = BackgroundCommandsMetadata
                     .from(leftBackground, rightBackground)
                     .withTableFootprint(tableFootprint.backgroundMetadata());
+            final AuditTrailComparisonResult auditTrailComparison = auditTrailComparisonService.compare(
+                    context,
+                    command.interactionId(),
+                    completedBackgroundInteractionIds(leftBackground),
+                    completedBackgroundInteractionIds(rightBackground));
             if (tableFootprint.comparisonTables().isEmpty()) {
                 return AutomationRefreshResult.success(new LatestAutomationResult(
-                        withAutomationMetadata(EMPTY_COMPARISON_JSON, commandMetadata, backgroundCommands, null),
+                        withAutomationMetadata(
+                                EMPTY_COMPARISON_JSON,
+                                commandMetadata,
+                                backgroundCommands,
+                                auditTrailComparison,
+                                null),
                         Instant.now(clock),
                         0,
                         commandMetadata,
@@ -135,7 +151,12 @@ public class AutomationComparisonService {
                     null,
                     context);
             final LatestAutomationResult result = new LatestAutomationResult(
-                    withAutomationMetadata(outcome.json(), commandMetadata, backgroundCommands, null),
+                    withAutomationMetadata(
+                            outcome.json(),
+                            commandMetadata,
+                            backgroundCommands,
+                            auditTrailComparison,
+                            null),
                     Instant.now(clock),
                     request.tables().size(),
                     commandMetadata,
@@ -256,6 +277,7 @@ public class AutomationComparisonService {
             final String json,
             final CommandMetadata commandMetadata,
             final BackgroundCommandsMetadata backgroundCommandsMetadata,
+            final AuditTrailComparisonResult auditTrailComparison,
             final String status) {
         try {
             final ObjectNode root = (ObjectNode) JSON_MAPPER.readTree(json);
@@ -266,6 +288,9 @@ public class AutomationComparisonService {
                 root.set("command", JSON_MAPPER.valueToTree(commandMetadata));
             }
             root.set("backgroundCommands", JSON_MAPPER.valueToTree(backgroundCommandsMetadata));
+            if (auditTrailComparison != null) {
+                root.set("auditTrailComparison", JSON_MAPPER.valueToTree(auditTrailComparison));
+            }
             return JSON_MAPPER.writeValueAsString(root) + System.lineSeparator();
         } catch (JsonProcessingException | ClassCastException ex) {
             throw new IllegalStateException("Failed to add automation metadata to JSON comparison result", ex);
