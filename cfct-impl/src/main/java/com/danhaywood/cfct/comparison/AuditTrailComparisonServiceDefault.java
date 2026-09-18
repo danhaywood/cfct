@@ -13,6 +13,8 @@ import java.util.TreeMap;
 
 public final class AuditTrailComparisonServiceDefault implements AuditTrailComparisonService {
 
+    private static final String OBJECT_VERSION_MEMBER_IDENTIFIER = "objectVersion";
+
     @Override
     public AuditTrailComparisonResult compare(
             final List<AuditTrailEntryDescriptor> appAForeground,
@@ -31,9 +33,11 @@ public final class AuditTrailComparisonServiceDefault implements AuditTrailCompa
     private static AuditTrailScopeComparison compareScope(
             final List<AuditTrailEntryDescriptor> appA,
             final List<AuditTrailEntryDescriptor> appB) {
+        final List<AuditTrailEntryDescriptor> eligibleAppA = eligibleEntries(appA);
+        final List<AuditTrailEntryDescriptor> eligibleAppB = eligibleEntries(appB);
         final Map<AuditTrailSemanticKey, Counts> counts = new TreeMap<>();
-        appA.forEach(entry -> counts.computeIfAbsent(keyOf(entry), ignored -> new Counts()).appACount++);
-        appB.forEach(entry -> counts.computeIfAbsent(keyOf(entry), ignored -> new Counts()).appBCount++);
+        eligibleAppA.forEach(entry -> counts.computeIfAbsent(keyOf(entry), ignored -> new Counts()).appACount++);
+        eligibleAppB.forEach(entry -> counts.computeIfAbsent(keyOf(entry), ignored -> new Counts()).appBCount++);
         final List<AuditTrailCountDifference> differences = counts.entrySet().stream()
                 .filter(entry -> entry.getValue().appACount != entry.getValue().appBCount)
                 .map(entry -> new AuditTrailCountDifference(
@@ -44,9 +48,16 @@ public final class AuditTrailComparisonServiceDefault implements AuditTrailCompa
                 .toList();
         return new AuditTrailScopeComparison(
                 !differences.isEmpty(),
-                appA.size(),
-                appB.size(),
+                eligibleAppA.size(),
+                eligibleAppB.size(),
                 differences);
+    }
+
+    private static List<AuditTrailEntryDescriptor> eligibleEntries(
+            final List<AuditTrailEntryDescriptor> entries) {
+        return entries.stream()
+                .filter(entry -> !OBJECT_VERSION_MEMBER_IDENTIFIER.equals(entry.memberIdentifier()))
+                .toList();
     }
 
     private static AuditTrailSemanticKey keyOf(final AuditTrailEntryDescriptor entry) {

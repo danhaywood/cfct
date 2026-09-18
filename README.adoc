@@ -799,6 +799,7 @@ The JSON preserves `hasDifferences`, `differingTables`, and `comparedTables`, ke
 Top-level `hasDifferences` continues to describe business-table divergence only.
 The independent `auditTrailComparison.hasDifferences` field describes audit-structure divergence and identifies its mode as `semantic-key-counts`.
 Its `foreground` and `background` objects contain `appACount`, `appBCount`, and deterministic `differences` entries with `target`, `memberIdentifier`, `appACount`, and `appBCount`.
+Audit records whose member identifier is exactly `objectVersion` are excluded from semantic-key comparison and from both scope totals because persistence implementations do not update that technical member consistently.
 The `backgroundCommands` object contains aggregate `pending`, `completed`, and `failed` counts plus separate `appA` and `appB` command lists with interaction ID, parent ID, member, replay state, execution mode, timestamps, and classified status.
 Its `tableFootprint` object lists eligible tables attributable to completed background descendants under `appA` and `appB`, together with their deduplicated `union`.
 Each table identity contains `schema` and `name`, and the same union tables participate in the normal comparison request.

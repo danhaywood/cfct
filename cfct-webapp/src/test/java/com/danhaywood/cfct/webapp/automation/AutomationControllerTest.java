@@ -63,7 +63,13 @@ class AutomationControllerTest {
                 .andExpect(jsonPath("$.command.timestamp").value("2026-06-12T07:00:00"))
                 .andExpect(jsonPath("$.backgroundCommands.pending").value(2))
                 .andExpect(jsonPath("$.auditTrailComparison.hasDifferences").value(false))
-                .andExpect(jsonPath("$.auditTrailComparison.mode").value("semantic-key-counts"));
+                .andExpect(jsonPath("$.auditTrailComparison.mode").value("semantic-key-counts"))
+                .andExpect(jsonPath("$.auditTrailComparison.foreground.appACount").value(1))
+                .andExpect(jsonPath("$.auditTrailComparison.foreground.appBCount").value(1))
+                .andExpect(jsonPath("$.auditTrailComparison.foreground.differences").isEmpty())
+                .andExpect(jsonPath("$.auditTrailComparison.background.appACount").value(0))
+                .andExpect(jsonPath("$.auditTrailComparison.background.appBCount").value(0))
+                .andExpect(jsonPath("$.auditTrailComparison.background.differences").isEmpty());
 
         verify(service).refresh();
     }
